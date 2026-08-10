@@ -12,6 +12,8 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [idNumber, setIdNumber] = useState('');
   const [branchId, setBranchId] = useState(branches[0]?.id || '');
@@ -28,6 +30,12 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      alert('Las contraseñas no coinciden. Por favor verifícalas.');
+      return;
+    }
+
     submitStudentRegistration({
       first_name: firstName,
       last_name: lastName,
@@ -145,7 +153,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico (será tu usuario)</label>
           <input
             type="email"
             required
@@ -154,6 +162,33 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Crear Contraseña</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Repetir Contraseña</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="Confirma tu clave"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            />
+          </div>
         </div>
 
         <div>

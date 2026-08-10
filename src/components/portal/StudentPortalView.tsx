@@ -166,8 +166,8 @@ export const StudentPortalView: React.FC = () => {
         {activeTab === 'schedule' && (
           <div className="space-y-5 animate-fade-in">
             
-            {/* Student Credit Summary Pill */}
-            {currentStudent && (
+            {/* Student Credit Summary Pill or Empty Register Banner */}
+            {currentStudent ? (
               <div className="bg-gradient-to-r from-brand-600 to-brand-800 text-white rounded-3xl p-5 shadow-soft flex items-center justify-between">
                 <div>
                   <span className="text-xs text-brand-100 block font-medium">Hola, {currentStudent.first_name}!</span>
@@ -181,6 +181,22 @@ export const StudentPortalView: React.FC = () => {
                 >
                   <QrCode className="w-3.5 h-3.5 text-brand-700" />
                   <span>Ver Pase</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-6 text-center border border-slate-200 shadow-soft space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center mx-auto shadow-xs border border-brand-100">
+                  <User className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900">Bienvenido al Portal de Alumnos</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Aún no hay alumnos activos registrados en el sistema. Puedes completar tu ficha médica para solicitar tu ingreso.
+                </p>
+                <button
+                  onClick={() => setActiveTab('register')}
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs shadow-xs"
+                >
+                  Completar Ficha Médica de Alta
                 </button>
               </div>
             )}
