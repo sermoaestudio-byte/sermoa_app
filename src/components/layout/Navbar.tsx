@@ -20,9 +20,11 @@ import {
   QrCode,
   Menu,
   X,
-  Smartphone
+  Smartphone,
+  Share2
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
+import { StudioLinksModal } from '../common/StudioLinksModal';
 
 interface NavbarProps {
   currentView: string;
@@ -33,6 +35,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQRPoster }) => {
   const { studio, profiles, currentRole } = useStudioStore();
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showLinksModal, setShowLinksModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -273,23 +276,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
               <span className="hidden md:inline">Cartel QR</span>
             </button>
 
-            {/* Quick Copy Link Button */}
+            {/* Studio Links Center Button */}
             <button
-              onClick={handleCopyLink}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-xs transition-all shrink-0"
+              onClick={() => setShowLinksModal(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-800 bg-brand-50 hover:bg-brand-100/80 border border-brand-200 shadow-xs transition-all shrink-0"
+              title="Ver y copiar enlaces para Instagram Bio y WhatsApp"
             >
-              {copiedLink ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-extrabold text-[11px]">¡Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="hidden sm:inline text-[11px]">Link Alumnos</span>
-                  <ExternalLink className="w-3 h-3 text-slate-400 hidden sm:inline" />
-                </>
-              )}
+              <Share2 className="w-3.5 h-3.5 text-brand-700" />
+              <span className="hidden sm:inline text-[11px]">Links para Redes</span>
             </button>
 
             {/* Notifications Bell */}
@@ -475,6 +469,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
             <span>Abrir Vista Alumno</span>
           </button>
         </div>
+      )}
+
+      {/* Studio Links Center Modal */}
+      {showLinksModal && (
+        <StudioLinksModal
+          onClose={() => setShowLinksModal(false)}
+          onOpenQRPoster={onOpenQRPoster}
+        />
       )}
 
     </header>
