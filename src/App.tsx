@@ -94,6 +94,17 @@ export function App() {
     }
 
     if (currentView === 'portal-alumno') {
+      if (currentRole !== 'client') {
+        return (
+          <AccessDeniedView
+            requiredRole="client"
+            onNavigate={(view) => {
+              setCurrentView(view);
+              window.location.hash = `#${view}`;
+            }}
+          />
+        );
+      }
       return <StudentPortalView />;
     }
 

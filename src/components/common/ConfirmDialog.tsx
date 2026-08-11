@@ -61,7 +61,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   const styles = getVariantStyles();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
       <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade-in relative">
         
         {/* Close Button */}
