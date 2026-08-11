@@ -14,7 +14,7 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
   const activeStudents = profiles.filter((p) => p.role === 'client' && p.status === 'active');
   const totalStudents = profiles.filter((p) => p.role === 'client').length;
   const classesToday = classes.filter((c) => !c.is_cancelled && (c.date === todayStr || c.day_of_week === new Date().getDay()));
-  const instructorsCount = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin').length;
+  const instructorsCount = profiles.filter((p) => p.role === 'instructor').length;
   const branchesCount = branches.length;
 
   return (

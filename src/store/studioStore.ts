@@ -1,7 +1,3 @@
-// ==============================================================================
-// SERMOA FIT / AGENDAFIT NEXT - CENTRAL REACTIVE STORE (ZUSTAND PATTERN / REACT HOOK)
-// ==============================================================================
-
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import {
   Studio,
@@ -15,22 +11,49 @@ import {
   PaymentTransaction,
   PaymentMethod,
   AttendanceRecord,
+  AttendanceStatus,
+  CheckinMethod,
   Routine,
   WhatsAppTemplate,
   UserRole,
+  FinancialCategory,
+  FinancialMonthlyGoals,
 } from '../types';
 import { toISODateString } from '../utils/date';
 import { isWithinGeofence } from '../utils/geo';
 import { formatWhatsAppTemplate, openWhatsApp } from '../utils/whatsapp';
+import { getPortalLink } from '../utils/links';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-const STORAGE_KEY = 'sermoa_app_production_clean_v1';
+const STORAGE_KEY = 'sermoa_app_clean_v4';
 
-// Initial Mock Data
+// Helper to generate RFC4122 compliant UUID v4 for PostgreSQL / Supabase
+export function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// Initial UUIDs
+const DEFAULT_STUDIO_ID = '11111111-1111-4111-8111-111111111111';
+const DEFAULT_BRANCH_ID = '22222222-2222-4222-8222-222222222222';
+const DEFAULT_ADMIN_ID = '33333333-3333-4333-8333-333333333333';
+
 const initialStudio: Studio = {
-  id: 'studio-1',
+  id: DEFAULT_STUDIO_ID,
   name: 'SERMOA App',
   slug: 'sermoa',
   logo_url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&auto=format&fit=crop&q=80',
+  brand_colors: {
+    primary: '#4d5d43',
+    secondary: '#2d3827',
+    accent: '#738a65',
+  },
   phone: '5491155550199',
   email: 'contacto@sermoa.com',
   description: 'Gestión integral de turnos y actividades para centros de entrenamiento.',
@@ -52,45 +75,28 @@ const initialStudio: Studio = {
   },
 };
 
-const initialBranches: Branch[] = [
-  {
-    id: 'branch-1',
-    studio_id: 'studio-1',
-    name: 'Sede Principal',
-    address: 'Av. Libertador 1200, CABA',
-    city: 'Buenos Aires',
-    phone: '+54 11 5555-0199',
-    latitude: -34.5885,
-    longitude: -58.4233,
-    opening_hours: 'Lun a Vie 07:00 a 21:00 hs | Sáb 09:00 a 14:00 hs',
-    is_active: true,
-    rooms: [
-      { id: 'room-1', branch_id: 'branch-1', name: 'Sala Reformer', capacity: 10 },
-      { id: 'room-2', branch_id: 'branch-1', name: 'Sala Mat & Yoga', capacity: 12 },
-    ],
-  },
-];
+const initialBranches: Branch[] = [];
 
 const initialActivities: Activity[] = [
   {
-    id: 'act-1',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     name: 'Pilates Reformer',
     description: 'Trabajo integral de tonificación, postura y flexibilidad en reformer.',
-    color: '#54875e',
+    color: '#4d5d43',
     default_duration_minutes: 60,
   },
   {
-    id: 'act-2',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     name: 'Yoga Vinyasa Flow',
     description: 'Fluidez, respiración consciente y fuerza postural.',
     color: '#8b5cf6',
     default_duration_minutes: 60,
   },
   {
-    id: 'act-3',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     name: 'Entrenamiento Funcional',
     description: 'Circuitos de fuerza, estabilidad y capacidad cardiovascular.',
     color: '#f59e0b',
@@ -99,16 +105,15 @@ const initialActivities: Activity[] = [
 ];
 
 const initialProfiles: Profile[] = [
-  // Administrador Principal del Estudio
   {
-    id: 'prof-admin',
-    studio_id: 'studio-1',
+    id: DEFAULT_ADMIN_ID,
+    studio_id: DEFAULT_STUDIO_ID,
     role: 'admin',
     status: 'active',
     first_name: 'Jonathan',
     last_name: 'Leguizamon',
     email: 'joni0627@gmail.com',
-    phone: '5491155550199',
+    phone: '3512409232',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     credits_balance: 999,
     debt_amount: 0,
@@ -122,15 +127,13 @@ const initialProfiles: Profile[] = [
 const todayStr = toISODateString(new Date());
 
 const initialClasses: ClassSchedule[] = [];
-
 const initialBookings: Booking[] = [];
-
 const initialWaitlist: WaitlistEntry[] = [];
 
 const initialCreditPacks: CreditPack[] = [
   {
-    id: 'pack-1',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     name: 'Pack 8 Clases / Mes',
     description: 'Ideal para entrenar 2 veces por semana. Válido por 30 días.',
     credits_count: 8,
@@ -141,8 +144,8 @@ const initialCreditPacks: CreditPack[] = [
     popular_badge: true,
   },
   {
-    id: 'pack-2',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     name: 'Pack 12 Clases / Mes',
     description: 'Ideal para entrenar 3 veces por semana. Máxima flexibilidad.',
     credits_count: 12,
@@ -152,8 +155,8 @@ const initialCreditPacks: CreditPack[] = [
     is_active: true,
   },
   {
-    id: 'pack-3',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     name: 'Clase Suelta / Prueba',
     description: '1 crédito para conocer el estudio o tomar una clase puntual.',
     credits_count: 1,
@@ -168,143 +171,221 @@ const initialPayments: PaymentTransaction[] = [];
 
 const initialWhatsAppTemplates: WhatsAppTemplate[] = [
   {
-    id: 'wapp-1',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     code: 'welcome_approved',
     title: 'Bienvenida & Aprobación de Cuenta',
     template_text: '¡Hola {{nombre}}! 👋 Te damos la bienvenida a {{estudio}}. Tu cuenta ha sido aprobada con éxito ✅. Ya puedes ingresar a reservar tus clases desde este enlace: {{link}} ¡Te esperamos!',
     is_active: true,
   },
   {
-    id: 'wapp-2',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     code: 'class_reminder',
     title: 'Recordatorio de Clase Hoy',
     template_text: '¡Hola {{nombre}}! 👋 Te recordamos tu clase de *{{clase}}* hoy a las *{{horario}} hs* en *{{sede}}*. Por favor recuerda llegar 5 minutos antes para el check-in. Si necesitas cancelar, hazlo desde: {{link}}',
     is_active: true,
   },
   {
-    id: 'wapp-3',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     code: 'waitlist_promoted',
     title: 'Cupo Liberado en Lista de Espera',
     template_text: '¡Buenas noticias {{nombre}}! 🎉 Se liberó un cupo para la clase de *{{clase}}* del día *{{fecha}}* a las *{{horario}} hs*. Tu reserva ha sido confirmada automáticamente. ¡Nos vemos en el estudio!',
     is_active: true,
   },
   {
-    id: 'wapp-4',
-    studio_id: 'studio-1',
+    id: generateUUID(),
+    studio_id: DEFAULT_STUDIO_ID,
     code: 'debt_reminder',
     title: 'Recordatorio de Cuota / Saldo',
     template_text: 'Hola {{nombre}}, te escribimos de {{estudio}} para recordarte que posees un saldo pendiente de ${{monto}}. Puedes abonarlo por transferencia o MercadoPago desde tu panel: {{link}} ¡Muchas gracias!',
     is_active: true,
   },
-  {
-    id: 'wapp-5',
-    studio_id: 'studio-1',
-    code: 'booking_confirmed',
-    title: 'Confirmación de Turno Reservado',
-    template_text: '¡Reserva confirmada {{nombre}}! 🧘‍♀️ Tienes tu lugar guardado para *{{clase}}* el *{{fecha}}* a las *{{horario}} hs* en *{{sede}}*. Tus créditos restantes: {{creditos}}.',
-    is_active: true,
-  },
 ];
 
 const initialRoutines: Routine[] = [];
-
 const initialAttendances: AttendanceRecord[] = [];
 
-// Load persisted state or initial
-function loadInitialState() {
-  const defaultState = {
-    studio: initialStudio,
-    branches: initialBranches,
-    activities: initialActivities,
-    profiles: initialProfiles,
-    classes: initialClasses,
-    bookings: initialBookings,
-    waitlist: initialWaitlist,
-    creditPacks: initialCreditPacks,
-    payments: initialPayments,
-    whatsappTemplates: initialWhatsAppTemplates,
-    routines: initialRoutines,
-    attendances: initialAttendances,
-    currentRole: 'admin' as UserRole,
-    currentStudentId: 'stu-1', // Alumno activo para simular vista alumno
-    currentInstructorId: 'prof-admin',
-  };
+const initialFinancialCategories: FinancialCategory[] = [
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Alquiler', type: 'expense', color: '#6366f1', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Sueldos Profesores', type: 'expense', color: '#a855f7', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Servicios (Luz, Agua, Internet)', type: 'expense', color: '#06b6d4', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Mantenimiento & Reformers', type: 'expense', color: '#f59e0b', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Marketing & Publicidad', type: 'expense', color: '#ec4899', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Venta de Pack / Membresía', type: 'income', color: '#10b981', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Clase Suelta / Prueba', type: 'income', color: '#3b82f6', is_active: true },
+  { id: generateUUID(), studio_id: DEFAULT_STUDIO_ID, name: 'Ingreso manual', type: 'income', color: '#10b981', is_active: true },
+];
 
+const initialFinancialGoals: FinancialMonthlyGoals = {
+  id: generateUUID(),
+  studio_id: DEFAULT_STUDIO_ID,
+  month: new Date().getMonth() + 1,
+  year: new Date().getFullYear(),
+  avg_class_price: 9000,
+  operational_be_amount: 0,
+  cash_be_amount: 0,
+  target_sales_amount: 2300000,
+  operating_days: 24,
+};
+
+// Global Memory State
+let state: any = {
+  studio: initialStudio,
+  branches: initialBranches,
+  activities: initialActivities,
+  profiles: initialProfiles,
+  classes: initialClasses,
+  bookings: initialBookings,
+  waitlist: initialWaitlist,
+  creditPacks: initialCreditPacks,
+  payments: initialPayments,
+  financialCategories: initialFinancialCategories,
+  financialGoals: initialFinancialGoals,
+  whatsappTemplates: initialWhatsAppTemplates,
+  routines: initialRoutines,
+  attendances: initialAttendances,
+  currentRole: 'admin' as UserRole,
+  currentStudentId: DEFAULT_ADMIN_ID,
+  currentInstructorId: DEFAULT_ADMIN_ID,
+};
+
+// Load saved local cache on first load
+try {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return {
-        ...defaultState,
-        ...parsed,
-        routines: parsed.routines && parsed.routines.length > 0 ? parsed.routines : initialRoutines,
-      };
-    } catch (e) {
-      console.error('Failed to parse saved state, using initial mock data', e);
-    }
+    const parsed = JSON.parse(saved);
+    state = { ...state, ...parsed };
   }
-  return defaultState;
+} catch (e) {
+  console.warn('Could not read state from localStorage', e);
 }
 
-// Global Singleton Reactive Store State
-let globalStoreState = loadInitialState();
-const storeListeners = new Set<() => void>();
+const listeners = new Set<() => void>();
 
-function setGlobalStoreState(updater: any) {
-  globalStoreState = typeof updater === 'function' ? updater(globalStoreState) : updater;
+function setState(updater: any) {
+  const nextState = typeof updater === 'function' ? updater(state) : updater;
+  state = nextState;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalStoreState));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
-    console.error('Failed to save state to localStorage', e);
+    console.warn('Could not persist state to localStorage', e);
   }
-  storeListeners.forEach((listener) => listener());
+  listeners.forEach((l) => l());
 }
 
+// Background Synchronization from Supabase
+let isSyncing = false;
+async function syncFromSupabase() {
+  if (!isSupabaseConfigured || isSyncing) return;
+  isSyncing = true;
+
+  try {
+    // 1. Studio check & seed
+    const { data: studiosData, error: studioErr } = await supabase.from('studios').select('*').limit(1);
+    let currentStudio = state.studio;
+    if (!studioErr && studiosData && studiosData.length > 0) {
+      currentStudio = { ...state.studio, ...studiosData[0] };
+    } else {
+      await supabase.from('studios').upsert({
+        id: state.studio.id,
+        name: state.studio.name,
+        slug: state.studio.slug,
+        brand_colors: state.studio.brand_colors,
+        phone: state.studio.phone,
+        email: state.studio.email,
+        is_active: true,
+      });
+    }
+
+    // 2. Fetch Profiles
+    const { data: profilesData } = await supabase.from('profiles').select('*');
+    // 3. Fetch Branches
+    const { data: branchesData } = await supabase.from('branches').select('*');
+    // 4. Fetch Activities
+    const { data: activitiesData } = await supabase.from('activities').select('*');
+    // 5. Fetch Classes
+    const { data: classesData } = await supabase.from('classes').select('*');
+    // 6. Fetch Credit Packs
+    const { data: packsData } = await supabase.from('credit_packs').select('*');
+    // 7. Fetch Bookings
+    const { data: bookingsData } = await supabase.from('bookings').select('*');
+    // 8. Fetch Attendances
+    const { data: attendancesData } = await supabase.from('attendances').select('*');
+    // 9. Fetch Payments
+    const { data: paymentsData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
+    // 10. Fetch Categories
+    const { data: categoriesData } = await supabase.from('financial_categories').select('*');
+    // 11. Fetch Goals
+    const { data: goalsData } = await supabase.from('financial_monthly_goals').select('*').limit(1);
+
+    setState((prev: any) => ({
+      ...prev,
+      studio: currentStudio || prev.studio,
+      profiles: profilesData && profilesData.length > 0 ? profilesData : prev.profiles,
+      branches: branchesData && branchesData.length > 0 ? branchesData : prev.branches,
+      activities: activitiesData && activitiesData.length > 0 ? activitiesData : prev.activities,
+      classes: classesData && classesData.length > 0 ? classesData : prev.classes,
+      creditPacks: packsData && packsData.length > 0 ? packsData : prev.creditPacks,
+      bookings: bookingsData && bookingsData.length > 0 ? bookingsData : prev.bookings,
+      attendances: attendancesData && attendancesData.length > 0 ? attendancesData : prev.attendances,
+      payments: paymentsData && paymentsData.length > 0 ? paymentsData : prev.payments,
+      financialCategories: categoriesData && categoriesData.length > 0 ? categoriesData : prev.financialCategories,
+      financialGoals: goalsData && goalsData.length > 0 ? goalsData[0] : prev.financialGoals,
+    }));
+  } catch (err) {
+    console.error('Error syncing data from Supabase:', err);
+  } finally {
+    isSyncing = false;
+  }
+}
+
+// React Hook
 export function useStudioStore() {
-  const state = useSyncExternalStore(
+  const syncStore = useSyncExternalStore(
     (callback) => {
-      storeListeners.add(callback);
-      return () => {
-        storeListeners.delete(callback);
-      };
+      listeners.add(callback);
+      return () => listeners.delete(callback);
     },
-    () => globalStoreState
+    () => state
   );
 
-  const setState = setGlobalStoreState;
+  useEffect(() => {
+    syncFromSupabase();
+  }, []);
 
-  // Helpers to get enriched objects
+  // Computed Getters
   const getEnrichedClasses = (): ClassSchedule[] => {
     return state.classes.map((cls: ClassSchedule) => {
       const branch = state.branches.find((b: Branch) => b.id === cls.branch_id);
-      const room = branch?.rooms?.find((r) => r.id === cls.room_id);
-      const activity = state.activities.find((a: Activity) => a.id === cls.activity_id);
+      const room = branch?.rooms?.find((r) => r.id === cls.room_id) || { name: 'Sala Principal' };
       const instructor = state.profiles.find((p: Profile) => p.id === cls.instructor_id);
-      const enrolledCount = state.bookings.filter(
+      const activity = state.activities.find((a: Activity) => a.id === cls.activity_id);
+      const confirmedBookings = state.bookings.filter(
         (b: Booking) => b.class_id === cls.id && b.status === 'confirmed'
-      ).length;
-      const waitlistCount = state.waitlist.filter(
-        (w: WaitlistEntry) => w.class_id === cls.id && w.status === 'waiting'
-      ).length;
+      );
+      const waitlistCount = state.waitlist.filter((w: WaitlistEntry) => w.class_id === cls.id).length;
 
       return {
         ...cls,
         branch,
         room,
-        activity,
         instructor,
-        enrolled_students_count: enrolledCount,
+        activity,
+        bookings_count: confirmedBookings.length,
         waitlist_count: waitlistCount,
+        is_full: confirmedBookings.length >= cls.max_capacity,
       };
     });
   };
 
-  const getEnrichedBookings = (filterDate?: string): Booking[] => {
-    return state.bookings
-      .filter((b: Booking) => !filterDate || b.booking_date === filterDate)
+  const getEnrichedBookings = (studentId?: string): Booking[] => {
+    const list = studentId
+      ? state.bookings.filter((b: Booking) => b.student_id === studentId)
+      : state.bookings;
+
+    return list
       .map((b: Booking) => {
         const student = state.profiles.find((p: Profile) => p.id === b.student_id);
         const classItem = getEnrichedClasses().find((c) => c.id === b.class_id);
@@ -327,7 +408,7 @@ export function useStudioStore() {
 
   // Student Registration & Approval
   const submitStudentRegistration = (newStudentData: Partial<Profile>) => {
-    const id = `stu-req-${Date.now()}`;
+    const id = generateUUID();
     const newStudent: Profile = {
       id,
       studio_id: state.studio.id,
@@ -356,12 +437,36 @@ export function useStudioStore() {
       profiles: [newStudent, ...prev.profiles],
     }));
 
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').insert({
+        id,
+        studio_id: state.studio.id,
+        role: 'client',
+        status: 'pending_approval',
+        first_name: newStudent.first_name,
+        last_name: newStudent.last_name,
+        email: newStudent.email,
+        phone: newStudent.phone,
+        id_number: newStudent.id_number,
+        medical_notes: newStudent.medical_notes,
+        has_medical_certificate: newStudent.has_medical_certificate,
+        medical_declaration: newStudent.medical_declaration,
+        credits_balance: 0,
+        debt_amount: 0,
+        preferred_branch_id: newStudent.preferred_branch_id,
+      }).then(({ error }) => {
+        if (error) console.error('Error insertando alumno en Supabase:', error);
+      });
+    }
+
     return newStudent;
   };
 
   const approveStudentRegistration = (studentId: string, initialCredits: number = 1) => {
     const student = state.profiles.find((p: Profile) => p.id === studentId);
     if (!student) return;
+
+    const updatedCredits = (student.credits_balance || 0) + initialCredits;
 
     setState((prev: any) => ({
       ...prev,
@@ -370,12 +475,21 @@ export function useStudioStore() {
           ? {
               ...p,
               status: 'active' as const,
-              credits_balance: p.credits_balance + initialCredits,
+              credits_balance: updatedCredits,
               updated_at: new Date().toISOString(),
             }
           : p
       ),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').update({
+        status: 'active',
+        credits_balance: updatedCredits,
+      }).eq('id', studentId).then(({ error }) => {
+        if (error) console.error('Error aprobando alumno en Supabase:', error);
+      });
+    }
 
     // Trigger WhatsApp welcome message
     const welcomeTpl = state.whatsappTemplates.find((t: WhatsAppTemplate) => t.code === 'welcome_approved');
@@ -383,7 +497,7 @@ export function useStudioStore() {
       const text = formatWhatsAppTemplate(welcomeTpl.template_text, {
         nombre: student.first_name,
         estudio: state.studio.name,
-        link: `${window.location.origin}/#portal-alumno`,
+        link: getPortalLink(),
       });
       openWhatsApp(student.phone, text);
     }
@@ -393,9 +507,17 @@ export function useStudioStore() {
     setState((prev: any) => ({
       ...prev,
       profiles: prev.profiles.map((p: Profile) =>
-        p.id === studentId ? { ...p, status: 'rejected' as const, updated_at: new Date().toISOString() } : p
+        p.id === studentId ? { ...p, status: 'inactive' as const, updated_at: new Date().toISOString() } : p
       ),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').update({
+        status: 'inactive',
+      }).eq('id', studentId).then(({ error }) => {
+        if (error) console.error('Error rechazando alumno en Supabase:', error);
+      });
+    }
   };
 
   const addInstructor = (instructorData: {
@@ -411,7 +533,7 @@ export function useStudioStore() {
       create_students?: boolean;
     };
   }) => {
-    const id = `inst-${Date.now()}`;
+    const id = generateUUID();
     const newInstructor: Profile = {
       id,
       studio_id: state.studio.id,
@@ -439,6 +561,25 @@ export function useStudioStore() {
       profiles: [...prev.profiles, newInstructor],
     }));
 
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').insert({
+        id,
+        studio_id: state.studio.id,
+        role: 'instructor',
+        status: 'active',
+        first_name: newInstructor.first_name,
+        last_name: newInstructor.last_name,
+        email: newInstructor.email,
+        phone: newInstructor.phone,
+        credits_balance: 0,
+        debt_amount: 0,
+        specialties: newInstructor.specialties,
+        permissions: newInstructor.permissions,
+      }).then(({ error }) => {
+        if (error) console.error('Error agregando profesor en Supabase:', error);
+      });
+    }
+
     return newInstructor;
   };
 
@@ -449,6 +590,12 @@ export function useStudioStore() {
         p.id === id ? { ...p, ...updatedData, updated_at: new Date().toISOString() } : p
       ),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').update(updatedData).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando profesor en Supabase:', error);
+      });
+    }
   };
 
   const deleteInstructor = (id: string) => {
@@ -459,6 +606,101 @@ export function useStudioStore() {
         c.instructor_id === id ? { ...c, instructor_id: prev.profiles[0]?.id || '' } : c
       ),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Error eliminando profesor en Supabase:', error);
+      });
+    }
+  };
+
+  // Branch / Sede Actions (CRUD)
+  const createBranch = (branchData: {
+    name: string;
+    address: string;
+    city?: string;
+    phone?: string;
+    opening_hours?: string;
+    latitude?: number;
+    longitude?: number;
+    rooms?: { name: string; capacity: number }[];
+  }) => {
+    const newBranchId = generateUUID();
+    const newBranch: Branch = {
+      id: newBranchId,
+      studio_id: state.studio.id,
+      name: branchData.name,
+      address: branchData.address,
+      city: branchData.city || 'Buenos Aires',
+      phone: branchData.phone || '',
+      latitude: branchData.latitude || -34.5885,
+      longitude: branchData.longitude || -58.4233,
+      opening_hours: branchData.opening_hours || 'Lun a Vie 08:00 a 20:00 hs',
+      is_active: true,
+      rooms: (branchData.rooms && branchData.rooms.length > 0
+        ? branchData.rooms
+        : [{ name: 'Sala Principal', capacity: 10 }]
+      ).map((r) => ({
+        id: generateUUID(),
+        branch_id: newBranchId,
+        name: r.name,
+        capacity: r.capacity || 10,
+      })),
+    };
+
+    setState((prev: any) => ({
+      ...prev,
+      branches: [newBranch, ...prev.branches],
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('branches').insert({
+        id: newBranchId,
+        studio_id: state.studio.id,
+        name: newBranch.name,
+        address: newBranch.address,
+        city: newBranch.city,
+        phone: newBranch.phone,
+        latitude: newBranch.latitude,
+        longitude: newBranch.longitude,
+        is_active: true,
+      }).then(({ error }) => {
+        if (error) console.error('Error creando sucursal en Supabase:', error);
+      });
+    }
+
+    return newBranch;
+  };
+
+  const updateBranch = (id: string, branchData: Partial<Branch>) => {
+    setState((prev: any) => ({
+      ...prev,
+      branches: prev.branches.map((b: Branch) => (b.id === id ? { ...b, ...branchData } : b)),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('branches').update({
+        name: branchData.name,
+        address: branchData.address,
+        city: branchData.city,
+        phone: branchData.phone,
+      }).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando sucursal en Supabase:', error);
+      });
+    }
+  };
+
+  const deleteBranch = (id: string) => {
+    setState((prev: any) => ({
+      ...prev,
+      branches: prev.branches.filter((b: Branch) => b.id !== id),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('branches').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Error eliminando sucursal en Supabase:', error);
+      });
+    }
   };
 
   // Classes & Bookings Actions
@@ -467,20 +709,21 @@ export function useStudioStore() {
   };
 
   const createClassesBatch = (newClasses: Partial<ClassSchedule>[]) => {
-    const timestamp = Date.now();
-    const items: ClassSchedule[] = newClasses.map((nc, idx) => ({
-      id: `class-${timestamp}-${idx}`,
+    const items: ClassSchedule[] = newClasses.map((nc) => ({
+      id: generateUUID(),
       studio_id: state.studio.id,
-      branch_id: nc.branch_id || state.branches[0].id,
-      room_id: nc.room_id || state.branches[0].rooms[0]?.id || 'room-1',
-      activity_id: nc.activity_id || state.activities[0].id,
-      instructor_id: nc.instructor_id || state.profiles[0].id,
+      branch_id: nc.branch_id || state.branches[0]?.id || DEFAULT_BRANCH_ID,
+      room_id: nc.room_id || state.branches[0]?.rooms[0]?.id,
+      activity_id: nc.activity_id || state.activities[0]?.id,
+      instructor_id: nc.instructor_id || state.profiles[0]?.id,
       title: nc.title || 'Nueva Clase',
       day_of_week: nc.day_of_week ?? new Date().getDay(),
       start_time: nc.start_time || '10:00',
       end_time: nc.end_time || '11:00',
       date: nc.date || todayStr,
       max_capacity: nc.max_capacity || 12,
+      credit_cost: nc.credit_cost || 1.0,
+      single_class_price: nc.single_class_price || 6500,
       is_recurring: nc.is_recurring ?? true,
       is_cancelled: false,
       color: nc.color || '#54875e',
@@ -490,6 +733,32 @@ export function useStudioStore() {
       ...prev,
       classes: [...prev.classes, ...items],
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('classes').insert(
+        items.map((c) => ({
+          id: c.id,
+          studio_id: c.studio_id,
+          branch_id: c.branch_id,
+          room_id: c.room_id,
+          activity_id: c.activity_id,
+          instructor_id: c.instructor_id,
+          title: c.title,
+          day_of_week: c.day_of_week,
+          start_time: c.start_time,
+          end_time: c.end_time,
+          date: c.date,
+          max_capacity: c.max_capacity,
+          credit_cost: c.credit_cost,
+          single_class_price: c.single_class_price,
+          is_recurring: c.is_recurring,
+          color: c.color,
+          is_active: true,
+        }))
+      ).then(({ error }) => {
+        if (error) console.error('Error insertando clases en Supabase:', error);
+      });
+    }
   };
 
   const deleteClass = (classId: string) => {
@@ -499,6 +768,12 @@ export function useStudioStore() {
       bookings: prev.bookings.filter((b: Booking) => b.class_id !== classId),
       waitlist: prev.waitlist.filter((w: WaitlistEntry) => w.class_id !== classId),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('classes').delete().eq('id', classId).then(({ error }) => {
+        if (error) console.error('Error eliminando clase en Supabase:', error);
+      });
+    }
   };
 
   const bookClass = (classId: string, studentId: string, bookingDate: string = todayStr): { success: boolean; isWaitlist: boolean; message: string } => {
@@ -514,26 +789,23 @@ export function useStudioStore() {
       (b: Booking) => b.class_id === classId && b.student_id === studentId && b.booking_date === bookingDate && b.status === 'confirmed'
     );
     if (existing) {
-      return { success: false, isWaitlist: false, message: 'Ya tienes una reserva confirmada para esta clase.' };
+      return { success: false, isWaitlist: false, message: 'Ya tienes una reserva confirmada para este turno.' };
     }
 
-    // Check capacity
-    const currentEnrolled = state.bookings.filter(
+    const currentBookings = state.bookings.filter(
       (b: Booking) => b.class_id === classId && b.booking_date === bookingDate && b.status === 'confirmed'
-    ).length;
+    );
 
-    if (currentEnrolled >= classSchedule.max_capacity) {
-      // Add to Waitlist
-      const currentWaitlistCount = state.waitlist.filter(
-        (w: WaitlistEntry) => w.class_id === classId && w.booking_date === bookingDate && w.status === 'waiting'
-      ).length;
-
+    // If Class is Full -> Add to Waitlist
+    if (currentBookings.length >= classSchedule.max_capacity) {
+      const waitlistId = generateUUID();
       const waitlistEntry: WaitlistEntry = {
-        id: `wait-${Date.now()}`,
+        id: waitlistId,
+        studio_id: state.studio.id,
         class_id: classId,
         student_id: studentId,
-        booking_date: bookingDate,
-        position: currentWaitlistCount + 1,
+        request_date: bookingDate,
+        position: state.waitlist.filter((w: WaitlistEntry) => w.class_id === classId).length + 1,
         status: 'waiting',
         created_at: new Date().toISOString(),
       };
@@ -543,38 +815,83 @@ export function useStudioStore() {
         waitlist: [...prev.waitlist, waitlistEntry],
       }));
 
+      if (isSupabaseConfigured) {
+        supabase.from('waitlist').insert({
+          id: waitlistId,
+          studio_id: state.studio.id,
+          class_id: classId,
+          student_id: studentId,
+          request_date: bookingDate,
+          position: waitlistEntry.position,
+          status: 'waiting',
+        }).then(({ error }) => {
+          if (error) console.error('Error insertando en waitlist de Supabase:', error);
+        });
+      }
+
       return {
         success: true,
         isWaitlist: true,
-        message: `Clase completa. Has ingresado a la Lista de Espera en la posición #${waitlistEntry.position}.`,
+        message: `La clase está completa. Has quedado en posición #${waitlistEntry.position} en la Lista de Espera.`,
       };
     }
 
-    // Check credits
-    if (student.credits_balance <= 0) {
-      return { success: false, isWaitlist: false, message: 'No dispones de créditos suficientes para reservar esta clase.' };
+    // Deduct Credit
+    if (student.credits_balance < 1) {
+      return {
+        success: false,
+        isWaitlist: false,
+        message: 'No dispones de créditos suficientes. Por favor adquiere un pack de clases.',
+      };
     }
 
-    // Confirm Booking & Deduct Credit
-    const booking: Booking = {
-      id: `book-${Date.now()}`,
+    const bookingId = generateUUID();
+    const newBooking: Booking = {
+      id: bookingId,
+      studio_id: state.studio.id,
       class_id: classId,
       student_id: studentId,
       booking_date: bookingDate,
+      start_time: classSchedule.start_time,
       status: 'confirmed',
-      credit_deducted: true,
       created_at: new Date().toISOString(),
     };
 
+    const newCredits = Math.max(0, student.credits_balance - 1);
+
     setState((prev: any) => ({
       ...prev,
-      bookings: [...prev.bookings, booking],
+      bookings: [newBooking, ...prev.bookings],
       profiles: prev.profiles.map((p: Profile) =>
-        p.id === studentId ? { ...p, credits_balance: Math.max(0, p.credits_balance - 1) } : p
+        p.id === studentId ? { ...p, credits_balance: newCredits } : p
       ),
     }));
 
-    return { success: true, isWaitlist: false, message: '¡Reserva confirmada con éxito!' };
+    if (isSupabaseConfigured) {
+      supabase.from('bookings').insert({
+        id: bookingId,
+        studio_id: state.studio.id,
+        class_id: classId,
+        student_id: studentId,
+        booking_date: bookingDate,
+        start_time: classSchedule.start_time,
+        status: 'confirmed',
+      }).then(({ error }) => {
+        if (error) console.error('Error insertando reserva en Supabase:', error);
+      });
+
+      supabase.from('profiles').update({
+        credits_balance: newCredits,
+      }).eq('id', studentId).then(({ error }) => {
+        if (error) console.error('Error actualizando créditos en Supabase:', error);
+      });
+    }
+
+    return {
+      success: true,
+      isWaitlist: false,
+      message: '¡Reserva confirmada con éxito!',
+    };
   };
 
   const cancelBooking = (bookingId: string) => {
@@ -582,175 +899,356 @@ export function useStudioStore() {
     if (!booking) return;
 
     // Refund credit
-    setState((prev: any) => {
-      const updatedBookings = prev.bookings.map((b: Booking) =>
-        b.id === bookingId ? { ...b, status: 'cancelled_by_user' as const, cancelled_at: new Date().toISOString() } : b
-      );
+    const student = state.profiles.find((p: Profile) => p.id === booking.student_id);
+    const restoredCredits = (student?.credits_balance || 0) + 1;
 
-      const updatedProfiles = prev.profiles.map((p: Profile) =>
-        p.id === booking.student_id && booking.credit_deducted ? { ...p, credits_balance: p.credits_balance + 1 } : p
-      );
+    setState((prev: any) => ({
+      ...prev,
+      bookings: prev.bookings.map((b: Booking) =>
+        b.id === bookingId ? { ...b, status: 'cancelled_in_time' as const } : b
+      ),
+      profiles: prev.profiles.map((p: Profile) =>
+        p.id === booking.student_id ? { ...p, credits_balance: restoredCredits } : p
+      ),
+    }));
 
-      // Check if there is someone in waitlist to auto-promote
-      const nextInWaitlist = prev.waitlist
-        .filter((w: WaitlistEntry) => w.class_id === booking.class_id && w.booking_date === booking.booking_date && w.status === 'waiting')
-        .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+    if (isSupabaseConfigured) {
+      supabase.from('bookings').update({
+        status: 'cancelled_in_time',
+      }).eq('id', bookingId).then(({ error }) => {
+        if (error) console.error('Error cancelando reserva en Supabase:', error);
+      });
 
-      let newBookings = updatedBookings;
-      let updatedWaitlist = prev.waitlist;
-
-      if (nextInWaitlist) {
-        // Promote student to confirmed booking
-        const promotedBooking: Booking = {
-          id: `book-promoted-${Date.now()}`,
-          class_id: booking.class_id,
-          student_id: nextInWaitlist.student_id,
-          booking_date: booking.booking_date,
-          status: 'confirmed',
-          credit_deducted: true,
-          created_at: new Date().toISOString(),
-        };
-
-        newBookings = [...newBookings, promotedBooking];
-        updatedWaitlist = prev.waitlist.map((w: WaitlistEntry) =>
-          w.id === nextInWaitlist.id ? { ...w, status: 'promoted' as const, promoted_at: new Date().toISOString() } : w
-        );
-
-        // Notify promoted student via WhatsApp
-        const student = prev.profiles.find((p: Profile) => p.id === nextInWaitlist.student_id);
-        const classItem = prev.classes.find((c: ClassSchedule) => c.id === booking.class_id);
-        const tpl = prev.whatsappTemplates.find((t: WhatsAppTemplate) => t.code === 'waitlist_promoted');
-        if (tpl && student?.phone && classItem) {
-          const msg = formatWhatsAppTemplate(tpl.template_text, {
-            nombre: student.first_name,
-            clase: classItem.title,
-            fecha: booking.booking_date,
-            horario: classItem.start_time,
-          });
-          openWhatsApp(student.phone, msg);
-        }
-      }
-
-      return {
-        ...prev,
-        bookings: newBookings,
-        profiles: updatedProfiles,
-        waitlist: updatedWaitlist,
-      };
-    });
+      supabase.from('profiles').update({
+        credits_balance: restoredCredits,
+      }).eq('id', booking.student_id).then(({ error }) => {
+        if (error) console.error('Error restaurando créditos en Supabase:', error);
+      });
+    }
   };
 
-  // Checkin & Attendance (with GPS validation)
+  // Attendance & Check-in
   const performQRCheckinWithGPS = (
     studentId: string,
     classId: string,
     userCoords?: { latitude: number; longitude: number }
-  ): { success: boolean; message: string; distanceMeters?: number } => {
-    const student = state.profiles.find((p: Profile) => p.id === studentId);
-    const classSchedule = state.classes.find((c: ClassSchedule) => c.id === classId);
-    if (!student || !classSchedule) {
-      return { success: false, message: 'Datos no encontrados.' };
-    }
+  ): { success: boolean; message: string; distanceMeters?: number; verifiedByGps: boolean } => {
+    // Find booking
+    const booking = state.bookings.find(
+      (b: Booking) => b.class_id === classId && b.student_id === studentId && (b.booking_date === todayStr || !b.booking_date)
+    );
 
-    const branch = state.branches.find((b: Branch) => b.id === classSchedule.branch_id);
+    const branch = state.branches[0] || { latitude: -34.5885, longitude: -58.4233, name: 'Sede Principal' };
+    let isGeoVerified = false;
     let distanceMeters = 0;
 
-    if (userCoords && branch) {
-      const geoCheck = isWithinGeofence(
+    if (userCoords && branch.latitude && branch.longitude) {
+      const allowedRadius = state.studio.gps_checkin_radius_meters || 75;
+      const geores = isWithinGeofence(
         userCoords.latitude,
         userCoords.longitude,
         branch.latitude,
         branch.longitude,
-        state.studio.gps_checkin_radius_meters
+        allowedRadius
       );
-      distanceMeters = geoCheck.distanceMeters;
+      isGeoVerified = geores.isInside;
+      distanceMeters = geores.distanceMeters;
+    }
 
-      if (!geoCheck.isInside) {
-        return {
-          success: false,
-          distanceMeters,
-          message: `Ubicación fuera de rango: Te encuentras a ${distanceMeters}m de la sucursal (máximo permitido: ${state.studio.gps_checkin_radius_meters}m). Debes estar físicamente en el estudio para registrar asistencia.`,
-        };
+    const attendanceId = generateUUID();
+    const attendance: AttendanceRecord = {
+      id: attendanceId,
+      booking_id: booking?.id || generateUUID(),
+      class_id: classId,
+      student_id: studentId,
+      status: 'present',
+      checkin_method: 'qr_gps',
+      distance_meters: distanceMeters,
+      verified_latitude: userCoords?.latitude,
+      verified_longitude: userCoords?.longitude,
+      timestamp: new Date().toISOString(),
+    };
+
+    setState((prev: any) => ({
+      ...prev,
+      bookings: booking
+        ? prev.bookings.map((b: Booking) => (b.id === booking.id ? { ...b, status: 'attended' as const } : b))
+        : prev.bookings,
+      attendances: [attendance, ...prev.attendances],
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('attendances').insert({
+        id: attendanceId,
+        studio_id: state.studio.id,
+        booking_id: attendance.booking_id,
+        class_id: classId,
+        student_id: studentId,
+        attendance_date: todayStr,
+        status: 'present',
+        checkin_method: 'qr_code',
+        checkin_time: attendance.timestamp,
+        verified_by_gps: isGeoVerified,
+      }).then(({ error }) => {
+        if (error) console.error('Error guardando asistencia en Supabase:', error);
+      });
+
+      if (booking) {
+        supabase.from('bookings').update({ status: 'attended' }).eq('id', booking.id);
       }
     }
 
-    // Find or create booking
-    let booking = state.bookings.find(
-      (b: Booking) => b.class_id === classId && b.student_id === studentId && b.booking_date === todayStr
-    );
-
-    const newAttendance: AttendanceRecord = {
-      id: `att-${Date.now()}`,
-      booking_id: booking?.id || `book-${Date.now()}`,
-      student_id: studentId,
-      class_id: classId,
-      checkin_method: 'qr_gps',
-      verified_latitude: userCoords?.latitude,
-      verified_longitude: userCoords?.longitude,
-      distance_meters: distanceMeters,
-      status: 'present',
-      timestamp: new Date().toISOString(),
-    };
-
-    setState((prev: any) => ({
-      ...prev,
-      attendances: [newAttendance, ...prev.attendances],
-      bookings: booking
-        ? prev.bookings.map((b: Booking) => (b.id === booking!.id ? { ...b, status: 'attended' as const } : b))
-        : prev.bookings,
-    }));
-
     return {
       success: true,
+      message: isGeoVerified
+        ? `¡Check-in validado con GPS (${distanceMeters}m de la sede)!`
+        : '¡Check-in completado exitosamente!',
       distanceMeters,
-      message: `¡Asistencia confirmada! Check-in validado exitosamente a ${distanceMeters}m del estudio.`,
+      verifiedByGps: isGeoVerified,
     };
   };
 
-  // Roll-Call (Pasar Lista manual)
-  const markAttendance = (bookingId: string, status: 'present' | 'late' | 'absent_with_notice' | 'no_show') => {
+  const markAttendance = (bookingId: string, status: 'present' | 'late' | 'no_show' | 'absent_with_notice') => {
     const booking = state.bookings.find((b: Booking) => b.id === bookingId);
     if (!booking) return;
 
-    const newAttendance: AttendanceRecord = {
-      id: `att-manual-${Date.now()}`,
+    const attendanceId = generateUUID();
+    const attendance: AttendanceRecord = {
+      id: attendanceId,
       booking_id: bookingId,
-      student_id: booking.student_id,
       class_id: booking.class_id,
+      student_id: booking.student_id,
+      status: status as AttendanceStatus,
       checkin_method: 'manual_instructor',
-      status,
       timestamp: new Date().toISOString(),
     };
 
     setState((prev: any) => ({
       ...prev,
-      attendances: [newAttendance, ...prev.attendances.filter((a: AttendanceRecord) => a.booking_id !== bookingId)],
       bookings: prev.bookings.map((b: Booking) =>
-        b.id === bookingId ? { ...b, status: status === 'present' || status === 'late' ? 'attended' : 'no_show' } : b
+        b.id === bookingId ? { ...b, status: status === 'present' ? ('attended' as const) : ('no_show' as const) } : b
       ),
+      attendances: [attendance, ...prev.attendances],
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('attendances').insert({
+        id: attendanceId,
+        studio_id: state.studio.id,
+        booking_id: bookingId,
+        class_id: booking.class_id,
+        student_id: booking.student_id,
+        attendance_date: booking.booking_date,
+        status,
+        checkin_method: 'manual',
+        checkin_time: attendance.timestamp,
+      }).then(({ error }) => {
+        if (error) console.error('Error insertando asistencia manual en Supabase:', error);
+      });
+    }
   };
 
-  // Financial Transactions
-  const addTransaction = (tx: Partial<PaymentTransaction>) => {
+  // Payments & Financial Ledger Actions
+  const addTransaction = (
+    tx: Partial<PaymentTransaction>,
+    creditsToAdd: number = 0
+  ) => {
+    const newTxId = generateUUID();
     const newTx: PaymentTransaction = {
-      id: `pay-${Date.now()}`,
+      id: newTxId,
       studio_id: state.studio.id,
       student_id: tx.student_id,
       student_name: tx.student_name,
+      pack_id: tx.pack_id,
       amount: tx.amount || 0,
       payment_type: tx.payment_type || 'income',
-      payment_method: tx.payment_method || 'mercadopago',
-      concept: tx.concept || 'Cobro de cuota',
-      status: 'completed',
-      reference_code: tx.reference_code || `TX-${Date.now().toString().slice(-6)}`,
-      created_at: new Date().toISOString(),
+      payment_method: tx.payment_method || 'cash',
+      concept: tx.concept || 'Cobro general',
+      category: tx.category || (tx.payment_type === 'expense' ? 'Gasto Operativo' : 'Cuota / Pack'),
+      notes: tx.notes || '',
+      status: tx.status || 'completed',
+      reference_code: tx.reference_code || `REC-${Date.now().toString().slice(-6)}`,
+      created_at: tx.created_at || new Date().toISOString(),
+    };
+
+    setState((prev: any) => {
+      let updatedProfiles = prev.profiles;
+      if (tx.student_id && tx.payment_type === 'income') {
+        updatedProfiles = prev.profiles.map((p: Profile) =>
+          p.id === tx.student_id
+            ? {
+                ...p,
+                credits_balance: (p.credits_balance || 0) + (creditsToAdd || 0),
+                debt_amount: Math.max(0, (p.debt_amount || 0) - (tx.amount || 0)),
+              }
+            : p
+        );
+      }
+
+      return {
+        ...prev,
+        payments: [newTx, ...prev.payments],
+        profiles: updatedProfiles,
+      };
+    });
+
+    if (isSupabaseConfigured) {
+      supabase.from('payments').insert({
+        id: newTxId,
+        studio_id: state.studio.id,
+        student_id: newTx.student_id,
+        student_name: newTx.student_name,
+        pack_id: newTx.pack_id,
+        amount: newTx.amount,
+        currency: 'ARS',
+        payment_type: newTx.payment_type,
+        payment_method: newTx.payment_method,
+        concept: newTx.concept,
+        category: newTx.category,
+        reference_code: newTx.reference_code,
+        notes: newTx.notes,
+        status: 'completed',
+        created_at: newTx.created_at,
+      }).then(({ error }) => {
+        if (error) console.error('Error insertando pago en Supabase:', error);
+      });
+
+      if (tx.student_id && tx.payment_type === 'income') {
+        const student = state.profiles.find((p: Profile) => p.id === tx.student_id);
+        if (student) {
+          supabase.from('profiles').update({
+            credits_balance: (student.credits_balance || 0) + (creditsToAdd || 0),
+            debt_amount: Math.max(0, (student.debt_amount || 0) - (tx.amount || 0)),
+          }).eq('id', tx.student_id).then(({ error }) => {
+            if (error) console.error('Error actualizando deuda/créditos en Supabase:', error);
+          });
+        }
+      }
+    }
+
+    return newTx;
+  };
+
+  const deleteTransaction = (id: string) => {
+    setState((prev: any) => ({
+      ...prev,
+      payments: prev.payments.filter((p: PaymentTransaction) => p.id !== id),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('payments').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Error eliminando pago en Supabase:', error);
+      });
+    }
+  };
+
+  const updateTransaction = (id: string, updatedData: Partial<PaymentTransaction>) => {
+    setState((prev: any) => ({
+      ...prev,
+      payments: prev.payments.map((p: PaymentTransaction) =>
+        p.id === id ? { ...p, ...updatedData } : p
+      ),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('payments').update(updatedData).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando pago en Supabase:', error);
+      });
+    }
+  };
+
+  // Financial Categories Actions
+  const createFinancialCategory = (category: Partial<FinancialCategory>) => {
+    const id = generateUUID();
+    const newCat: FinancialCategory = {
+      id,
+      studio_id: state.studio.id,
+      name: category.name || 'Nueva Categoría',
+      type: category.type || 'expense',
+      color: category.color || (category.type === 'income' ? '#10b981' : '#6366f1'),
+      is_active: true,
     };
 
     setState((prev: any) => ({
       ...prev,
-      payments: [newTx, ...prev.payments],
+      financialCategories: [...prev.financialCategories, newCat],
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('financial_categories').insert({
+        id,
+        studio_id: state.studio.id,
+        name: newCat.name,
+        type: newCat.type,
+        color: newCat.color,
+        is_active: true,
+      }).then(({ error }) => {
+        if (error) console.error('Error creando categoría en Supabase:', error);
+      });
+    }
+
+    return newCat;
+  };
+
+  const toggleFinancialCategory = (id: string) => {
+    const cat = state.financialCategories.find((c: FinancialCategory) => c.id === id);
+    const nextActive = cat ? !cat.is_active : true;
+
+    setState((prev: any) => ({
+      ...prev,
+      financialCategories: prev.financialCategories.map((c: FinancialCategory) =>
+        c.id === id ? { ...c, is_active: nextActive } : c
+      ),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('financial_categories').update({
+        is_active: nextActive,
+      }).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error toggling categoría en Supabase:', error);
+      });
+    }
+  };
+
+  const deleteFinancialCategory = (id: string) => {
+    setState((prev: any) => ({
+      ...prev,
+      financialCategories: prev.financialCategories.filter((c: FinancialCategory) => c.id !== id),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('financial_categories').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Error eliminando categoría en Supabase:', error);
+      });
+    }
+  };
+
+  // Financial Monthly Goals Actions
+  const updateFinancialGoals = (goals: Partial<FinancialMonthlyGoals>) => {
+    const updatedGoals = {
+      ...state.financialGoals,
+      ...goals,
+    };
+
+    setState((prev: any) => ({
+      ...prev,
+      financialGoals: updatedGoals,
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('financial_monthly_goals').upsert({
+        studio_id: state.studio.id,
+        month: updatedGoals.month || new Date().getMonth() + 1,
+        year: updatedGoals.year || new Date().getFullYear(),
+        avg_class_price: updatedGoals.avg_class_price,
+        operational_be_amount: updatedGoals.operational_be_amount,
+        cash_be_amount: updatedGoals.cash_be_amount,
+        target_sales_amount: updatedGoals.target_sales_amount,
+        operating_days: updatedGoals.operating_days,
+      }).then(({ error }) => {
+        if (error) console.error('Error guardando objetivos en Supabase:', error);
+      });
+    }
   };
 
   // Credit pack purchase
@@ -759,36 +1257,42 @@ export function useStudioStore() {
     const pack = state.creditPacks.find((cp: CreditPack) => cp.id === packId);
     if (!student || !pack) return;
 
-    addTransaction({
-      student_id: studentId,
-      student_name: `${student.first_name} ${student.last_name}`,
-      pack_id: packId,
-      amount: pack.price,
-      payment_type: 'income',
-      payment_method: paymentMethod,
-      concept: `Compra: ${pack.name}`,
-    });
-
-    setState((prev: any) => ({
-      ...prev,
-      profiles: prev.profiles.map((p: Profile) =>
-        p.id === studentId
-          ? {
-              ...p,
-              credits_balance: p.credits_balance + pack.credits_count,
-              debt_amount: 0,
-            }
-          : p
-      ),
-    }));
+    addTransaction(
+      {
+        student_id: studentId,
+        student_name: `${student.first_name} ${student.last_name}`,
+        pack_id: packId,
+        amount: pack.price,
+        payment_type: 'income',
+        payment_method: paymentMethod,
+        concept: `Compra: ${pack.name}`,
+      },
+      pack.credits_count
+    );
   };
 
-  // Settings update
+  // Studio Settings Update
   const updateStudioSettings = (updated: Partial<Studio>) => {
     setState((prev: any) => ({
       ...prev,
       studio: { ...prev.studio, ...updated },
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('studios').update({
+        name: updated.name,
+        brand_colors: updated.brand_colors,
+        phone: updated.phone,
+        email: updated.email,
+        address: updated.address,
+        cuit_tax_id: updated.cuit_tax_id,
+        booking_window_days: updated.booking_window_days,
+        cancellation_window_hours: updated.cancellation_window_hours,
+        gps_checkin_radius_meters: updated.gps_checkin_radius_meters,
+      }).eq('id', state.studio.id).then(({ error }) => {
+        if (error) console.error('Error actualizando estudio en Supabase:', error);
+      });
+    }
   };
 
   const updateWhatsAppTemplate = (id: string, newText: string) => {
@@ -798,11 +1302,19 @@ export function useStudioStore() {
         t.id === id ? { ...t, template_text: newText } : t
       ),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('whatsapp_templates').update({
+        message: newText,
+      }).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando plantilla en Supabase:', error);
+      });
+    }
   };
 
   // Routine Actions
   const createRoutine = (routineData: Partial<Routine>) => {
-    const id = `routine-${Date.now()}`;
+    const id = generateUUID();
     const newRoutine: Routine = {
       id,
       studio_id: state.studio.id,
@@ -824,6 +1336,22 @@ export function useStudioStore() {
       routines: [newRoutine, ...prev.routines],
     }));
 
+    if (isSupabaseConfigured) {
+      supabase.from('routines').insert({
+        id,
+        studio_id: state.studio.id,
+        student_id: newRoutine.student_id,
+        instructor_id: newRoutine.instructor_id,
+        title: newRoutine.title,
+        description: newRoutine.goal,
+        level: newRoutine.level,
+        exercises: newRoutine.exercises,
+        is_active: true,
+      }).then(({ error }) => {
+        if (error) console.error('Error creando rutina en Supabase:', error);
+      });
+    }
+
     return newRoutine;
   };
 
@@ -834,6 +1362,12 @@ export function useStudioStore() {
         r.id === id ? { ...r, ...updatedData } : r
       ),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('routines').update(updatedData).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando rutina en Supabase:', error);
+      });
+    }
   };
 
   const deleteRoutine = (id: string) => {
@@ -841,6 +1375,12 @@ export function useStudioStore() {
       ...prev,
       routines: prev.routines.filter((r: Routine) => r.id !== id),
     }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('routines').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Error eliminando rutina en Supabase:', error);
+      });
+    }
   };
 
   // Reset to initial mock data
@@ -856,12 +1396,14 @@ export function useStudioStore() {
       waitlist: initialWaitlist,
       creditPacks: initialCreditPacks,
       payments: initialPayments,
+      financialCategories: initialFinancialCategories,
+      financialGoals: initialFinancialGoals,
       whatsappTemplates: initialWhatsAppTemplates,
       routines: initialRoutines,
       attendances: initialAttendances,
       currentRole: 'admin',
-      currentStudentId: 'stu-1',
-      currentInstructorId: 'prof-admin',
+      currentStudentId: DEFAULT_ADMIN_ID,
+      currentInstructorId: DEFAULT_ADMIN_ID,
     });
   };
 
@@ -875,6 +1417,8 @@ export function useStudioStore() {
     waitlist: state.waitlist,
     creditPacks: state.creditPacks,
     payments: state.payments,
+    financialCategories: state.financialCategories || initialFinancialCategories,
+    financialGoals: state.financialGoals || initialFinancialGoals,
     whatsappTemplates: state.whatsappTemplates,
     routines: state.routines,
     attendances: state.attendances,
@@ -893,6 +1437,9 @@ export function useStudioStore() {
     addInstructor,
     updateInstructor,
     deleteInstructor,
+    createBranch,
+    updateBranch,
+    deleteBranch,
     createClass,
     createClassesBatch,
     deleteClass,
@@ -901,6 +1448,12 @@ export function useStudioStore() {
     performQRCheckinWithGPS,
     markAttendance,
     addTransaction,
+    deleteTransaction,
+    updateTransaction,
+    createFinancialCategory,
+    toggleFinancialCategory,
+    deleteFinancialCategory,
+    updateFinancialGoals,
     purchaseCreditPack,
     updateStudioSettings,
     updateWhatsAppTemplate,

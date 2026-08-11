@@ -21,10 +21,12 @@ import {
   Menu,
   X,
   Smartphone,
-  Share2
+  Share2,
+  LogOut
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { StudioLinksModal } from '../common/StudioLinksModal';
+import { getRegisterLink } from '../../utils/links';
 
 interface NavbarProps {
   currentView: string;
@@ -45,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
   const adminProfile = profiles.find((p) => p.role === 'admin') || profiles[0];
 
   const handleCopyLink = () => {
-    const bookingUrl = `${window.location.origin}/#reservar/${studio.slug}`;
+    const bookingUrl = getRegisterLink();
     navigator.clipboard.writeText(bookingUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -65,17 +67,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
           {/* LEFT: Brand Logo & Desktop Navigation */}
           <div className="flex items-center space-x-3 sm:space-x-6">
             
-            {/* SERMOA Logo Badge */}
+            {/* Studio Logo Badge & Name */}
             <button
               onClick={() => handleNavClick('dashboard')}
               className="flex items-center space-x-2.5 group focus:outline-none shrink-0"
             >
-              <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-700 via-brand-600 to-emerald-600 flex items-center justify-center text-white font-black text-base shadow-md shadow-brand-600/20 group-hover:scale-105 transition-transform">
-                <span>S</span>
+              <div className="w-9 h-9 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-emerald-600 flex items-center justify-center text-white font-black text-base shadow-md shadow-brand-600/20 group-hover:scale-105 transition-transform border border-slate-100/60">
+                {studio.logo_url ? (
+                  <img src={studio.logo_url} alt={studio.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{studio.name?.[0] || 'S'}</span>
+                )}
               </div>
               <div className="text-left">
                 <span className="font-black text-slate-900 text-base tracking-tight block leading-none">
-                  SERMOA<span className="text-brand-600">.app</span>
+                  {studio.name || 'SERMOA'}<span className="text-brand-600">.app</span>
                 </span>
                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
                   Estudio Propio
@@ -202,18 +208,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
                 )}
               </div>
 
-              {/* Dropdown: Estrategia & Marca */}
+              {/* Dropdown: Estrategia & Configuración */}
               <div className="relative">
                 <button
                   onClick={() => setOpenDropdown(openDropdown === 'estrategia' ? null : 'estrategia')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
-                    ['settings', 'pricing', 'finance'].includes(currentView)
+                    ['settings', 'finance'].includes(currentView)
                       ? 'bg-slate-100 text-slate-900 font-extrabold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
                   <Settings className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Estrategia & Marca</span>
+                  <span>Configuración & Caja</span>
                   <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openDropdown === 'estrategia' ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -231,27 +237,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
                     </button>
 
                     <button
-                      onClick={() => handleNavClick('pricing')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <Ticket className="w-4 h-4 text-purple-600" />
-                      <div>
-                        <div className="font-bold text-slate-800">Packs de créditos</div>
-                        <div className="text-[10px] text-slate-400">Planes, tarifas y vigencias</div>
-                      </div>
-                    </button>
-
-                    <button
                       onClick={() => handleNavClick('finance')}
                       className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
                     >
                       <BarChart3 className="w-4 h-4 text-brand-600" />
                       <div>
                         <div className="flex items-center space-x-1.5">
-                          <span className="font-bold text-slate-800">Control financiero</span>
-                          <span className="bg-emerald-100 text-emerald-800 text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase">
-                            Nuevo
-                          </span>
+                          <span className="font-bold text-slate-800">Control financiero & Caja</span>
                         </div>
                         <div className="text-[10px] text-slate-400">Ingresos, egresos y métricas</div>
                       </div>
@@ -370,6 +362,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
                     <Smartphone className="w-3.5 h-3.5 text-brand-600" />
                     <span>Ver App Alumno</span>
                   </button>
+                  <div className="border-t border-slate-100 mt-1 pt-1">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleNavClick('login');
+                      }}
+                      className="w-full px-4 py-2 text-left text-rose-600 hover:bg-rose-50 flex items-center space-x-2 font-extrabold transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -468,6 +472,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
             <Smartphone className="w-4 h-4" />
             <span>Abrir Vista Alumno</span>
           </button>
+          <div className="border-t border-slate-100 pt-2 mt-1">
+            <button
+              onClick={() => handleNavClick('login')}
+              className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-rose-600 hover:bg-rose-50 flex items-center space-x-2 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
         </div>
       )}
 

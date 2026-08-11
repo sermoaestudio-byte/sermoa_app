@@ -6,6 +6,7 @@ import { OperativaDiariaSection } from './OperativaDiariaSection';
 import { EstrategiaMarcaSection } from './EstrategiaMarcaSection';
 import { CheckinPromoBanner } from './CheckinPromoBanner';
 import { SidebarRight } from '../layout/SidebarRight';
+import { getRegisterLink } from '../../utils/links';
 
 interface DashboardViewProps {
   onNavigate: (view: string) => void;
@@ -21,7 +22,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const adminProfile = profiles.find((p) => p.role === 'admin') || profiles[0];
 
   const handleCopyLink = () => {
-    const bookingUrl = `${window.location.origin}/#reservar/${studio.slug}`;
+    const bookingUrl = getRegisterLink();
     navigator.clipboard.writeText(bookingUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

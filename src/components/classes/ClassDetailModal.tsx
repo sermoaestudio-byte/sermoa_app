@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Users,
@@ -14,6 +15,7 @@ import {
 import { ClassSchedule, Profile, Booking, WaitlistEntry } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
 import { openWhatsApp, formatWhatsAppTemplate } from '../../utils/whatsapp';
+import { getBookingLink } from '../../utils/links';
 
 interface ClassDetailModalProps {
   classItem: ClassSchedule | null;
@@ -70,14 +72,14 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
         clase: classItem.title,
         horario: classItem.start_time,
         sede: classItem.branch?.name || '',
-        link: `${window.location.origin}/#reservar/${studio.slug}`,
+        link: getBookingLink(studio.slug),
       });
       openWhatsApp(student.phone, msg);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
         
         {/* Modal Header */}
@@ -301,6 +303,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

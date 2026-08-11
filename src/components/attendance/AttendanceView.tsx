@@ -9,7 +9,8 @@ import {
   MapPin,
   Sparkles,
   Camera,
-  HelpCircle
+  HelpCircle,
+  ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
@@ -18,7 +19,11 @@ import { Booking, ClassSchedule, Profile } from '../../types';
 import { QRScannerModal } from './QRScannerModal';
 import { ModuleHelpDrawer } from '../common/ModuleHelpDrawer';
 
-export const AttendanceView: React.FC = () => {
+interface AttendanceViewProps {
+  onNavigate?: (view: string) => void;
+}
+
+export const AttendanceView: React.FC<AttendanceViewProps> = ({ onNavigate }) => {
   const {
     classes,
     bookings,
@@ -56,22 +61,33 @@ export const AttendanceView: React.FC = () => {
   };
 
   return (
-    <div className="py-6 sm:py-8">
+    <div className="py-6 sm:py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              <ClipboardList className="w-3.5 h-3.5 text-rose-500" />
-              <span>Operativa Diaria</span>
+          <div className="flex items-start space-x-3">
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl shadow-xs transition-colors shrink-0 mt-0.5"
+                title="Volver al Inicio"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <ClipboardList className="w-3.5 h-3.5 text-rose-500" />
+                <span>Operativa Diaria</span>
+              </div>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                Pasar Lista & Control de Asistencia
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Toma de asistencia rápida del día por clase o escaneo de código QR
+              </p>
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Pasar Lista & Control de Asistencia
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Toma de asistencia rápida del día por clase o escaneo de código QR
-            </p>
           </div>
 
           <div className="flex items-center space-x-2.5 self-start sm:self-center">

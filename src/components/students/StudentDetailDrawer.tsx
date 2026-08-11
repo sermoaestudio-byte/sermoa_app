@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Phone,
@@ -11,18 +12,25 @@ import {
   Minus,
   MessageCircle,
   FileCheck,
-  DollarSign
+  DollarSign,
+  Receipt,
+  AlertCircle
 } from 'lucide-react';
 import { Profile, Booking, PaymentTransaction } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
-import { openWhatsApp, formatWhatsAppTemplate } from '../../utils/whatsapp';
+import { openWhatsApp } from '../../utils/whatsapp';
 
 interface StudentDetailDrawerProps {
   student: Profile | null;
   onClose: () => void;
+  onOpenPayment?: (studentId: string) => void;
 }
 
-export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ student, onClose }) => {
+export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
+  student,
+  onClose,
+  onOpenPayment,
+}) => {
   const {
     studio,
     creditPacks,
@@ -41,7 +49,6 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
   const studentPayments = payments.filter((p: PaymentTransaction) => p.student_id === student.id);
 
   const handleSendWhatsApp = () => {
-    const tpl = whatsappTemplates.find((t) => t.code === 'class_reminder');
     const msg = `¡Hola ${student.first_name}! Te escribimos de ${studio.name}. ¿Cómo estás?`;
     openWhatsApp(student.phone, msg);
   };
@@ -53,8 +60,8 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
     setShowBuyPack(false);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-xs animate-fade-in flex justify-end">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-hidden bg-slate-950/60 backdrop-blur-xs animate-fade-in flex justify-end">
       <div className="bg-white w-full max-w-xl h-full overflow-y-auto shadow-2xl flex flex-col">
         
         {/* Drawer Header */}
@@ -93,10 +100,10 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
         </div>
 
         {/* Drawer Body */}
-        <div className="p-6 space-y-6 flex-1">
+        <div className="p-6 space-y-6 flex-1 text-xs">
           
           {/* Quick Actions / Contact Bar */}
-          <div className="flex items-center justify-between gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
             <div className="text-xs text-slate-600 space-y-1">
               <div className="flex items-center space-x-2">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
@@ -108,51 +115,95 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
               </div>
             </div>
 
-            <button
-              onClick={handleSendWhatsApp}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center space-x-1.5 shrink-0"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>WhatsApp</span>
-            </button>
+            <div className="flex items-center space-x-2">
+              {onOpenPayment && (
+                <button
+                  onClick={() => onOpenPayment(student.id)}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition-all flex items-center space-x-1.5"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  <span>Cobrar / Registrar Pago</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleSendWhatsApp}
+                className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all flex items-center justify-center"
+                title="Abrir WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Credits & Financial Balance */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            {/* Credits Card */}
+            <div className="p-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-2">
               <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-tight block">
                 Créditos Disponibles
               </span>
-              <div className="text-2xl font-extrabold text-emerald-950 mt-1">
+              <div className="text-2xl font-black text-emerald-950">
                 {student.credits_balance} clases
               </div>
-              <button
-                onClick={() => setShowBuyPack(!showBuyPack)}
-                className="mt-2 text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center space-x-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Cargar Pack de Clases</span>
-              </button>
+              
+              <div className="pt-1 flex items-center space-x-2">
+                {onOpenPayment ? (
+                  <button
+                    onClick={() => onOpenPayment(student.id)}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Cargar & Cobrar Pack</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowBuyPack(!showBuyPack)}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Asignar Pack</span>
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className={`p-4 rounded-2xl border ${
-              student.debt_amount > 0
-                ? 'bg-rose-50 border-rose-200 text-rose-900'
-                : 'bg-slate-50 border-slate-200 text-slate-800'
-            }`}>
+            {/* Account State Card */}
+            <div
+              className={`p-4 rounded-2xl border space-y-2 ${
+                student.debt_amount > 0
+                  ? 'bg-rose-50 border-rose-200 text-rose-900'
+                  : 'bg-slate-50 border-slate-200 text-slate-800'
+              }`}
+            >
               <span className="text-[11px] font-bold uppercase tracking-tight block">
                 Estado de Cuenta
               </span>
-              <div className="text-2xl font-extrabold mt-1">
-                {student.debt_amount > 0 ? `-$${student.debt_amount}` : '$0.00'}
+              <div className="text-2xl font-black">
+                {student.debt_amount > 0
+                  ? `-$${student.debt_amount.toLocaleString('es-AR')}`
+                  : '$0.00'}
               </div>
-              <span className="text-[11px] text-slate-400 font-medium block mt-2">
-                {student.debt_amount > 0 ? 'Saldo pendiente de pago' : 'Al día'}
-              </span>
+              
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[11px] font-medium text-slate-500">
+                  {student.debt_amount > 0 ? 'Saldo pendiente de pago' : '✓ Al día'}
+                </span>
+                {student.debt_amount > 0 && onOpenPayment && (
+                  <button
+                    onClick={() => onOpenPayment(student.id)}
+                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[10px] rounded-lg shadow-2xs transition-all"
+                  >
+                    Regularizar
+                  </button>
+                )}
+              </div>
             </div>
+
           </div>
 
-          {/* Assign Pack Form */}
+          {/* Assign Pack Form (Quick modal inside drawer) */}
           {showBuyPack && (
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl animate-fade-in space-y-3">
               <label className="block text-xs font-bold text-slate-700">
@@ -219,21 +270,20 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
                 Sin reservas registradas aún.
               </p>
             ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {studentBookings.map((b) => (
+              <div className="space-y-2">
+                {studentBookings.slice(0, 5).map((b) => (
                   <div
                     key={b.id}
                     className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs"
                   >
-                    <div className="flex items-center space-x-2.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <div>
-                        <span className="font-bold text-slate-800">{b.booking_date}</span>
-                        <span className="text-slate-400 block text-[11px]">Reserva #{b.id.slice(-5)}</span>
-                      </div>
+                    <div>
+                      <span className="font-bold text-slate-800">Clase Reservada</span>
+                      <span className="text-slate-400 block text-[11px]">
+                        {b.booking_date} • {b.start_time} hs
+                      </span>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                         b.status === 'confirmed'
                           ? 'bg-emerald-100 text-emerald-800'
                           : b.status === 'attended'
@@ -251,26 +301,45 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
 
           {/* Payments History */}
           <div>
-            <h4 className="font-extrabold text-slate-800 text-sm mb-3">Compras y Pagos Realizados</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-extrabold text-slate-800 text-sm">Compras y Pagos Realizados</h4>
+              {onOpenPayment && (
+                <button
+                  onClick={() => onOpenPayment(student.id)}
+                  className="text-xs font-bold text-emerald-700 hover:underline flex items-center space-x-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuevo Cobro</span>
+                </button>
+              )}
+            </div>
+
             {studentPayments.length === 0 ? (
               <p className="text-xs text-slate-400 py-3 text-center bg-slate-50 rounded-2xl">
-                No hay comprobantes de pago asociados.
+                No hay comprobantes de pago asociados a este alumno.
               </p>
             ) : (
               <div className="space-y-2">
                 {studentPayments.map((pay) => (
                   <div
                     key={pay.id}
-                    className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs"
+                    className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
                   >
                     <div>
-                      <span className="font-bold text-slate-800">{pay.concept}</span>
-                      <span className="text-slate-400 block text-[11px]">
-                        {new Date(pay.created_at).toLocaleDateString('es-AR')} • {pay.payment_method}
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-slate-900">{pay.concept}</span>
+                        {pay.reference_code && (
+                          <span className="font-mono text-[9px] text-slate-400 bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                            {pay.reference_code}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-400 block text-[11px] mt-0.5">
+                        {new Date(pay.created_at).toLocaleDateString('es-AR')} • {pay.payment_method} • {pay.category}
                       </span>
                     </div>
-                    <span className="font-extrabold text-emerald-700 text-sm">
-                      ${pay.amount.toLocaleString('es-AR')}
+                    <span className="font-black text-emerald-700 text-sm">
+                      +${pay.amount.toLocaleString('es-AR')}
                     </span>
                   </div>
                 ))}
@@ -281,6 +350,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({ studen
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

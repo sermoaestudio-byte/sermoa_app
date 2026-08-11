@@ -17,8 +17,16 @@ export interface Studio {
   name: string;
   slug: string;
   logo_url: string;
+  brand_colors?: {
+    primary: string;
+    secondary?: string;
+    accent?: string;
+  };
   phone: string;
   email: string;
+  address?: string;
+  cuit_tax_id?: string;
+  booking_window_days?: number;
   description: string;
   currency: string;
   cancellation_window_hours: number;
@@ -66,6 +74,7 @@ export interface Activity {
   description: string;
   color: string;
   default_duration_minutes: number;
+  default_price?: number;
   icon?: string;
 }
 
@@ -84,6 +93,7 @@ export interface Profile {
   birth_date?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
+  notes?: string;
   medical_notes?: string;
   has_medical_certificate?: boolean;
   medical_declaration?: {
@@ -92,6 +102,15 @@ export interface Profile {
     has_hypertension: boolean;
     is_pregnant: boolean;
     taking_medications: boolean;
+    medications_detail?: string;
+    has_cardiac_conditions: boolean;
+  };
+  medical_conditions?: {
+    has_injuries: boolean;
+    injuries_detail?: string;
+    is_pregnant: boolean;
+    pregnancy_weeks?: number;
+    takes_medication: boolean;
     medications_detail?: string;
     has_cardiac_conditions: boolean;
   };
@@ -124,6 +143,8 @@ export interface ClassSchedule {
   end_time: string; // "09:00"
   date?: string; // "2026-08-10" para clases específicas
   max_capacity: number;
+  credit_cost?: number;
+  single_class_price?: number; // Tarifa clase suelta / por sesión
   is_recurring: boolean;
   is_cancelled: boolean;
   color: string;
@@ -132,18 +153,22 @@ export interface ClassSchedule {
   room?: Room;
   activity?: Activity;
   instructor?: Profile;
+  bookings_count?: number;
   enrolled_students_count?: number;
   waitlist_count?: number;
+  is_full?: boolean;
 }
 
 export interface Booking {
   id: string;
+  studio_id?: string;
   class_id: string;
   student_id: string;
   booking_date: string; // "2026-08-10"
+  start_time?: string;
   status: BookingStatus;
-  credit_deducted: boolean;
-  created_at: string;
+  credit_deducted?: boolean;
+  created_at?: string;
   cancelled_at?: string;
   // Expandidos
   student?: Profile;
@@ -152,12 +177,14 @@ export interface Booking {
 
 export interface WaitlistEntry {
   id: string;
+  studio_id?: string;
   class_id: string;
   student_id: string;
-  booking_date: string;
+  booking_date?: string;
+  request_date?: string;
   position: number;
   status: WaitlistStatus;
-  created_at: string;
+  created_at?: string;
   promoted_at?: string;
   // Expandidos
   student?: Profile;
@@ -190,6 +217,28 @@ export interface StudentMembership {
   status: 'active' | 'expired' | 'consumed';
 }
 
+export interface FinancialCategory {
+  id: string;
+  studio_id?: string;
+  name: string;
+  type: PaymentType; // 'income' | 'expense'
+  color: string;
+  is_active: boolean;
+}
+
+export interface FinancialMonthlyGoals {
+  id?: string;
+  studio_id?: string;
+  month?: number;
+  year?: number;
+  month_key?: string; // "2026-08"
+  avg_class_price: number;
+  operational_be_amount: number; // PE operativo ($)
+  cash_be_amount: number; // PE caja ($)
+  target_sales_amount: number; // Venta mensual objetivo ($)
+  operating_days: number; // Días operativos (ej: 24)
+}
+
 export interface PaymentTransaction {
   id: string;
   studio_id: string;
@@ -200,6 +249,9 @@ export interface PaymentTransaction {
   payment_type: PaymentType;
   payment_method: PaymentMethod;
   concept: string;
+  category?: string;
+  category_id?: string;
+  notes?: string;
   status: PaymentStatus;
   reference_code: string;
   created_at: string;

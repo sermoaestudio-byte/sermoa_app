@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Info,
@@ -9,7 +10,9 @@ import {
   Plus,
   ChevronDown,
   MessageCircle,
-  Check
+  Check,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { openWhatsApp } from '../../utils/whatsapp';
@@ -34,6 +37,7 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
   const [phone, setPhone] = useState(instructorToEdit?.phone || '+54 9 11 ');
   const [password, setPassword] = useState(isEditing ? '••••••••••' : '');
   const [showPassword, setShowPassword] = useState(false);
+  const [status, setStatus] = useState<'active' | 'inactive'>(instructorToEdit?.status === 'inactive' ? 'inactive' : 'active');
 
   // Permissions
   const [showPermissions, setShowPermissions] = useState(true);
@@ -88,6 +92,7 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
         last_name: lastName,
         email,
         phone,
+        status,
         permissions: {
           view_all_students: viewAllStudents || createNewStudents,
           manage_student_credits: manageCredits,
@@ -114,13 +119,13 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
     onClose();
   };
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-        <div className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+        <div className="bg-white rounded-3xl max-w-xl w-full max-h-[88vh] shadow-2xl border border-slate-100 flex flex-col my-auto overflow-hidden text-left">
           
           {/* Modal Header */}
-          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-20">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
               {isEditing ? 'Editar Profesor' : 'Nuevo Profesor'}
             </h3>
@@ -132,8 +137,9 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
             </button>
           </div>
 
-          {/* Modal Body Form */}
-          <form onSubmit={handleFormSubmit} className="p-6 space-y-5 flex-1 text-xs">
+          {/* Modal Body Form with internal scroll and fixed footer */}
+          <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0 text-xs">
             
             {/* Callout / Info Banner */}
             <div className="p-4 bg-blue-50/80 border border-blue-100 rounded-2xl flex items-start space-x-3.5">
@@ -238,6 +244,45 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Estado del Profesor (si está editando) */}
+            {isEditing && (
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <div>
+                  <h4 className="font-extrabold text-slate-800 text-xs">Estado de la Cuenta</h4>
+                  <p className="text-[11px] text-slate-500">
+                    {status === 'active' ? 'El profesor puede acceder y dictar clases' : 'El profesor está temporalmente inactivado'}
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-1.5 bg-white p-1 rounded-xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setStatus('active')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all flex items-center space-x-1 ${
+                      status === 'active'
+                        ? 'bg-emerald-600 text-white shadow-2xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Power className="w-3 h-3" />
+                    <span>Activo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatus('inactive')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all flex items-center space-x-1 ${
+                      status === 'inactive'
+                        ? 'bg-amber-600 text-white shadow-2xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <PowerOff className="w-3 h-3" />
+                    <span>Inactivo</span>
                   </button>
                 </div>
               </div>
@@ -361,18 +406,20 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
               )}
             </div>
 
-            {/* Modal Actions Footer */}
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            </div>
+
+            {/* Pinned Modal Actions Footer */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end space-x-3 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-brand-olive hover:bg-brand-darkolive text-white text-xs font-extrabold shadow-sm transition-all"
+                className="px-6 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-extrabold shadow-md shadow-purple-700/20 transition-all"
               >
                 {isEditing ? 'Guardar Cambios' : 'Crear'}
               </button>
@@ -398,6 +445,7 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
         onConfirm={handleExecuteSave}
         onCancel={() => setShowConfirmModal(false)}
       />
-    </>
+    </>,
+    document.body
   );
 };

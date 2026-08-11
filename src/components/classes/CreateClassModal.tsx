@@ -121,9 +121,10 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
     },
   ]);
 
-  // 6. Capacidad y Créditos
+  // 6. Capacidad, Créditos y Tarifario
   const [maxCapacity, setMaxCapacity] = useState(12);
   const [creditCost, setCreditCost] = useState(1.0);
+  const [singleClassPrice, setSingleClassPrice] = useState<number>(6500);
   const [allowPrivateBookings, setAllowPrivateBookings] = useState(false);
   const [allowCustomBookings, setAllowCustomBookings] = useState(false);
 
@@ -217,6 +218,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
           start_time: start,
           end_time: end,
           max_capacity: maxCapacity,
+          single_class_price: singleClassPrice,
           is_recurring: true,
           color,
         });
@@ -251,6 +253,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
             start_time: start,
             end_time: end,
             max_capacity: maxCapacity,
+            single_class_price: singleClassPrice,
             is_recurring: classType === 'recurring',
             date: classType === 'single' ? singleDate : undefined,
             color,
@@ -273,6 +276,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
             start_time: slot.startTime,
             end_time: slot.endTime,
             max_capacity: maxCapacity,
+            single_class_price: singleClassPrice,
             is_recurring: classType === 'recurring',
             date: classType === 'single' ? singleDate : undefined,
             color,
@@ -848,20 +852,43 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
               Configuración de Créditos
             </h4>
 
-            <div>
-              <div className="flex items-center font-bold text-slate-700 mb-1.5">
-                <span><span className="text-rose-500 mr-1">*</span>Costo en créditos (Reserva normal)</span>
-                <FieldHelp text="Cantidad de créditos que se descontarán del paquete del alumno al reservar esta clase (por defecto 1.0 crédito)." />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center font-bold text-slate-700 mb-1.5">
+                  <span><span className="text-rose-500 mr-1">*</span>Costo en créditos (Reserva normal)</span>
+                  <FieldHelp text="Cantidad de créditos que se descontarán del paquete del alumno al reservar esta clase (por defecto 1.0 crédito)." />
+                </div>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  max="10"
+                  value={creditCost}
+                  onChange={(e) => setCreditCost(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
               </div>
-              <input
-                type="number"
-                step="0.5"
-                min="0.5"
-                max="10"
-                value={creditCost}
-                onChange={(e) => setCreditCost(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
+
+              <div>
+                <div className="flex items-center font-bold text-slate-700 mb-1.5">
+                  <span>Tarifa Clase Suelta ($ ARS)</span>
+                  <FieldHelp text="Precio de referencia para cobrar la clase suelta o sin pack a un alumno." />
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    placeholder="Ej: 6500"
+                    value={singleClassPrice}
+                    onChange={(e) => setSingleClassPrice(Number(e.target.value))}
+                    className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2 pt-1">

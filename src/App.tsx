@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStudioStore } from './store/studioStore';
 import { Navbar } from './components/layout/Navbar';
-import { RoleSwitcher } from './components/layout/RoleSwitcher';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { ClassesView } from './components/classes/ClassesView';
 import { StudentsView } from './components/students/StudentsView';
@@ -10,18 +9,23 @@ import { InstructorsView } from './components/instructors/InstructorsView';
 import { BranchesView } from './components/branches/BranchesView';
 import { RoutinesView } from './components/routines/RoutinesView';
 import { HistoryView } from './components/history/HistoryView';
-import { PacksView } from './components/pricing/PacksView';
 import { FinanceView } from './components/finance/FinanceView';
 import { SettingsView } from './components/settings/SettingsView';
 import { StudentPortalView } from './components/portal/StudentPortalView';
 import { StudentRegisterView } from './components/portal/StudentRegisterView';
 import { LoginView } from './components/auth/LoginView';
 import { StudioQRPosterModal } from './components/checkin/StudioQRPosterModal';
+import { applyStudioTheme } from './utils/theme';
 
 export function App() {
-  const { currentRole } = useStudioStore();
+  const { currentRole, studio } = useStudioStore();
   const [currentView, setCurrentView] = useState('dashboard');
   const [showQRPoster, setShowQRPoster] = useState(false);
+
+  // Apply dynamic brand theme to :root whenever studio colors change
+  useEffect(() => {
+    applyStudioTheme(studio.brand_colors);
+  }, [studio.brand_colors]);
 
   // Hash-based route listener for direct links like #registro, #login, #reservar or #portal-alumno
   useEffect(() => {
@@ -79,25 +83,23 @@ export function App() {
           />
         );
       case 'classes':
-        return <ClassesView />;
+        return <ClassesView onNavigate={(view) => setCurrentView(view)} />;
       case 'students':
-        return <StudentsView />;
+        return <StudentsView onNavigate={(view) => setCurrentView(view)} />;
       case 'attendance':
-        return <AttendanceView />;
+        return <AttendanceView onNavigate={(view) => setCurrentView(view)} />;
       case 'instructors':
-        return <InstructorsView />;
+        return <InstructorsView onNavigate={(view) => setCurrentView(view)} />;
       case 'branches':
-        return <BranchesView />;
+        return <BranchesView onNavigate={(view) => setCurrentView(view)} />;
       case 'routines':
-        return <RoutinesView />;
+        return <RoutinesView onNavigate={(view) => setCurrentView(view)} />;
       case 'history':
-        return <HistoryView />;
-      case 'pricing':
-        return <PacksView />;
+        return <HistoryView onNavigate={(view) => setCurrentView(view)} />;
       case 'finance':
-        return <FinanceView />;
+        return <FinanceView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
-        return <SettingsView />;
+        return <SettingsView onNavigate={(view) => setCurrentView(view)} />;
       case 'portal-alumno':
         return <StudentPortalView />;
       default:
@@ -128,9 +130,6 @@ export function App() {
       <div className="flex-1">
         {renderMainView()}
       </div>
-
-      {/* Floating Role Switcher Pill */}
-      <RoleSwitcher onNavigate={(view) => setCurrentView(view)} />
 
       {/* Printable / Downloadable Studio QR Poster Modal */}
       {showQRPoster && (

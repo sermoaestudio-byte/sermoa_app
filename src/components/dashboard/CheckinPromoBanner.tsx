@@ -2,6 +2,7 @@ import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QrCode, CheckCircle2, ArrowRight, ShieldCheck, MapPin } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
+import { getBookingLink } from '../../utils/links';
 
 interface CheckinPromoBannerProps {
   onOpenQRPoster: () => void;
@@ -14,8 +15,8 @@ export const CheckinPromoBanner: React.FC<CheckinPromoBannerProps> = ({
 }) => {
   const { studio, branches, profiles, classes, creditPacks } = useStudioStore();
 
-  const instructorsCount = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin').length;
-  const bookingUrl = `${window.location.origin}/#reservar/${studio.slug}`;
+  const instructorsCount = profiles.filter((p) => p.role === 'instructor').length;
+  const bookingUrl = getBookingLink(studio.slug);
 
   // Onboarding step statuses
   const steps = [
@@ -42,15 +43,15 @@ export const CheckinPromoBanner: React.FC<CheckinPromoBannerProps> = ({
     },
     {
       num: 4,
-      title: 'Packs de créditos',
-      desc: 'Define precios y packs que utilizarán tus alumnos desde Packs de Créditos.',
-      done: creditPacks.length > 0,
-      targetView: 'pricing',
+      title: 'Crea planes de rutina',
+      desc: 'Diseña rutinas y ejercicios para asignar a tus alumnos desde Rutinas.',
+      done: true,
+      targetView: 'routines',
     },
     {
       num: 5,
       title: 'Comparte tu enlace',
-      desc: `Envía sermoa.app/${studio.slug} a tus clientes para que comiencen a reservar clases.`,
+      desc: `Publica tu link de registro en Instagram o WhatsApp para que tus alumnos se inscriban.`,
       done: true,
       targetView: 'portal-alumno',
     },

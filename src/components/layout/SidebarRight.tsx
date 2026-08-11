@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { toISODateString } from '../../utils/date';
+import { getRegisterLink } from '../../utils/links';
 
 interface SidebarRightProps {
   onNavigate: (view: string) => void;
@@ -28,13 +29,11 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
 
   const todayStr = toISODateString(new Date());
   const activeStudentsCount = profiles.filter((p) => p.role === 'client' && p.status === 'active').length;
-  const instructorsCount = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin').length;
+  const instructorsCount = profiles.filter((p) => p.role === 'instructor').length;
   const todayClasses = classes.filter((c) => !c.is_cancelled && (c.date === todayStr || c.day_of_week === new Date().getDay()));
   const todayBookings = bookings.filter((b) => b.booking_date === todayStr && b.status === 'confirmed');
 
-  const registrationLink = typeof window !== 'undefined'
-    ? `${window.location.origin}/#registro`
-    : `https://${studio.slug}.sermoa.app/#registro`;
+  const registrationLink = getRegisterLink();
 
   const handleCopyRegistrationLink = () => {
     navigator.clipboard.writeText(registrationLink);

@@ -11,7 +11,10 @@ import {
   AlertCircle,
   FileText,
   Clock,
-  HelpCircle
+  HelpCircle,
+  ArrowLeft,
+  DollarSign,
+  Receipt
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { Profile } from '../../types';
@@ -19,15 +22,21 @@ import { StudentApprovalTab } from './StudentApprovalTab';
 import { StudentDetailDrawer } from './StudentDetailDrawer';
 import { AddStudentModal } from './AddStudentModal';
 import { ModuleHelpDrawer } from '../common/ModuleHelpDrawer';
+import { NewTransactionModal } from '../finance/NewTransactionModal';
 import { openWhatsApp } from '../../utils/whatsapp';
 
-export const StudentsView: React.FC = () => {
+interface StudentsViewProps {
+  onNavigate?: (view: string) => void;
+}
+
+export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
   const { profiles, studio } = useStudioStore();
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'debt' | 'no_credits'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [paymentStudentId, setPaymentStudentId] = useState<string | null>(null);
 
   const clients = profiles.filter((p) => p.role === 'client');
   const pendingCount = clients.filter((p) => p.status === 'pending_approval').length;
@@ -52,22 +61,33 @@ export const StudentsView: React.FC = () => {
   });
 
   return (
-    <div className="py-6 sm:py-8">
+    <div className="py-6 sm:py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header with Title & Add Student Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              <Users className="w-3.5 h-3.5 text-blue-600" />
-              <span>Operativa Diaria</span>
+          <div className="flex items-start space-x-3">
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl shadow-xs transition-colors shrink-0 mt-0.5"
+                title="Volver al Inicio"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <Users className="w-3.5 h-3.5 text-blue-600" />
+                <span>Operativa Diaria</span>
+              </div>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                Gestión de Alumnos (CRM)
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Administra perfiles, cobros de cuotas, saldos de créditos, deudas y solicitudes
+              </p>
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Gestión de Alumnos (CRM)
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Administra perfiles, saldos de créditos, fichas médicas y solicitudes pendientes
-            </p>
           </div>
 
           <div className="flex items-center space-x-2.5 self-start sm:self-center">
@@ -138,7 +158,12 @@ export const StudentsView: React.FC = () => {
                 : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
             }`}
           >
-            <span>Con Deuda ({debtCount})</span>
+            <span>Con Deuda / Pendientes</span>
+            {debtCount > 0 && (
+              <span className="bg-rose-100 text-rose-900 text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                {debtCount}
+              </span>
+            )}
           </button>
 
           <button
@@ -189,7 +214,7 @@ export const StudentsView: React.FC = () => {
                     <th className="px-6 py-3.5">Alumno</th>
                     <th className="px-6 py-3.5">Contacto / WhatsApp</th>
                     <th className="px-6 py-3.5">Estado</th>
-                    <th className="px-6 py-3.5">Créditos</th>
+                    <th className="px-6 py-3.5">Créditos & Cuenta</th>
                     <th className="px-6 py-3.5">Ficha Médica</th>
                     <th className="px-6 py-3.5 text-right">Acciones</th>
                   </tr>
@@ -243,15 +268,27 @@ export const StudentsView: React.FC = () => {
                           </span>
                         </td>
 
-                        {/* Credits */}
+                        {/* Credits & Account State */}
                         <td className="px-6 py-4">
-                          <span
-                            className={`font-extrabold text-sm ${
-                              student.credits_balance > 0 ? 'text-emerald-700' : 'text-slate-400'
-                            }`}
-                          >
-                            {student.credits_balance} clases
-                          </span>
+                          <div>
+                            <span
+                              className={`font-extrabold text-sm block leading-tight ${
+                                student.credits_balance > 0 ? 'text-emerald-700' : 'text-slate-400'
+                              }`}
+                            >
+                              {student.credits_balance} clases
+                            </span>
+                            {student.debt_amount > 0 ? (
+                              <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded-md mt-0.5">
+                                <AlertCircle className="w-3 h-3" />
+                                <span>Deuda: -${student.debt_amount.toLocaleString('es-AR')}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-emerald-600 mt-0.5 block">
+                                ✓ Al día
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Medical */}
@@ -265,26 +302,37 @@ export const StudentsView: React.FC = () => {
                                 : 'text-slate-400'
                             }`}
                           >
-                            {student.has_medical_certificate ? '✅ Apto al día' : student.medical_notes ? '⚠️ Con lesión/nota' : 'Sin apto'}
+                            {student.has_medical_certificate ? '✅ Apto al día' : student.medical_notes ? '⚠️ Con nota médica' : 'Sin apto'}
                           </span>
                         </td>
 
                         {/* Actions */}
                         <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end space-x-2">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {/* Registrar Cobro / Pago Directo */}
+                            <button
+                              onClick={() => setPaymentStudentId(student.id)}
+                              className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-2xs transition-all flex items-center space-x-1"
+                              title="Registrar cobro / ingreso"
+                            >
+                              <DollarSign className="w-3.5 h-3.5" />
+                              <span>Cobrar</span>
+                            </button>
+
                             <button
                               onClick={() => {
                                 const msg = `Hola ${student.first_name}, te escribimos de ${studio.name}.`;
                                 openWhatsApp(student.phone, msg);
                               }}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-emerald-200/80"
                               title="WhatsApp directo"
                             >
                               <MessageCircle className="w-4 h-4" />
                             </button>
+
                             <button
                               onClick={() => setSelectedStudent(student)}
-                              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition-colors"
+                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-xl transition-colors"
                             >
                               Ver Ficha
                             </button>
@@ -305,11 +353,22 @@ export const StudentsView: React.FC = () => {
           <StudentDetailDrawer
             student={selectedStudent}
             onClose={() => setSelectedStudent(null)}
+            onOpenPayment={(stuId) => setPaymentStudentId(stuId)}
           />
         )}
 
         {showAddModal && (
           <AddStudentModal onClose={() => setShowAddModal(false)} />
+        )}
+
+        {/* Direct Payment / Cobro Modal */}
+        {paymentStudentId && (
+          <NewTransactionModal
+            isOpen={!!paymentStudentId}
+            onClose={() => setPaymentStudentId(null)}
+            defaultType="income"
+            preselectedStudentId={paymentStudentId}
+          />
         )}
 
         {/* Auto-Help Module Drawer */}

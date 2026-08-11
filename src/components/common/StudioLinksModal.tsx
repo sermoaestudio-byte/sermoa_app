@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Share2,
@@ -14,6 +15,12 @@ import {
   Globe
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
+import {
+  getRegisterLink,
+  getPortalLink,
+  getInstagramBioText,
+  getWhatsAppPortalInviteText,
+} from '../../utils/links';
 
 interface StudioLinksModalProps {
   onClose: () => void;
@@ -26,9 +33,8 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
 }) => {
   const { studio } = useStudioStore();
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sermoa.app';
-  const registerUrl = `${baseUrl}/#registro`;
-  const portalUrl = `${baseUrl}/#portal-alumno`;
+  const registerUrl = getRegisterLink();
+  const portalUrl = getPortalLink();
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -38,24 +44,24 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  const instagramBioText = `✨ ${studio.name} | Pilates Reformer & Movimiento Consciente\n📲 ¡Solicita tu ingreso y completa tu ficha médica aquí!\n👉 ${registerUrl}`;
-  const whatsappActiveStudentText = `¡Hola! 👋 Ya puedes ingresar a consultar y reservar tus clases desde tu Portal SERMOA aquí: ${portalUrl}`;
+  const instagramBioText = getInstagramBioText(studio.name);
+  const whatsappActiveStudentText = getWhatsAppPortalInviteText(studio.name);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex min-h-full items-center justify-center p-3 sm:p-6 animate-fade-in">
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-100 my-auto flex flex-col max-h-[88vh] overflow-hidden text-left">
         
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/80 sticky top-0 z-20">
+        <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/90 shrink-0">
           <div className="flex items-start space-x-3.5 pr-4">
-            <div className="w-11 h-11 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-lg shrink-0 shadow-xs border border-brand-100">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-lg shrink-0 shadow-xs border border-brand-100">
               <Share2 className="w-5 h-5" />
             </div>
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-700 bg-brand-100/60 px-2 py-0.5 rounded-full border border-brand-200">
                 Difusión & Captación
               </span>
-              <h3 className="text-xl font-black text-slate-900 mt-1 leading-snug">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 mt-1 leading-snug">
                 Centro de Enlaces Oficiales
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -66,20 +72,20 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-200/60 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 flex-1 text-xs">
+        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
           
           {/* 1. LINK DE INSCRIPCIÓN / REDES SOCIALES */}
-          <div className="p-5 bg-gradient-to-br from-brand-50/70 to-emerald-50/50 border border-brand-200 rounded-3xl space-y-3.5 shadow-soft">
+          <div className="p-4 sm:p-5 bg-gradient-to-br from-brand-50/70 to-emerald-50/50 border border-brand-200 rounded-3xl space-y-3 shadow-soft">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2.5">
-                <div className="p-2 rounded-xl bg-brand-600 text-white shadow-xs">
+                <div className="p-2 rounded-xl bg-brand-600 text-white shadow-xs shrink-0">
                   <Instagram className="w-4 h-4" />
                 </div>
                 <div>
@@ -94,8 +100,8 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
             </div>
 
             {/* URL Display */}
-            <div className="p-3 bg-white rounded-2xl border border-brand-200/80 flex items-center justify-between font-mono text-xs text-brand-900">
-              <span className="truncate mr-2 font-bold">{registerUrl}</span>
+            <div className="p-2.5 sm:p-3 bg-white rounded-2xl border border-brand-200/80 flex items-center justify-between font-mono text-xs text-brand-900">
+              <span className="truncate mr-2 font-bold text-[11px] sm:text-xs">{registerUrl}</span>
               <button
                 onClick={() => handleCopy(registerUrl, 'register_url')}
                 className="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shrink-0 flex items-center space-x-1 transition-all shadow-xs"
@@ -117,7 +123,7 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
             {/* Ready to copy Bio Template */}
             <div className="bg-white/80 p-3 rounded-2xl border border-brand-100 space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
-                <span>📝 Texto sugerido listo para Bio de Instagram:</span>
+                <span>📝 Texto sugerido para Bio de Instagram:</span>
                 <button
                   onClick={() => handleCopy(instagramBioText, 'bio_text')}
                   className="text-brand-700 hover:text-brand-900 text-[10px] font-extrabold flex items-center space-x-1"
@@ -136,10 +142,10 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
           </div>
 
           {/* 2. LINK DEL PORTAL DE ALUMNOS (RESERVAS & RUTINAS) */}
-          <div className="p-5 bg-white border border-slate-200 rounded-3xl space-y-3.5 shadow-soft">
+          <div className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-soft">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
                   <Smartphone className="w-4 h-4" />
                 </div>
                 <div>
@@ -154,8 +160,8 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
             </div>
 
             {/* URL Display */}
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between font-mono text-xs text-slate-800">
-              <span className="truncate mr-2 font-bold">{portalUrl}</span>
+            <div className="p-2.5 sm:p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between font-mono text-xs text-slate-800">
+              <span className="truncate mr-2 font-bold text-[11px] sm:text-xs">{portalUrl}</span>
               <button
                 onClick={() => handleCopy(portalUrl, 'portal_url')}
                 className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shrink-0 flex items-center space-x-1 transition-all"
@@ -196,9 +202,9 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
           </div>
 
           {/* 3. CARTEL QR DE RECEPCIÓN (CHECK-IN CON GPS) */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between gap-3">
             <div className="flex items-center space-x-3">
-              <div className="p-2.5 bg-white rounded-xl text-slate-800 border border-slate-200 shadow-xs">
+              <div className="p-2.5 bg-white rounded-xl text-slate-800 border border-slate-200 shadow-xs shrink-0">
                 <QrCode className="w-5 h-5 text-brand-700" />
               </div>
               <div>
@@ -216,18 +222,18 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
                 onClose();
                 onOpenQRPoster();
               }}
-              className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800 transition-colors shadow-xs"
+              className="px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800 transition-colors shadow-xs shrink-0"
             >
-              Ver e Imprimir Cartel
+              Ver Cartel
             </button>
           </div>
 
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
           <span className="text-[11px] text-slate-400 font-medium">
-            SERMOA App • Difusión & Accesos
+            SERMOA App • Difusión & Redes
           </span>
           <button
             onClick={onClose}
@@ -238,6 +244,7 @@ export const StudioLinksModal: React.FC<StudioLinksModalProps> = ({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

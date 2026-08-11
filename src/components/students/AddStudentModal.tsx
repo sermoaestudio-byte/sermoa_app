@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, UserPlus, Phone, Mail, User, HeartPulse } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 
@@ -37,8 +38,8 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in">
       <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
         
         {/* Header */}
@@ -188,6 +189,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

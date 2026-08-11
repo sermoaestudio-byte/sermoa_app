@@ -16,7 +16,8 @@ import {
   HelpCircle,
   MessageCircle,
   Edit2,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { Routine, Profile } from '../../types';
@@ -26,7 +27,11 @@ import { ModuleHelpDrawer } from '../common/ModuleHelpDrawer';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { openWhatsApp } from '../../utils/whatsapp';
 
-export const RoutinesView: React.FC = () => {
+interface RoutinesViewProps {
+  onNavigate?: (view: string) => void;
+}
+
+export const RoutinesView: React.FC<RoutinesViewProps> = ({ onNavigate }) => {
   const { routines, profiles, activities, deleteRoutine } = useStudioStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,22 +102,33 @@ export const RoutinesView: React.FC = () => {
   };
 
   return (
-    <div className="py-6 sm:py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="py-6 sm:py-8 animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-              <Dumbbell className="w-3.5 h-3.5 text-cyan-600" />
-              <span>Operativa Diaria</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3">
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl shadow-xs transition-colors shrink-0 mt-0.5"
+                title="Volver al Inicio"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <div>
+              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <Dumbbell className="w-3.5 h-3.5 text-cyan-600" />
+                <span>Operativa Diaria</span>
+              </div>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                Rutinas & Planes de Entrenamiento
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Crea ejercicios, asigna profesores responsables y prescribe planes a múltiples alumnos
+              </p>
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Rutinas & Planes de Entrenamiento
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Crea ejercicios, asigna profesores responsables y prescribe planes a múltiples alumnos
-            </p>
           </div>
 
           <div className="flex items-center space-x-2.5 self-start md:self-auto">

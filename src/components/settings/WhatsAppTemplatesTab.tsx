@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MessageCircle, Save, Check, Sparkles, Send } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { formatWhatsAppTemplate, openWhatsApp } from '../../utils/whatsapp';
+import { getBookingLink } from '../../utils/links';
 
 export const WhatsAppTemplatesTab: React.FC = () => {
   const { whatsappTemplates, updateWhatsAppTemplate, studio } = useStudioStore();
@@ -35,7 +36,7 @@ export const WhatsAppTemplatesTab: React.FC = () => {
     sede: 'Sede Palermo',
     monto: '15.000',
     creditos: '5',
-    link: `${window.location.origin}/#reservar/${studio.slug}`,
+    link: getBookingLink(studio.slug),
   };
 
   const previewMessage = formatWhatsAppTemplate(templateText, sampleVariables);

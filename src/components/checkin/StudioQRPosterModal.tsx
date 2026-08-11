@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Printer, Download, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
+import { getCheckinQRLink } from '../../utils/links';
 
 interface StudioQRPosterModalProps {
   onClose: () => void;
@@ -12,14 +14,14 @@ export const StudioQRPosterModal: React.FC<StudioQRPosterModalProps> = ({ onClos
   const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || '');
 
   const currentBranch = branches.find((b) => b.id === selectedBranchId) || branches[0];
-  const qrCheckinUrl = `${window.location.origin}/#checkin/${studio.slug}?branch=${currentBranch?.id}`;
+  const qrCheckinUrl = getCheckinQRLink(studio.slug, currentBranch?.id);
 
   const handlePrint = () => {
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
       <div className="bg-white rounded-3xl max-w-xl w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
         
         {/* Header */}
@@ -122,8 +124,8 @@ export const StudioQRPosterModal: React.FC<StudioQRPosterModalProps> = ({ onClos
             </button>
           </div>
         </div>
-
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
