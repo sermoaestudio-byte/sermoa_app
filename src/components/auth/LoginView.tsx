@@ -23,7 +23,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   onGoToRegister,
 }) => {
-  const { studio, profiles, setRole, setCurrentStudentId } = useStudioStore();
+  const { studio, profiles, loginWithSupabase, setRole, setCurrentStudentId } = useStudioStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,56 +31,24 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      const res = await loginWithSupabase(email, password);
       setIsSubmitting(false);
 
-      // Search profile by email (or username)
-      const cleanEmail = email.trim().toLowerCase();
-      const matchedProfile = profiles.find(
-        (p) => p.email.toLowerCase() === cleanEmail || cleanEmail === 'admin@sermoa.app' || cleanEmail === 'admin'
-      );
-
-      // 1. Admin login fallback / demo
-      if (cleanEmail === 'admin@sermoa.app' || cleanEmail === 'admin' || matchedProfile?.role === 'admin') {
-        setRole('admin');
-        onLoginSuccess('admin');
-        return;
+      if (res.success && res.role) {
+        onLoginSuccess(res.role);
+      } else {
+        setErrorMessage(res.message || 'Credenciales inválidas. Por favor intenta nuevamente.');
       }
-
-      // 2. Instructor login
-      if (matchedProfile && (matchedProfile.role === 'instructor')) {
-        setRole('instructor');
-        onLoginSuccess('instructor');
-        return;
-      }
-
-      // 3. Client / Student login
-      if (matchedProfile && matchedProfile.role === 'client') {
-        if (matchedProfile.status === 'pending_approval') {
-          setErrorMessage(
-            'Tu solicitud de alta aún se encuentra en revisión médica por el administrador. Te avisaremos por WhatsApp en cuanto sea aprobada.'
-          );
-          return;
-        }
-
-        setRole('client');
-        setCurrentStudentId(matchedProfile.id);
-        onLoginSuccess('client');
-        return;
-      }
-
-      // If not found in mock state, check password demo validation
-      if (!matchedProfile) {
-        setErrorMessage(
-          'Usuario o contraseña incorrectos. Si aún no te registraste, completa tu formulario de alta.'
-        );
-      }
-    }, 400);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setErrorMessage('Ocurrió un error al procesar el inicio de sesión. Intenta nuevamente.');
+    }
   };
 
   // Quick Demo Access Selector

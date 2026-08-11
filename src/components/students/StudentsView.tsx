@@ -14,13 +14,17 @@ import {
   HelpCircle,
   ArrowLeft,
   DollarSign,
-  Receipt
+  Receipt,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { Profile } from '../../types';
 import { StudentApprovalTab } from './StudentApprovalTab';
 import { StudentDetailDrawer } from './StudentDetailDrawer';
 import { AddStudentModal } from './AddStudentModal';
+import { EditStudentModal } from './EditStudentModal';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ModuleHelpDrawer } from '../common/ModuleHelpDrawer';
 import { NewTransactionModal } from '../finance/NewTransactionModal';
 import { openWhatsApp } from '../../utils/whatsapp';
@@ -30,10 +34,12 @@ interface StudentsViewProps {
 }
 
 export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
-  const { profiles, studio } = useStudioStore();
+  const { profiles, studio, deleteStudent } = useStudioStore();
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'debt' | 'no_credits'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
+  const [studentToEdit, setStudentToEdit] = useState<Profile | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Profile | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [paymentStudentId, setPaymentStudentId] = useState<string | null>(null);
@@ -319,6 +325,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                               <span>Cobrar</span>
                             </button>
 
+                            {/* WhatsApp directo */}
                             <button
                               onClick={() => {
                                 const msg = `Hola ${student.first_name}, te escribimos de ${studio.name}.`;
@@ -330,6 +337,25 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                               <MessageCircle className="w-4 h-4" />
                             </button>
 
+                            {/* Editar Alumno */}
+                            <button
+                              onClick={() => setStudentToEdit(student)}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-slate-200"
+                              title="Editar datos del alumno"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Eliminar Alumno */}
+                            <button
+                              onClick={() => setStudentToDelete(student)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-slate-200"
+                              title="Eliminar alumno"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Ver Ficha Lateral */}
                             <button
                               onClick={() => setSelectedStudent(student)}
                               className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-xl transition-colors"
@@ -354,6 +380,41 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
             student={selectedStudent}
             onClose={() => setSelectedStudent(null)}
             onOpenPayment={(stuId) => setPaymentStudentId(stuId)}
+            onEditStudent={(stu) => setStudentToEdit(stu)}
+            onDeleteStudent={(stu) => setStudentToDelete(stu)}
+          />
+        )}
+
+        {studentToEdit && (
+          <EditStudentModal
+            student={studentToEdit}
+            onClose={() => {
+              setStudentToEdit(null);
+              // Update selectedStudent if it was currently open
+              if (selectedStudent && selectedStudent.id === studentToEdit.id) {
+                const refreshed = profiles.find((p) => p.id === studentToEdit.id);
+                if (refreshed) setSelectedStudent(refreshed);
+              }
+            }}
+          />
+        )}
+
+        {studentToDelete && (
+          <ConfirmDialog
+            isOpen={!!studentToDelete}
+            title="¿Eliminar Alumno del Sistema?"
+            message={`¿Estás seguro de que deseas eliminar permanentemente a "${studentToDelete.first_name} ${studentToDelete.last_name}"? Se borrará su perfil, saldo de créditos y reservas tanto de la aplicación como de la base de datos de Supabase.`}
+            confirmText="Sí, Eliminar Alumno"
+            cancelText="Cancelar"
+            variant="danger"
+            onConfirm={() => {
+              deleteStudent(studentToDelete.id);
+              if (selectedStudent?.id === studentToDelete.id) {
+                setSelectedStudent(null);
+              }
+              setStudentToDelete(null);
+            }}
+            onCancel={() => setStudentToDelete(null)}
           />
         )}
 

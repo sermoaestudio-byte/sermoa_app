@@ -14,7 +14,9 @@ import {
   FileCheck,
   DollarSign,
   Receipt,
-  AlertCircle
+  AlertCircle,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { Profile, Booking, PaymentTransaction } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
@@ -24,12 +26,16 @@ interface StudentDetailDrawerProps {
   student: Profile | null;
   onClose: () => void;
   onOpenPayment?: (studentId: string) => void;
+  onEditStudent?: (student: Profile) => void;
+  onDeleteStudent?: (student: Profile) => void;
 }
 
 export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
   student,
   onClose,
   onOpenPayment,
+  onEditStudent,
+  onDeleteStudent,
 }) => {
   const {
     studio,
@@ -91,12 +97,34 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-1.5">
+            {onEditStudent && (
+              <button
+                onClick={() => onEditStudent(student)}
+                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                title="Editar Alumno"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {onDeleteStudent && (
+              <button
+                onClick={() => onDeleteStudent(student)}
+                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
+                title="Eliminar Alumno"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Drawer Body */}

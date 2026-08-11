@@ -1,11 +1,17 @@
 import React from 'react';
 import { Settings, BarChart3, ShieldCheck } from 'lucide-react';
+import { useStudioStore } from '../../store/studioStore';
 
 interface EstrategiaMarcaSectionProps {
   onNavigate: (view: string) => void;
 }
 
 export const EstrategiaMarcaSection: React.FC<EstrategiaMarcaSectionProps> = ({ onNavigate }) => {
+  const { currentRole } = useStudioStore();
+
+  if (currentRole !== 'admin') {
+    return null;
+  }
   return (
     <section aria-labelledby="estrategia-marca-heading" className="mb-10">
       

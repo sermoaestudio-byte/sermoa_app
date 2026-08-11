@@ -11,7 +11,8 @@ import {
   Smartphone,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
@@ -77,22 +78,32 @@ export const StudentPortalView: React.FC = () => {
             </div>
           </div>
 
-          {/* Student Selector Switcher */}
-          {activeTab !== 'register' && currentStudent && (
-            <div className="flex items-center space-x-2">
+          {/* Student Actions & Logout */}
+          <div className="flex items-center space-x-2">
+            {activeTab !== 'register' && currentStudent && (
               <select
                 value={currentStudent.id}
                 onChange={(e) => setCurrentStudentId(e.target.value)}
-                className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 focus:outline-none"
+                className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 focus:outline-none max-w-[150px] sm:max-w-none truncate"
               >
                 {activeStudents.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.first_name} ({s.credits_balance} créditos)
+                    {s.first_name} ({s.credits_balance} clases)
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
+
+            <button
+              onClick={() => {
+                window.location.hash = '#login';
+              }}
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-slate-200"
+              title="Salir / Iniciar sesión con otra cuenta"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Student App Navigation Tabs */}

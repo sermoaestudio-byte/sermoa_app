@@ -33,10 +33,10 @@ interface InstructorsViewProps {
 export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) => {
   const { profiles, classes, deleteInstructor, updateInstructor } = useStudioStore();
   
-  // Real instructors (excluding the studio owner/admin)
-  const instructors = profiles.filter((p) => p.role === 'instructor');
+  // Staff members (instructors and admins)
+  const staffMembers = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin');
 
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'inactive'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'admins' | 'instructors' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modal States
@@ -61,53 +61,57 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
     onConfirm: () => {},
   });
 
-  const activeCount = instructors.filter((i) => i.status === 'active' || !i.status).length;
-  const inactiveCount = instructors.filter((i) => i.status === 'inactive').length;
+  const adminsCount = staffMembers.filter((s) => s.role === 'admin').length;
+  const instructorsCount = staffMembers.filter((s) => s.role === 'instructor').length;
+  const activeCount = staffMembers.filter((i) => i.status === 'active' || !i.status).length;
+  const inactiveCount = staffMembers.filter((i) => i.status === 'inactive').length;
 
-  const filteredInstructors = instructors.filter((instructor) => {
-    const isInactive = instructor.status === 'inactive';
+  const filteredStaff = staffMembers.filter((member) => {
+    const isInactive = member.status === 'inactive';
     const matchesTab =
       activeTab === 'all' ||
+      (activeTab === 'admins' && member.role === 'admin') ||
+      (activeTab === 'instructors' && member.role === 'instructor') ||
       (activeTab === 'active' && !isInactive) ||
       (activeTab === 'inactive' && isInactive);
 
-    const fullName = `${instructor.first_name} ${instructor.last_name}`.toLowerCase();
+    const fullName = `${member.first_name} ${member.last_name}`.toLowerCase();
     const matchesSearch =
       fullName.includes(searchQuery.toLowerCase()) ||
-      instructor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      instructor.phone.includes(searchQuery);
+      member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.phone.includes(searchQuery);
 
     return matchesTab && matchesSearch;
   });
 
-  const handleToggleStatus = (instructor: Profile) => {
-    const isCurrentlyActive = instructor.status === 'active' || !instructor.status;
+  const handleToggleStatus = (staff: Profile) => {
+    const isCurrentlyActive = staff.status === 'active' || !staff.status;
     const newStatus = isCurrentlyActive ? 'inactive' : 'active';
 
     setConfirmDialog({
       isOpen: true,
-      title: isCurrentlyActive ? '¿Inactivar Profesor?' : '¿Activar Profesor?',
+      title: isCurrentlyActive ? '¿Inactivar Usuario?' : '¿Activar Usuario?',
       message: isCurrentlyActive
-        ? `Al inactivar a "${instructor.first_name} ${instructor.last_name}", no podrá acceder ni ser asignado a nuevos turnos hasta que lo reactives.`
-        : `Se reactivará la cuenta de "${instructor.first_name} ${instructor.last_name}" en el staff.`,
+        ? `Al inactivar a "${staff.first_name} ${staff.last_name}", no podrá acceder al sistema hasta que lo reactives.`
+        : `Se reactivará la cuenta de "${staff.first_name} ${staff.last_name}" en el equipo.`,
       confirmText: isCurrentlyActive ? 'Inactivar' : 'Activar',
       variant: isCurrentlyActive ? 'warning' : 'primary',
       onConfirm: () => {
-        updateInstructor(instructor.id, { status: newStatus });
+        updateInstructor(staff.id, { status: newStatus });
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
       },
     });
   };
 
-  const handleDelete = (instructor: Profile) => {
+  const handleDelete = (staff: Profile) => {
     setConfirmDialog({
       isOpen: true,
-      title: '¿Eliminar Profesor del Staff?',
-      message: `¿Estás seguro de que deseas eliminar permanentemente a "${instructor.first_name} ${instructor.last_name}"? Esta acción no se puede deshacer.`,
-      confirmText: 'Eliminar Profesor',
+      title: '¿Eliminar Usuario del Staff?',
+      message: `¿Estás seguro de que deseas eliminar permanentemente a "${staff.first_name} ${staff.last_name}"? Esta acción no se puede deshacer y se borrará su acceso.`,
+      confirmText: 'Eliminar Usuario',
       variant: 'danger',
       onConfirm: () => {
-        deleteInstructor(instructor.id);
+        deleteInstructor(staff.id);
         setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
       },
     });
@@ -135,10 +139,10 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                 <span>Operativa Diaria</span>
               </div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Profesores & Staff
+                Equipo & Staff (Administradores y Profesores)
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Administra tu equipo de instructores, estado activo/inactivo, permisos y asignaciones
+                Administra roles de Administrador (acceso a finanzas) y Profesores (clases y alumnos)
               </p>
             </div>
           </div>
@@ -147,7 +151,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
             <button
               onClick={() => setShowHelp(true)}
               className="inline-flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold shadow-xs transition-all"
-              title="Ver guía de Profesores"
+              title="Ver guía del Staff"
             >
               <HelpCircle className="w-4 h-4 text-purple-600" />
               <span>Ayuda</span>
@@ -161,13 +165,13 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
               className="inline-flex items-center space-x-1.5 px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-extrabold shadow-md shadow-purple-700/20 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span>Nuevo Profesor</span>
+              <span>Nuevo Staff / Usuario</span>
             </button>
           </div>
         </div>
 
         {/* Tab & Search Filters */}
-        {instructors.length > 0 && (
+        {staffMembers.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex items-center space-x-1 overflow-x-auto pb-1 sm:pb-0">
               <button
@@ -178,13 +182,33 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                Todos ({instructors.length})
+                Todos ({staffMembers.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('admins')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center space-x-1 ${
+                  activeTab === 'admins'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span>🛡️ Admins ({adminsCount})</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('instructors')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all shrink-0 flex items-center space-x-1 ${
+                  activeTab === 'instructors'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span>🧘 Profesores ({instructorsCount})</span>
               </button>
               <button
                 onClick={() => setActiveTab('active')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all shrink-0 ${
                   activeTab === 'active'
-                    ? 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-slate-200 text-slate-800'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -215,18 +239,18 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
           </div>
         )}
 
-        {/* Empty State when no instructors */}
-        {instructors.length === 0 && (
+        {/* Empty State when no staff */}
+        {staffMembers.length === 0 && (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-soft space-y-4 my-8">
             <div className="w-16 h-16 rounded-3xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto shadow-xs border border-purple-100">
               <UserCheck className="w-8 h-8" />
             </div>
             <div>
               <h3 className="text-lg font-black text-slate-900">
-                Aún no has registrado profesores
+                Aún no has registrado miembros del staff
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                Registra a los profesores de tu equipo para asignarles clases, turnos y permisos especiales.
+                Registra a los administradores y profesores de tu equipo para asignarles roles y permisos.
               </p>
             </div>
             <button
@@ -237,17 +261,18 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
               className="px-6 py-3 bg-purple-700 hover:bg-purple-800 text-white rounded-2xl text-xs font-extrabold shadow-md shadow-purple-700/20 inline-flex items-center space-x-2 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span>Crear Primer Profesor</span>
+              <span>Crear Primer Miembro</span>
             </button>
           </div>
         )}
 
-        {/* Instructors Grid */}
-        {instructors.length > 0 && (
+        {/* Staff Grid */}
+        {staffMembers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredInstructors.map((instructor) => {
+            {filteredStaff.map((instructor) => {
               const assignedClasses = classes.filter((c) => c.instructor_id === instructor.id);
               const isInactive = instructor.status === 'inactive';
+              const isAdmin = instructor.role === 'admin';
 
               return (
                 <div
@@ -255,6 +280,8 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                   className={`bg-white rounded-3xl p-6 border transition-all flex flex-col justify-between group relative ${
                     isInactive
                       ? 'border-slate-200 opacity-75 bg-slate-50/40'
+                      : isAdmin
+                      ? 'border-blue-200/90 shadow-soft hover:shadow-soft-lg bg-gradient-to-b from-white to-blue-50/20'
                       : 'border-slate-200/80 shadow-soft hover:shadow-soft-lg'
                   }`}
                 >
@@ -266,6 +293,8 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                           className={`w-12 h-12 rounded-2xl font-black text-base flex items-center justify-center shadow-xs ${
                             isInactive
                               ? 'bg-slate-100 text-slate-500'
+                              : isAdmin
+                              ? 'bg-blue-600 text-white shadow-blue-600/20'
                               : 'bg-purple-50 text-purple-700 border border-purple-100'
                           }`}
                         >
@@ -285,9 +314,15 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                             >
                               {isInactive ? 'Inactivo' : 'Activo'}
                             </span>
-                            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                              Staff
-                            </span>
+                            {isAdmin ? (
+                              <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 flex items-center space-x-0.5">
+                                <span>🛡️ Admin (Finanzas)</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                                🧘 Profesor
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -301,7 +336,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                             setShowAddModal(true);
                           }}
                           className="p-2 text-slate-400 hover:text-purple-700 hover:bg-purple-50 rounded-xl transition-colors"
-                          title="Editar profesor"
+                          title="Editar usuario"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -314,7 +349,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                               ? 'text-emerald-600 hover:bg-emerald-50'
                               : 'text-amber-600 hover:bg-amber-50'
                           }`}
-                          title={isInactive ? 'Reactivar profesor' : 'Inactivar profesor'}
+                          title={isInactive ? 'Reactivar usuario' : 'Inactivar usuario'}
                         >
                           {isInactive ? (
                             <Power className="w-3.5 h-3.5" />
@@ -327,7 +362,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                         <button
                           onClick={() => handleDelete(instructor)}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
-                          title="Eliminar profesor"
+                          title="Eliminar usuario"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

@@ -246,6 +246,8 @@ let state: any = {
   whatsappTemplates: initialWhatsAppTemplates,
   routines: initialRoutines,
   attendances: initialAttendances,
+  isAuthenticated: false,
+  currentUser: null as Profile | null,
   currentRole: 'admin' as UserRole,
   currentStudentId: DEFAULT_ADMIN_ID,
   currentInstructorId: DEFAULT_ADMIN_ID,
@@ -406,6 +408,144 @@ export function useStudioStore() {
     setState((prev: any) => ({ ...prev, currentStudentId: id }));
   };
 
+  const loginWithSupabase = async (
+    email: string,
+    password?: string
+  ): Promise<{
+    success: boolean;
+    role?: UserRole;
+    message?: string;
+    status?: string;
+  }> => {
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Try to find user in local state or Supabase profiles table
+    let matchedProfile = state.profiles.find(
+      (p: Profile) => p.email && p.email.toLowerCase() === cleanEmail
+    );
+
+    if (!matchedProfile && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('email', cleanEmail)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          matchedProfile = data[0] as Profile;
+          setState((prev: any) => ({
+            ...prev,
+            profiles: [matchedProfile, ...prev.profiles.filter((p: Profile) => p.id !== matchedProfile?.id)],
+          }));
+        }
+      } catch (err) {
+        console.error('Error buscando perfil en Supabase:', err);
+      }
+    }
+
+    // 2. Admin Demo shortcut fallback
+    if (!matchedProfile && (cleanEmail === 'admin@sermoa.app' || cleanEmail === 'admin')) {
+      const adminProfile = state.profiles.find((p: Profile) => p.role === 'admin') || {
+        id: DEFAULT_ADMIN_ID,
+        studio_id: state.studio.id,
+        role: 'admin' as UserRole,
+        status: 'active' as const,
+        first_name: 'Administrador',
+        last_name: 'SERMOA',
+        email: 'admin@sermoa.app',
+        phone: '+54 9 11 5555 0199',
+        credits_balance: 999,
+        debt_amount: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      setState((prev: any) => ({
+        ...prev,
+        isAuthenticated: true,
+        currentUser: adminProfile,
+        currentRole: 'admin',
+        currentStudentId: adminProfile.id,
+        currentInstructorId: adminProfile.id,
+      }));
+
+      return { success: true, role: 'admin' };
+    }
+
+    if (!matchedProfile) {
+      return {
+        success: false,
+        message: 'No existe una cuenta registrada con este correo. Si eres nuevo, completa tu solicitud de registro.',
+      };
+    }
+
+    // 3. Status validations
+    if (matchedProfile.status === 'pending_approval') {
+      return {
+        success: false,
+        status: 'pending_approval',
+        message: 'Tu solicitud de alta está pendiente de revisión médica por el administrador. Te avisaremos por WhatsApp en cuanto sea aprobada.',
+      };
+    }
+
+    if (matchedProfile.status === 'inactive' || matchedProfile.status === 'rejected') {
+      return {
+        success: false,
+        status: matchedProfile.status,
+        message: 'Tu cuenta se encuentra pausada o inactiva. Comunícate con la administración.',
+      };
+    }
+
+    // 4. Supabase Auth authentication if available
+    if (isSupabaseConfigured && password) {
+      try {
+        const { error: authErr } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+        if (authErr) {
+          console.warn('Supabase Auth response:', authErr.message);
+        }
+      } catch (e) {
+        console.warn('Auth check error:', e);
+      }
+    }
+
+    // 5. Update authenticated session in store
+    setState((prev: any) => ({
+      ...prev,
+      isAuthenticated: true,
+      currentUser: matchedProfile,
+      currentRole: matchedProfile.role,
+      currentStudentId: matchedProfile.id,
+      currentInstructorId: matchedProfile.id,
+    }));
+
+    return {
+      success: true,
+      role: matchedProfile.role,
+    };
+  };
+
+  const logout = async () => {
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('Error en Supabase signOut:', e);
+      }
+    }
+
+    setState((prev: any) => ({
+      ...prev,
+      isAuthenticated: false,
+      currentUser: null,
+      currentRole: 'client',
+      currentStudentId: '',
+    }));
+  };
+
   // Student Registration & Approval
   const submitStudentRegistration = (newStudentData: Partial<Profile>) => {
     const id = generateUUID();
@@ -520,12 +660,57 @@ export function useStudioStore() {
     }
   };
 
-  const addInstructor = (instructorData: {
+  const updateStudent = (id: string, updatedData: Partial<Profile>) => {
+    setState((prev: any) => ({
+      ...prev,
+      profiles: prev.profiles.map((p: Profile) =>
+        p.id === id ? { ...p, ...updatedData, updated_at: new Date().toISOString() } : p
+      ),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').update({
+        first_name: updatedData.first_name,
+        last_name: updatedData.last_name,
+        email: updatedData.email,
+        phone: updatedData.phone,
+        id_number: updatedData.id_number,
+        medical_notes: updatedData.medical_notes,
+        has_medical_certificate: updatedData.has_medical_certificate,
+        credits_balance: updatedData.credits_balance,
+        debt_amount: updatedData.debt_amount,
+        status: updatedData.status,
+        preferred_branch_id: updatedData.preferred_branch_id,
+        updated_at: new Date().toISOString(),
+      }).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando alumno en Supabase:', error);
+      });
+    }
+  };
+
+  const deleteStudent = (id: string) => {
+    setState((prev: any) => ({
+      ...prev,
+      profiles: prev.profiles.filter((p: Profile) => p.id !== id),
+      bookings: prev.bookings.filter((b: Booking) => b.student_id !== id),
+      waitlist: prev.waitlist.filter((w: WaitlistEntry) => w.student_id !== id),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('profiles').delete().eq('id', id).then(({ error }) => {
+        if (error) console.error('Error eliminando alumno en Supabase:', error);
+      });
+    }
+  };
+
+  const addInstructor = (staffData: {
     first_name: string;
     last_name: string;
     email: string;
     phone: string;
     password?: string;
+    role?: UserRole;
+    specialties?: string[];
     permissions?: {
       view_all_students?: boolean;
       manage_student_credits?: boolean;
@@ -534,19 +719,25 @@ export function useStudioStore() {
     };
   }) => {
     const id = generateUUID();
-    const newInstructor: Profile = {
+    const role: UserRole = staffData.role || 'instructor';
+    const newStaff: Profile = {
       id,
       studio_id: state.studio.id,
-      role: 'instructor',
+      role,
       status: 'active',
-      first_name: instructorData.first_name,
-      last_name: instructorData.last_name,
-      email: instructorData.email,
-      phone: instructorData.phone,
-      credits_balance: 0,
+      first_name: staffData.first_name,
+      last_name: staffData.last_name,
+      email: staffData.email,
+      phone: staffData.phone,
+      credits_balance: role === 'admin' ? 999 : 0,
       debt_amount: 0,
-      specialties: ['Pilates Reformer', 'Entrenamiento Funcional'],
-      permissions: instructorData.permissions || {
+      specialties: staffData.specialties || ['Pilates Reformer', 'Entrenamiento Funcional'],
+      permissions: role === 'admin' ? {
+        view_all_students: true,
+        manage_student_credits: true,
+        view_all_classes: true,
+        create_students: true,
+      } : staffData.permissions || {
         view_all_students: false,
         manage_student_credits: false,
         view_all_classes: false,
@@ -558,29 +749,29 @@ export function useStudioStore() {
 
     setState((prev: any) => ({
       ...prev,
-      profiles: [...prev.profiles, newInstructor],
+      profiles: [...prev.profiles, newStaff],
     }));
 
     if (isSupabaseConfigured) {
       supabase.from('profiles').insert({
         id,
         studio_id: state.studio.id,
-        role: 'instructor',
+        role: newStaff.role,
         status: 'active',
-        first_name: newInstructor.first_name,
-        last_name: newInstructor.last_name,
-        email: newInstructor.email,
-        phone: newInstructor.phone,
-        credits_balance: 0,
+        first_name: newStaff.first_name,
+        last_name: newStaff.last_name,
+        email: newStaff.email,
+        phone: newStaff.phone,
+        credits_balance: newStaff.credits_balance,
         debt_amount: 0,
-        specialties: newInstructor.specialties,
-        permissions: newInstructor.permissions,
+        specialties: newStaff.specialties,
+        permissions: newStaff.permissions,
       }).then(({ error }) => {
-        if (error) console.error('Error agregando profesor en Supabase:', error);
+        if (error) console.error('Error agregando staff en Supabase:', error);
       });
     }
 
-    return newInstructor;
+    return newStaff;
   };
 
   const updateInstructor = (id: string, updatedData: Partial<Profile>) => {
@@ -593,7 +784,7 @@ export function useStudioStore() {
 
     if (isSupabaseConfigured) {
       supabase.from('profiles').update(updatedData).eq('id', id).then(({ error }) => {
-        if (error) console.error('Error actualizando profesor en Supabase:', error);
+        if (error) console.error('Error actualizando staff en Supabase:', error);
       });
     }
   };
@@ -1422,6 +1613,8 @@ export function useStudioStore() {
     whatsappTemplates: state.whatsappTemplates,
     routines: state.routines,
     attendances: state.attendances,
+    isAuthenticated: state.isAuthenticated,
+    currentUser: state.currentUser,
     currentRole: state.currentRole,
     currentStudentId: state.currentStudentId,
     currentInstructorId: state.currentInstructorId,
@@ -1431,9 +1624,13 @@ export function useStudioStore() {
     // Actions
     setRole,
     setCurrentStudentId,
+    loginWithSupabase,
+    logout,
     submitStudentRegistration,
     approveStudentRegistration,
     rejectStudentRegistration,
+    updateStudent,
+    deleteStudent,
     addInstructor,
     updateInstructor,
     deleteInstructor,

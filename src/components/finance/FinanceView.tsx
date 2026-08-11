@@ -32,7 +32,8 @@ import {
   Sparkles,
   Download,
   Save,
-  Check
+  Check,
+  ShieldAlert
 } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { PaymentMethod, PaymentTransaction, PaymentType, Profile } from '../../types';
@@ -53,9 +54,38 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onNavigate }) => {
     studio,
     financialCategories,
     financialGoals,
+    currentRole,
     deleteTransaction,
     updateFinancialGoals,
   } = useStudioStore();
+
+  if (currentRole !== 'admin') {
+    return (
+      <div className="py-16 px-4 max-w-xl mx-auto text-center animate-fade-in">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-200 shadow-soft space-y-4">
+          <div className="w-16 h-16 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto shadow-xs border border-rose-100">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-extrabold text-slate-900">
+            Módulo Exclusivo para Administradores
+          </h2>
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            El control financiero, la caja, el registro de egresos y las métricas de facturación están restringidos únicamente a usuarios con perfil de <strong>Administrador</strong>.
+          </p>
+          <div className="pt-3">
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('dashboard')}
+                className="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl transition-all shadow-xs"
+              >
+                Volver al Panel Principal
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const students = profiles.filter((p: Profile) => p.role === 'client');
 

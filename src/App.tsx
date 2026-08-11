@@ -15,10 +15,11 @@ import { StudentPortalView } from './components/portal/StudentPortalView';
 import { StudentRegisterView } from './components/portal/StudentRegisterView';
 import { LoginView } from './components/auth/LoginView';
 import { StudioQRPosterModal } from './components/checkin/StudioQRPosterModal';
+import { AccessDeniedView } from './components/common/AccessDeniedView';
 import { applyStudioTheme } from './utils/theme';
 
 export function App() {
-  const { currentRole, studio } = useStudioStore();
+  const { currentRole, studio, isAuthenticated, logout } = useStudioStore();
   const [currentView, setCurrentView] = useState('dashboard');
   const [showQRPoster, setShowQRPoster] = useState(false);
 
@@ -27,16 +28,32 @@ export function App() {
     applyStudioTheme(studio.brand_colors);
   }, [studio.brand_colors]);
 
-  // Hash-based route listener for direct links like #registro, #login, #reservar or #portal-alumno
+  // Hash-based route listener for direct links with security routing
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (!hash) return;
+
       if (hash === 'registro') {
         setCurrentView('registro');
       } else if (hash === 'login') {
         setCurrentView('login');
       } else if (hash.startsWith('reservar') || hash === 'portal-alumno') {
         setCurrentView('portal-alumno');
+      } else if (['dashboard', 'classes', 'clases', 'students', 'alumnos', 'attendance', 'asistencias', 'instructors', 'profesores', 'branches', 'sucursales', 'routines', 'rutinas', 'history', 'historial', 'finance', 'finanzas', 'settings', 'configuracion'].includes(hash)) {
+        // Map Spanish aliases to internal view keys
+        const viewMap: Record<string, string> = {
+          clases: 'classes',
+          alumnos: 'students',
+          asistencias: 'attendance',
+          profesores: 'instructors',
+          sucursales: 'branches',
+          rutinas: 'routines',
+          historial: 'history',
+          finanzas: 'finance',
+          configuracion: 'settings',
+        };
+        setCurrentView(viewMap[hash] || hash);
       }
     };
 
@@ -45,40 +62,76 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Auth & Role Guard: Ensure students only access their portal, registration, or login
-  useEffect(() => {
-    if (currentRole === 'client') {
-      if (currentView !== 'portal-alumno' && currentView !== 'registro' && currentView !== 'login') {
-        setCurrentView('portal-alumno');
-      }
-    }
-  }, [currentRole, currentView]);
-
+  // Strict Role & URL Security Guard
   const renderMainView = () => {
+    // 1. Public Isolated Views
+    if (currentView === 'registro') {
+      return (
+        <div className="py-8 px-4">
+          <StudentRegisterView onGoToLogin={() => setCurrentView('login')} />
+        </div>
+      );
+    }
+
+    if (currentView === 'login') {
+      return (
+        <LoginView
+          onLoginSuccess={(role) => {
+            if (role === 'client') {
+              setCurrentView('portal-alumno');
+              window.location.hash = '#portal-alumno';
+            } else {
+              setCurrentView('dashboard');
+              window.location.hash = '#dashboard';
+            }
+          }}
+          onGoToRegister={() => {
+            setCurrentView('registro');
+            window.location.hash = '#registro';
+          }}
+        />
+      );
+    }
+
+    if (currentView === 'portal-alumno') {
+      return <StudentPortalView />;
+    }
+
+    // 2. Client (Alumno) Security Guard: Block any internal dashboard or management views
+    if (currentRole === 'client') {
+      return (
+        <AccessDeniedView
+          requiredRole="admin"
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
+        />
+      );
+    }
+
+    // 3. Instructor (Profesor) Security Guard: Block Finance and Settings views
+    if (currentRole === 'instructor' && (currentView === 'finance' || currentView === 'settings')) {
+      return (
+        <AccessDeniedView
+          requiredRole="admin"
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
+        />
+      );
+    }
+
+    // 4. Authorized Internal Views
     switch (currentView) {
-      case 'registro':
-        return (
-          <div className="py-8 px-4">
-            <StudentRegisterView onGoToLogin={() => setCurrentView('login')} />
-          </div>
-        );
-      case 'login':
-        return (
-          <LoginView
-            onLoginSuccess={(role) => {
-              if (role === 'client') {
-                setCurrentView('portal-alumno');
-              } else {
-                setCurrentView('dashboard');
-              }
-            }}
-            onGoToRegister={() => setCurrentView('registro')}
-          />
-        );
       case 'dashboard':
         return (
           <DashboardView
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={(view) => {
+              setCurrentView(view);
+              window.location.hash = `#${view}`;
+            }}
             onOpenQRPoster={() => setShowQRPoster(true)}
           />
         );
@@ -100,12 +153,13 @@ export function App() {
         return <FinanceView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
         return <SettingsView onNavigate={(view) => setCurrentView(view)} />;
-      case 'portal-alumno':
-        return <StudentPortalView />;
       default:
         return (
           <DashboardView
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={(view) => {
+              setCurrentView(view);
+              window.location.hash = `#${view}`;
+            }}
             onOpenQRPoster={() => setShowQRPoster(true)}
           />
         );
@@ -118,10 +172,13 @@ export function App() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
       
       {/* Top Navbar (hidden on student portal, isolated registration, and login) */}
-      {!isIsolatedView && (
+      {!isIsolatedView && currentRole !== 'client' && (
         <Navbar
           currentView={currentView}
-          onNavigate={(view) => setCurrentView(view)}
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
           onOpenQRPoster={() => setShowQRPoster(true)}
         />
       )}
