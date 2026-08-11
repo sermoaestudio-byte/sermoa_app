@@ -420,20 +420,28 @@ export function useStudioStore() {
     const cleanEmail = email.trim().toLowerCase();
 
     // 1. Try to find user in local state or Supabase profiles table
-    let matchedProfile = state.profiles.find(
+    const matchingLocalProfiles = state.profiles.filter(
       (p: Profile) => p.email && p.email.toLowerCase() === cleanEmail
     );
+    
+    // Prioritize admin > instructor > client
+    let matchedProfile = matchingLocalProfiles.find((p: Profile) => p.role === 'admin') 
+      || matchingLocalProfiles.find((p: Profile) => p.role === 'instructor') 
+      || matchingLocalProfiles[0];
 
     if (!matchedProfile && isSupabaseConfigured) {
       try {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .ilike('email', cleanEmail)
-          .limit(1);
+          .ilike('email', cleanEmail);
 
         if (!error && data && data.length > 0) {
-          matchedProfile = data[0] as Profile;
+          // Prioritize admin > instructor > client
+          matchedProfile = data.find((p: any) => p.role === 'admin') 
+            || data.find((p: any) => p.role === 'instructor') 
+            || (data[0] as Profile);
+            
           setState((prev: any) => ({
             ...prev,
             profiles: [matchedProfile, ...prev.profiles.filter((p: Profile) => p.id !== matchedProfile?.id)],
