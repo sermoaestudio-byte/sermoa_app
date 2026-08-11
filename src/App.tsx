@@ -14,9 +14,11 @@ import { SettingsView } from './components/settings/SettingsView';
 import { StudentPortalView } from './components/portal/StudentPortalView';
 import { StudentRegisterView } from './components/portal/StudentRegisterView';
 import { LoginView } from './components/auth/LoginView';
+import { ResetPasswordView } from './components/auth/ResetPasswordView';
 import { StudioQRPosterModal } from './components/checkin/StudioQRPosterModal';
 import { AccessDeniedView } from './components/common/AccessDeniedView';
 import { applyStudioTheme } from './utils/theme';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 export function App() {
   const { currentRole, studio, isAuthenticated, logout } = useStudioStore();
@@ -28,6 +30,19 @@ export function App() {
     applyStudioTheme(studio.brand_colors);
   }, [studio.brand_colors]);
 
+  // Listen for Supabase Password Recovery events
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setCurrentView('actualizar-clave');
+          window.location.hash = '#actualizar-clave';
+        }
+      });
+      return () => authListener.subscription.unsubscribe();
+    }
+  }, []);
+
   // Hash-based route listener for direct links with security routing
   useEffect(() => {
     const handleHashChange = () => {
@@ -38,6 +53,8 @@ export function App() {
         setCurrentView('registro');
       } else if (hash === 'login') {
         setCurrentView('login');
+      } else if (hash === 'actualizar-clave') {
+        setCurrentView('actualizar-clave');
       } else if (hash.startsWith('reservar') || hash === 'portal-alumno') {
         setCurrentView('portal-alumno');
       } else if (['dashboard', 'classes', 'clases', 'students', 'alumnos', 'attendance', 'asistencias', 'instructors', 'profesores', 'branches', 'sucursales', 'routines', 'rutinas', 'history', 'historial', 'finance', 'finanzas', 'settings', 'configuracion'].includes(hash)) {
@@ -70,6 +87,17 @@ export function App() {
         <div className="py-8 px-4">
           <StudentRegisterView onGoToLogin={() => setCurrentView('login')} />
         </div>
+      );
+    }
+
+    if (currentView === 'actualizar-clave') {
+      return (
+        <ResetPasswordView 
+          onSuccess={() => {
+            setCurrentView('login');
+            window.location.hash = '#login';
+          }}
+        />
       );
     }
 

@@ -23,18 +23,37 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   onGoToRegister,
 }) => {
-  const { studio, profiles, loginWithSupabase, setRole, setCurrentStudentId } = useStudioStore();
+  const { studio, loginWithSupabase, requestPasswordReset, setRole, setCurrentStudentId } = useStudioStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
+    setSuccessMessage('');
     setIsSubmitting(true);
+
+    if (isRecoveringPassword) {
+      if (!email) {
+        setErrorMessage('Por favor, ingresa tu correo electrónico.');
+        setIsSubmitting(false);
+        return;
+      }
+      const res = await requestPasswordReset(email);
+      setIsSubmitting(false);
+      if (res.success) {
+        setSuccessMessage('Te hemos enviado un correo con las instrucciones para recuperar tu contraseña.');
+      } else {
+        setErrorMessage(res.message || 'Error al enviar el correo.');
+      }
+      return;
+    }
 
     try {
       const res = await loginWithSupabase(email, password);
@@ -69,13 +88,23 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </div>
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Ingresar a {studio.name}
+              {isRecoveringPassword ? 'Recuperar Contraseña' : `Ingresar a ${studio.name}`}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Accede a tu agenda de clases, reservas o panel de control
+              {isRecoveringPassword
+                ? 'Ingresa tu correo y te enviaremos un enlace'
+                : 'Accede a tu agenda de clases, reservas o panel de control'}
             </p>
           </div>
         </div>
+
+        {/* Success Alert Message */}
+        {successMessage && (
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start space-x-2.5 text-xs text-emerald-800 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <p className="leading-relaxed font-semibold">{successMessage}</p>
+          </div>
+        )}
 
         {/* Error Alert Message */}
         {errorMessage && (
@@ -106,41 +135,43 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </div>
           </div>
 
-          {/* Password */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="font-bold text-slate-700">Contraseña</label>
-              <button
-                type="button"
-                onClick={() =>
-                  alert(
-                    'Para recuperar tu contraseña, te enviaremos un enlace de restablecimiento a tu correo electrónico registrado.'
-                  )
-                }
-                className="text-[11px] font-bold text-brand-700 hover:text-brand-900"
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
+          {/* Password (Only if not recovering) */}
+          {!isRecoveringPassword && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-bold text-slate-700">Contraseña</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRecoveringPassword(true);
+                    setErrorMessage('');
+                    setSuccessMessage('');
+                  }}
+                  className="text-[11px] font-bold text-brand-700 hover:text-brand-900"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Submit Button */}
           <button
@@ -149,14 +180,29 @@ export const LoginView: React.FC<LoginViewProps> = ({
             className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-extrabold text-xs shadow-md shadow-brand-600/20 flex items-center justify-center space-x-2 transition-all"
           >
             {isSubmitting ? (
-              <span>Autenticando...</span>
+              <span>{isRecoveringPassword ? 'Enviando...' : 'Autenticando...'}</span>
             ) : (
               <>
-                <span>Iniciar Sesión</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>{isRecoveringPassword ? 'Enviar enlace de recuperación' : 'Iniciar Sesión'}</span>
+                {!isRecoveringPassword && <ArrowRight className="w-4 h-4" />}
               </>
             )}
           </button>
+
+          {/* Back to Login */}
+          {isRecoveringPassword && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsRecoveringPassword(false);
+                setErrorMessage('');
+                setSuccessMessage('');
+              }}
+              className="w-full py-2 text-slate-500 hover:text-slate-700 font-semibold text-xs"
+            >
+              Volver al inicio de sesión
+            </button>
+          )}
 
         </form>
 

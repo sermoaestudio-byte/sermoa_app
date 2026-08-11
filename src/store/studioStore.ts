@@ -452,35 +452,6 @@ export function useStudioStore() {
       }
     }
 
-    // 2. Admin Demo shortcut fallback
-    if (!matchedProfile && (cleanEmail === 'admin@sermoa.app' || cleanEmail === 'admin')) {
-      const adminProfile = state.profiles.find((p: Profile) => p.role === 'admin') || {
-        id: DEFAULT_ADMIN_ID,
-        studio_id: state.studio.id,
-        role: 'admin' as UserRole,
-        status: 'active' as const,
-        first_name: 'Administrador',
-        last_name: 'SERMOA',
-        email: 'admin@sermoa.app',
-        phone: '+54 9 11 5555 0199',
-        credits_balance: 999,
-        debt_amount: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      setState((prev: any) => ({
-        ...prev,
-        isAuthenticated: true,
-        currentUser: adminProfile,
-        currentRole: 'admin',
-        currentStudentId: adminProfile.id,
-        currentInstructorId: adminProfile.id,
-      }));
-
-      return { success: true, role: 'admin' };
-    }
-
     if (!matchedProfile) {
       return {
         success: false,
@@ -552,6 +523,36 @@ export function useStudioStore() {
       currentRole: 'client',
       currentStudentId: '',
     }));
+  };
+
+  const requestPasswordReset = async (email: string): Promise<{ success: boolean; message?: string }> => {
+    if (!isSupabaseConfigured) {
+      return { success: false, message: 'Supabase no está configurado.' };
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: window.location.origin + '/#actualizar-clave',
+      });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error enviando correo de recuperación:', err);
+      return { success: false, message: err.message || 'Error al enviar el correo.' };
+    }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; message?: string }> => {
+    if (!isSupabaseConfigured) {
+      return { success: false, message: 'Supabase no está configurado.' };
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error actualizando la contraseña:', err);
+      return { success: false, message: err.message || 'Error al actualizar la contraseña.' };
+    }
   };
 
   // Student Registration & Approval
@@ -1537,6 +1538,8 @@ export function useStudioStore() {
     if (isSupabaseConfigured) {
       supabase.from('studios').update({
         name: updated.name,
+        slug: updated.slug,
+        logo_url: updated.logo_url,
         brand_colors: updated.brand_colors,
         phone: updated.phone,
         email: updated.email,
@@ -1691,6 +1694,8 @@ export function useStudioStore() {
     setCurrentStudentId,
     loginWithSupabase,
     logout,
+    requestPasswordReset,
+    updatePassword,
     submitStudentRegistration,
     approveStudentRegistration,
     rejectStudentRegistration,
