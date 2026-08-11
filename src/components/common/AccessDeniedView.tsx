@@ -4,7 +4,7 @@ import { useStudioStore } from '../../store/studioStore';
 import { UserRole } from '../../types';
 
 interface AccessDeniedViewProps {
-  requiredRole?: 'admin' | 'instructor' | 'auth';
+  requiredRole?: 'admin' | 'instructor' | 'auth' | 'client';
   onNavigate: (view: string) => void;
 }
 
