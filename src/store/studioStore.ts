@@ -279,9 +279,11 @@ function setState(updater: any) {
 
 // Background Synchronization from Supabase
 let isSyncing = false;
+let hasSynced = false;
 async function syncFromSupabase() {
-  if (!isSupabaseConfigured || isSyncing) return;
+  if (!isSupabaseConfigured || isSyncing || hasSynced) return;
   isSyncing = true;
+  hasSynced = true;
 
   try {
     // 1. Studio check & seed
