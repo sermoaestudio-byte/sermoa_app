@@ -552,8 +552,8 @@ export function useStudioStore() {
     const newStudent: Profile = {
       id,
       studio_id: state.studio.id,
-      role: 'client',
-      status: 'pending_approval',
+      role: newStudentData.role || 'client',
+      status: newStudentData.status || 'pending_approval',
       first_name: newStudentData.first_name || '',
       last_name: newStudentData.last_name || '',
       email: newStudentData.email || '',
@@ -565,8 +565,8 @@ export function useStudioStore() {
       medical_notes: newStudentData.medical_notes || '',
       has_medical_certificate: !!newStudentData.has_medical_certificate,
       medical_declaration: newStudentData.medical_declaration,
-      credits_balance: 0,
-      debt_amount: 0,
+      credits_balance: newStudentData.credits_balance ?? 0,
+      debt_amount: newStudentData.debt_amount ?? 0,
       preferred_branch_id: newStudentData.preferred_branch_id || state.branches[0]?.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -574,15 +574,15 @@ export function useStudioStore() {
 
     setState((prev: any) => ({
       ...prev,
-      profiles: [newStudent, ...prev.profiles],
+      profiles: [newStudent, ...prev.profiles.filter((p: Profile) => p.id !== id)],
     }));
 
     if (isSupabaseConfigured) {
-      supabase.from('profiles').insert({
+      const payload: any = {
         id,
         studio_id: state.studio.id,
-        role: 'client',
-        status: 'pending_approval',
+        role: newStudent.role,
+        status: newStudent.status,
         first_name: newStudent.first_name,
         last_name: newStudent.last_name,
         email: newStudent.email,
@@ -590,12 +590,22 @@ export function useStudioStore() {
         id_number: newStudent.id_number,
         medical_notes: newStudent.medical_notes,
         has_medical_certificate: newStudent.has_medical_certificate,
-        medical_declaration: newStudent.medical_declaration,
-        credits_balance: 0,
-        debt_amount: 0,
-        preferred_branch_id: newStudent.preferred_branch_id,
-      }).then(({ error }) => {
-        if (error) console.error('Error insertando alumno en Supabase:', error);
+        credits_balance: newStudent.credits_balance,
+        debt_amount: newStudent.debt_amount,
+        created_at: newStudent.created_at,
+        updated_at: newStudent.updated_at,
+      };
+
+      if (newStudent.birth_date) payload.birth_date = newStudent.birth_date;
+      if (newStudent.emergency_contact_name) payload.emergency_contact_name = newStudent.emergency_contact_name;
+      if (newStudent.emergency_contact_phone) payload.emergency_contact_phone = newStudent.emergency_contact_phone;
+
+      supabase.from('profiles').upsert(payload).then(({ error }) => {
+        if (error) {
+          console.error('❌ Error guardando alumno en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Alumno guardado en Supabase exitosamente:', newStudent.email);
+        }
       });
     }
 
@@ -626,8 +636,13 @@ export function useStudioStore() {
       supabase.from('profiles').update({
         status: 'active',
         credits_balance: updatedCredits,
+        updated_at: new Date().toISOString(),
       }).eq('id', studentId).then(({ error }) => {
-        if (error) console.error('Error aprobando alumno en Supabase:', error);
+        if (error) {
+          console.error('❌ Error aprobando alumno en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Alumno aprobado en Supabase exitosamente:', studentId);
+        }
       });
     }
 
@@ -654,8 +669,13 @@ export function useStudioStore() {
     if (isSupabaseConfigured) {
       supabase.from('profiles').update({
         status: 'inactive',
+        updated_at: new Date().toISOString(),
       }).eq('id', studentId).then(({ error }) => {
-        if (error) console.error('Error rechazando alumno en Supabase:', error);
+        if (error) {
+          console.error('❌ Error rechazando alumno en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Alumno marcado inactivo en Supabase:', studentId);
+        }
       });
     }
   };
@@ -669,21 +689,30 @@ export function useStudioStore() {
     }));
 
     if (isSupabaseConfigured) {
-      supabase.from('profiles').update({
-        first_name: updatedData.first_name,
-        last_name: updatedData.last_name,
-        email: updatedData.email,
-        phone: updatedData.phone,
-        id_number: updatedData.id_number,
-        medical_notes: updatedData.medical_notes,
-        has_medical_certificate: updatedData.has_medical_certificate,
-        credits_balance: updatedData.credits_balance,
-        debt_amount: updatedData.debt_amount,
-        status: updatedData.status,
-        preferred_branch_id: updatedData.preferred_branch_id,
+      const payload: any = {
         updated_at: new Date().toISOString(),
-      }).eq('id', id).then(({ error }) => {
-        if (error) console.error('Error actualizando alumno en Supabase:', error);
+      };
+      if (updatedData.first_name !== undefined) payload.first_name = updatedData.first_name;
+      if (updatedData.last_name !== undefined) payload.last_name = updatedData.last_name;
+      if (updatedData.email !== undefined) payload.email = updatedData.email;
+      if (updatedData.phone !== undefined) payload.phone = updatedData.phone;
+      if (updatedData.id_number !== undefined) payload.id_number = updatedData.id_number;
+      if (updatedData.birth_date !== undefined) payload.birth_date = updatedData.birth_date;
+      if (updatedData.emergency_contact_name !== undefined) payload.emergency_contact_name = updatedData.emergency_contact_name;
+      if (updatedData.emergency_contact_phone !== undefined) payload.emergency_contact_phone = updatedData.emergency_contact_phone;
+      if (updatedData.medical_notes !== undefined) payload.medical_notes = updatedData.medical_notes;
+      if (updatedData.has_medical_certificate !== undefined) payload.has_medical_certificate = updatedData.has_medical_certificate;
+      if (updatedData.credits_balance !== undefined) payload.credits_balance = updatedData.credits_balance;
+      if (updatedData.debt_amount !== undefined) payload.debt_amount = updatedData.debt_amount;
+      if (updatedData.status !== undefined) payload.status = updatedData.status;
+      if (updatedData.role !== undefined) payload.role = updatedData.role;
+
+      supabase.from('profiles').update(payload).eq('id', id).then(({ error }) => {
+        if (error) {
+          console.error('❌ Error actualizando alumno en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Alumno actualizado en Supabase exitosamente:', id);
+        }
       });
     }
   };
@@ -698,7 +727,11 @@ export function useStudioStore() {
 
     if (isSupabaseConfigured) {
       supabase.from('profiles').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Error eliminando alumno en Supabase:', error);
+        if (error) {
+          console.error('❌ Error eliminando alumno en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Alumno eliminado de Supabase exitosamente:', id);
+        }
       });
     }
   };

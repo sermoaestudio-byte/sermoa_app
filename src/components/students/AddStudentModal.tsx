@@ -21,7 +21,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newStudent = submitStudentRegistration({
+    submitStudentRegistration({
       first_name: firstName,
       last_name: lastName,
       email,
@@ -29,11 +29,9 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ onClose }) => 
       id_number: idNumber,
       medical_notes: medicalNotes,
       has_medical_certificate: true,
+      status: autoApprove ? 'active' : 'pending_approval',
+      credits_balance: autoApprove ? initialCredits : 0,
     });
-
-    if (autoApprove && newStudent) {
-      approveStudentRegistration(newStudent.id, initialCredits);
-    }
 
     onClose();
   };
