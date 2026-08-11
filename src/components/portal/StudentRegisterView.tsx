@@ -54,7 +54,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
         taking_medications: false,
         has_cardiac_conditions: false,
       },
-    });
+    }, password);
 
     setIsSubmitted(true);
   };

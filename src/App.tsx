@@ -32,6 +32,13 @@ export function App() {
 
   // Listen for Supabase Password Recovery events
   useEffect(() => {
+    // Check if URL has recovery tokens/params instantly
+    const hashStr = window.location.hash;
+    const searchStr = window.location.search;
+    if (hashStr.includes('type=recovery') || searchStr.includes('type=recovery')) {
+      setCurrentView('actualizar-clave');
+    }
+
     if (isSupabaseConfigured) {
       const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
         if (event === 'PASSWORD_RECOVERY') {

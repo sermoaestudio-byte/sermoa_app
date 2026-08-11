@@ -479,17 +479,44 @@ export function useStudioStore() {
     }
 
     // 4. Supabase Auth authentication if available
-    if (isSupabaseConfigured && password) {
+    if (isSupabaseConfigured) {
+      if (!password) {
+        return { success: false, message: 'Debes ingresar una contraseña.' };
+      }
       try {
         const { error: authErr } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
           password,
         });
+
         if (authErr) {
-          console.warn('Supabase Auth response:', authErr.message);
+          // In Supabase, "Invalid login credentials" can mean wrong password OR user doesn't exist in Auth.
+          if (authErr.message.toLowerCase().includes('invalid login credentials')) {
+            // Auto-migration attempt: Try to create the user in Auth with the provided password.
+            const { error: signUpErr } = await supabase.auth.signUp({
+              email: cleanEmail,
+              password,
+            });
+
+            if (signUpErr) {
+              if (signUpErr.message.toLowerCase().includes('already registered')) {
+                // User DOES exist in Auth, so the password was definitely wrong.
+                return { success: false, message: 'Contraseña incorrecta.' };
+              }
+              // Other signup error
+              console.warn('Error auto-migrando usuario:', signUpErr);
+              return { success: false, message: 'Error al verificar credenciales: ' + signUpErr.message };
+            } else {
+              console.log('Usuario auto-migrado a Supabase Auth exitosamente.');
+            }
+          } else {
+            // Other auth errors (e.g. rate limit)
+            return { success: false, message: authErr.message };
+          }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.warn('Auth check error:', e);
+        return { success: false, message: 'Error interno de autenticación.' };
       }
     }
 
@@ -558,8 +585,23 @@ export function useStudioStore() {
   };
 
   // Student Registration & Approval
-  const submitStudentRegistration = (newStudentData: Partial<Profile>) => {
-    const id = generateUUID();
+  const submitStudentRegistration = async (newStudentData: Partial<Profile>, password?: string) => {
+    let id = generateUUID();
+
+    if (isSupabaseConfigured && password && newStudentData.email) {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newStudentData.email.trim().toLowerCase(),
+        password: password,
+      });
+
+      if (authError) {
+        console.error('Error creating Auth user during registration:', authError);
+        // Continue with fallback ID or we could return early.
+      } else if (authData.user) {
+        id = authData.user.id;
+      }
+    }
+
     const newStudent: Profile = {
       id,
       studio_id: state.studio.id,
