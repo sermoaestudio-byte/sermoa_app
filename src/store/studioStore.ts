@@ -797,8 +797,6 @@ export function useStudioStore() {
         phone: newStaff.phone,
         credits_balance: newStaff.credits_balance,
         debt_amount: newStaff.debt_amount,
-        specialties: newStaff.specialties,
-        permissions: newStaff.permissions,
         created_at: newStaff.created_at,
         updated_at: newStaff.updated_at,
       };
@@ -833,8 +831,6 @@ export function useStudioStore() {
       if (updatedData.phone !== undefined) payload.phone = updatedData.phone;
       if (updatedData.role !== undefined) payload.role = updatedData.role;
       if (updatedData.status !== undefined) payload.status = updatedData.status;
-      if (updatedData.specialties !== undefined) payload.specialties = updatedData.specialties;
-      if (updatedData.permissions !== undefined) payload.permissions = updatedData.permissions;
 
       supabase.from('profiles').update(payload).eq('id', id).then(({ error }) => {
         if (error) {
