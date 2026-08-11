@@ -160,47 +160,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
         </form>
 
-        {/* Register CTA */}
-        <div className="pt-4 border-t border-slate-100 text-center space-y-2">
-          <p className="text-xs text-slate-500">
-            ¿Aún no estás inscripto en el estudio?
-          </p>
-          <button
-            type="button"
-            onClick={onGoToRegister}
-            className="inline-flex items-center space-x-1.5 text-xs font-extrabold text-brand-700 hover:text-brand-900 bg-brand-50 hover:bg-brand-100/80 px-4 py-2 rounded-xl transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Completar Ficha Médica de Alta</span>
-          </button>
-        </div>
 
-        {/* Quick Demo Access Bar */}
-        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60 text-center space-y-1.5">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-            Acceso Rápido de Demostración
-          </span>
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => handleQuickLogin('admin')}
-              className="px-2.5 py-1 bg-white border border-slate-200 hover:bg-purple-50 text-purple-800 rounded-lg text-[10px] font-bold shadow-2xs"
-            >
-              👑 Administrador
-            </button>
-            <button
-              onClick={() => handleQuickLogin('instructor')}
-              className="px-2.5 py-1 bg-white border border-slate-200 hover:bg-blue-50 text-blue-800 rounded-lg text-[10px] font-bold shadow-2xs"
-            >
-              🧘 Profesor
-            </button>
-            <button
-              onClick={() => handleQuickLogin('client', 'stu-1')}
-              className="px-2.5 py-1 bg-white border border-slate-200 hover:bg-emerald-50 text-emerald-800 rounded-lg text-[10px] font-bold shadow-2xs"
-            >
-              📱 Alumno (Sofia)
-            </button>
-          </div>
-        </div>
 
       </div>
     </div>

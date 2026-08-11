@@ -786,21 +786,29 @@ export function useStudioStore() {
     }));
 
     if (isSupabaseConfigured) {
-      supabase.from('profiles').insert({
-        id,
-        studio_id: state.studio.id,
+      const payload: any = {
+        id: newStaff.id,
+        studio_id: newStaff.studio_id,
         role: newStaff.role,
-        status: 'active',
+        status: newStaff.status,
         first_name: newStaff.first_name,
         last_name: newStaff.last_name,
         email: newStaff.email,
         phone: newStaff.phone,
         credits_balance: newStaff.credits_balance,
-        debt_amount: 0,
+        debt_amount: newStaff.debt_amount,
         specialties: newStaff.specialties,
         permissions: newStaff.permissions,
-      }).then(({ error }) => {
-        if (error) console.error('Error agregando staff en Supabase:', error);
+        created_at: newStaff.created_at,
+        updated_at: newStaff.updated_at,
+      };
+
+      supabase.from('profiles').upsert(payload).then(({ error }) => {
+        if (error) {
+          console.error('❌ Error agregando staff en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Staff guardado en Supabase exitosamente:', newStaff.email);
+        }
       });
     }
 
@@ -816,8 +824,24 @@ export function useStudioStore() {
     }));
 
     if (isSupabaseConfigured) {
-      supabase.from('profiles').update(updatedData).eq('id', id).then(({ error }) => {
-        if (error) console.error('Error actualizando staff en Supabase:', error);
+      const payload: any = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updatedData.first_name !== undefined) payload.first_name = updatedData.first_name;
+      if (updatedData.last_name !== undefined) payload.last_name = updatedData.last_name;
+      if (updatedData.email !== undefined) payload.email = updatedData.email;
+      if (updatedData.phone !== undefined) payload.phone = updatedData.phone;
+      if (updatedData.role !== undefined) payload.role = updatedData.role;
+      if (updatedData.status !== undefined) payload.status = updatedData.status;
+      if (updatedData.specialties !== undefined) payload.specialties = updatedData.specialties;
+      if (updatedData.permissions !== undefined) payload.permissions = updatedData.permissions;
+
+      supabase.from('profiles').update(payload).eq('id', id).then(({ error }) => {
+        if (error) {
+          console.error('❌ Error actualizando staff en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Staff actualizado en Supabase exitosamente:', id);
+        }
       });
     }
   };
@@ -833,7 +857,11 @@ export function useStudioStore() {
 
     if (isSupabaseConfigured) {
       supabase.from('profiles').delete().eq('id', id).then(({ error }) => {
-        if (error) console.error('Error eliminando profesor en Supabase:', error);
+        if (error) {
+          console.error('❌ Error eliminando profesor en Supabase:', error.message || error);
+        } else {
+          console.log('✅ Staff eliminado de Supabase exitosamente:', id);
+        }
       });
     }
   };

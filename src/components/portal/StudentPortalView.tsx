@@ -156,17 +156,6 @@ export const StudentPortalView: React.FC = () => {
             <span>Pase QR</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('register')}
-            className={`py-2.5 px-3 border-b-2 transition-all flex items-center space-x-1.5 ${
-              activeTab === 'register'
-                ? 'border-brand-600 text-brand-800'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <User className="w-4 h-4" />
-            <span>Nuevo Registro</span>
-          </button>
         </div>
       </header>
 
@@ -203,12 +192,6 @@ export const StudentPortalView: React.FC = () => {
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   Aún no hay alumnos activos registrados en el sistema. Puedes completar tu ficha médica para solicitar tu ingreso.
                 </p>
-                <button
-                  onClick={() => setActiveTab('register')}
-                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs shadow-xs"
-                >
-                  Completar Ficha Médica de Alta
-                </button>
               </div>
             )}
 
