@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Dumbbell,
@@ -68,7 +69,7 @@ export const RoutineDetailModal: React.FC<RoutineDetailModalProps> = ({
     openWhatsApp(studentPhone || '', message);
   };
 
-  return (
+  return createPortal(
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
         <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
@@ -324,6 +325,7 @@ export const RoutineDetailModal: React.FC<RoutineDetailModalProps> = ({
         }}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </>
+    </>,
+    document.body
   );
 };
