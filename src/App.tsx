@@ -212,7 +212,7 @@ export function App() {
     }
   };
 
-  const isIsolatedView = ['portal-alumno', 'registro', 'login'].includes(currentView);
+  const isIsolatedView = ['portal-alumno', 'registro', 'login', 'actualizar-clave'].includes(currentView);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
