@@ -43,9 +43,8 @@ export const StudentPortalView: React.FC = () => {
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [showCheckinGPSModal, setShowCheckinGPSModal] = useState(false);
 
-  // Allow the logged-in staff user to see themselves in the portal selector
-  const activeStudents = profiles.filter((p) => (p.role === 'client' || p.id === currentUser?.id) && p.status === 'active');
-  const currentStudent = profiles.find((p) => p.id === currentStudentId) || activeStudents[0];
+  // El portal de alumno muestra estrictamente la información del usuario logueado
+  const currentStudent = currentUser;
 
   const weekDays = getWeekDates(currentWeekDate);
 
@@ -82,19 +81,7 @@ export const StudentPortalView: React.FC = () => {
 
           {/* Student Actions & Logout */}
           <div className="flex items-center space-x-2">
-            {activeTab !== 'register' && currentStudent && (
-              <select
-                value={currentStudent.id}
-                onChange={(e) => setCurrentStudentId(e.target.value)}
-                className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 focus:outline-none max-w-[150px] sm:max-w-none truncate"
-              >
-                {activeStudents.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.first_name} ({s.credits_balance} clases)
-                  </option>
-                ))}
-              </select>
-            )}
+
 
             <button
               onClick={() => {
