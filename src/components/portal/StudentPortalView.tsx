@@ -68,12 +68,12 @@ export const StudentPortalView: React.FC = () => {
       <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
         <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-full bg-brand-800 text-white flex items-center justify-center font-extrabold text-sm shadow-sm">
-              <span>Ai</span>
+            <div className="w-9 h-9 rounded-full bg-brand-800 text-white flex items-center justify-center font-extrabold text-sm shadow-sm uppercase">
+              <span>{currentStudent ? `${currentStudent.first_name?.[0] || ''}${currentStudent.last_name?.[0] || ''}` : 'U'}</span>
             </div>
             <div>
               <h2 className="font-extrabold text-slate-900 text-sm leading-tight">
-                {studio.name}
+                {currentStudent ? `${currentStudent.first_name} ${currentStudent.last_name}` : studio.name}
               </h2>
               <span className="text-[11px] text-slate-400 font-medium">Portal de Alumnos</span>
             </div>
@@ -161,7 +161,9 @@ export const StudentPortalView: React.FC = () => {
                 <div>
                   <span className="text-xs text-brand-100 block font-medium">Hola, {currentStudent.first_name}!</span>
                   <h3 className="text-xl font-extrabold mt-0.5">
-                    {currentStudent.credits_balance} Clases Disponibles
+                    {currentStudent.credits_balance === 999 
+                      ? 'Pase Libre (Ilimitado)' 
+                      : `${currentStudent.credits_balance} Clases Disponibles`}
                   </h3>
                 </div>
                 <button
