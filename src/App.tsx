@@ -129,7 +129,7 @@ export function App() {
     }
 
     if (currentView === 'portal-alumno') {
-      if (currentRole !== 'client') {
+      if (!isAuthenticated) {
         return (
           <AccessDeniedView
             requiredRole="client"

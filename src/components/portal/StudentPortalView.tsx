@@ -34,6 +34,7 @@ export const StudentPortalView: React.FC = () => {
     currentStudentId,
     setCurrentStudentId,
     bookClass,
+    currentUser,
   } = useStudioStore();
 
   const [activeTab, setActiveTab] = useState<'schedule' | 'my_bookings' | 'my_routines' | 'digital_pass' | 'register'>('schedule');
@@ -42,7 +43,8 @@ export const StudentPortalView: React.FC = () => {
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [showCheckinGPSModal, setShowCheckinGPSModal] = useState(false);
 
-  const activeStudents = profiles.filter((p) => p.role === 'client' && p.status === 'active');
+  // Allow the logged-in staff user to see themselves in the portal selector
+  const activeStudents = profiles.filter((p) => (p.role === 'client' || p.id === currentUser?.id) && p.status === 'active');
   const currentStudent = profiles.find((p) => p.id === currentStudentId) || activeStudents[0];
 
   const weekDays = getWeekDates(currentWeekDate);
