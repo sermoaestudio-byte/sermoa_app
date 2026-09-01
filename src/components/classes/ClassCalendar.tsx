@@ -558,15 +558,15 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                     {tableData.map((cls) => {
-                      const nextOccurrence = getNextOccurrenceStr(cls);
-                      const enrolled = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === nextOccurrence || !b.booking_date)) || [];
+                      const fallbackDate = cls.date || toISODateString(new Date());
+                      const enrolled = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === fallbackDate || !b.booking_date)) || [];
                       const enrolledCount = enrolled.length;
                       const isFull = enrolledCount >= cls.max_capacity;
 
                       return (
                         <tr
                           key={cls.id}
-                          onClick={() => onSelectClass(cls, nextOccurrence)}
+                          onClick={() => onSelectClass(cls, fallbackDate)}
                           className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4 font-black text-slate-900">
@@ -621,7 +621,7 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onSelectClass(cls);
+                                onSelectClass(cls, fallbackDate);
                               }}
                               className="px-3 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-xl text-xs font-bold transition-colors"
                             >

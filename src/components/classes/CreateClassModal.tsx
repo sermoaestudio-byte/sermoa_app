@@ -217,7 +217,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
           day_of_week: dIndex,
           start_time: start,
           end_time: end,
-          max_capacity: maxCapacity,
+          max_capacity: Number(maxCapacity) || 12,
           single_class_price: singleClassPrice,
           is_recurring: true,
           color,
@@ -276,7 +276,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
             day_of_week: dIndex,
             start_time: slot.startTime,
             end_time: slot.endTime,
-            max_capacity: maxCapacity,
+            max_capacity: Number(maxCapacity) || 12,
             single_class_price: singleClassPrice,
             is_recurring: classType === 'recurring',
             date: classType === 'single' ? singleDate : undefined,
@@ -341,7 +341,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
                   checked={classType === 'single'}
                   onChange={() => {
                     setClassType('single');
-                    if (scheduleMode === 'grid') setScheduleMode('manual');
+                    if (scheduleMode === 'grilla') setScheduleMode('manual');
                   }}
                   className="w-4 h-4 text-brand-olive focus:ring-brand-olive"
                 />

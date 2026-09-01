@@ -16,6 +16,7 @@ import { ClassSchedule, Profile, Booking, WaitlistEntry } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
 import { openWhatsApp, formatWhatsAppTemplate } from '../../utils/whatsapp';
 import { getBookingLink } from '../../utils/links';
+import { toISODateString } from '../../utils/date';
 
 interface ClassDetailModalProps {
   classItem: ClassSchedule | null;
