@@ -17,9 +17,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   onOpenQRPoster,
 }) => {
-  const { studio, profiles } = useStudioStore();
+  const { studio, profiles, currentUser } = useStudioStore();
   const [copied, setCopied] = React.useState(false);
   const adminProfile = profiles.find((p) => p.role === 'admin') || profiles[0];
+  const displayName = currentUser?.first_name || adminProfile?.first_name || 'Admin';
 
   const handleCopyLink = () => {
     const bookingUrl = getRegisterLink();
@@ -41,7 +42,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               Resumen y accesos rápidos para la gestión diaria de{' '}
-              <span className="text-brand-700">{adminProfile.first_name}</span>.
+              <span className="text-brand-700">{displayName}</span>.
             </h1>
           </div>
 
