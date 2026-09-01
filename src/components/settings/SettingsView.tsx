@@ -36,6 +36,10 @@ const COLOR_PRESETS = [
 
 const LOGO_PRESETS = [
   {
+    name: 'Logo Local (Recomendado)',
+    url: '/logo.png',
+  },
+  {
     name: 'Pilates Silueta',
     url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&auto=format&fit=crop&q=80',
   },

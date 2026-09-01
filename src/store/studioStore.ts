@@ -48,7 +48,7 @@ const initialStudio: Studio = {
   id: DEFAULT_STUDIO_ID,
   name: 'SERMOA App',
   slug: 'sermoa',
-  logo_url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=150&auto=format&fit=crop&q=80',
+  logo_url: '/logo.png',
   brand_colors: {
     primary: '#4d5d43',
     secondary: '#2d3827',
@@ -367,9 +367,9 @@ export function useStudioStore() {
       const instructor = state.profiles.find((p: Profile) => p.id === cls.instructor_id);
       const activity = state.activities.find((a: Activity) => a.id === cls.activity_id);
       const confirmedBookings = state.bookings.filter(
-        (b: Booking) => b.class_id === cls.id && b.status === 'confirmed'
+        (b: Booking) => b.class_id === cls.id && (b.status === 'confirmed' || b.status === 'attended')
       );
-      const waitlistCount = state.waitlist.filter((w: WaitlistEntry) => w.class_id === cls.id).length;
+      const waitlistEntries = state.waitlist.filter((w: WaitlistEntry) => w.class_id === cls.id);
 
       return {
         ...cls,
@@ -377,8 +377,10 @@ export function useStudioStore() {
         room,
         instructor,
         activity,
+        bookings: confirmedBookings,
+        waitlist: waitlistEntries,
         bookings_count: confirmedBookings.length,
-        waitlist_count: waitlistCount,
+        waitlist_count: waitlistEntries.length,
         is_full: confirmedBookings.length >= cls.max_capacity,
       };
     });
@@ -1058,6 +1060,19 @@ export function useStudioStore() {
         }))
       ).then(({ error }) => {
         if (error) console.error('Error insertando clases en Supabase:', error);
+      });
+    }
+  };
+
+  const updateClass = (id: string, updatedData: Partial<ClassSchedule>) => {
+    setState((prev: any) => ({
+      ...prev,
+      classes: prev.classes.map((c: ClassSchedule) => (c.id === id ? { ...c, ...updatedData } : c)),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('classes').update(updatedData).eq('id', id).then(({ error }) => {
+        if (error) console.error('Error actualizando clase en Supabase:', error);
       });
     }
   };
@@ -1753,6 +1768,7 @@ export function useStudioStore() {
     deleteBranch,
     createClass,
     createClassesBatch,
+    updateClass,
     deleteClass,
     bookClass,
     cancelBooking,

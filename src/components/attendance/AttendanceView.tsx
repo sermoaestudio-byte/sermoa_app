@@ -25,7 +25,7 @@ interface AttendanceViewProps {
 
 export const AttendanceView: React.FC<AttendanceViewProps> = ({ onNavigate }) => {
   const {
-    classes,
+    getEnrichedClasses,
     bookings,
     profiles,
     branches,
@@ -34,8 +34,13 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onNavigate }) =>
   } = useStudioStore();
 
   const todayStr = toISODateString(new Date());
-  const todayClasses = classes
-    .filter((c) => !c.is_cancelled && (c.date === todayStr || c.day_of_week === new Date().getDay()))
+  const todayClasses = getEnrichedClasses()
+    .filter((c) => {
+      if (c.is_cancelled) return false;
+      if (!c.is_recurring && c.date !== todayStr) return false;
+      if (c.is_recurring && c.day_of_week !== new Date().getDay()) return false;
+      return true;
+    })
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   const [selectedClassId, setSelectedClassId] = useState(todayClasses[0]?.id || '');
@@ -114,7 +119,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onNavigate }) =>
         <div className="flex items-center space-x-3 overflow-x-auto pb-3 mb-6 scrollbar-none">
           {todayClasses.map((cls) => {
             const isSelected = cls.id === currentClass?.id;
-            const clsBookings = bookings.filter((b) => b.class_id === cls.id);
+            const clsBookings = bookings.filter((b) => b.class_id === cls.id && b.booking_date === todayStr);
             const presentCount = clsBookings.filter((b) => b.status === 'attended').length;
 
             return (

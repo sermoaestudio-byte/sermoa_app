@@ -26,7 +26,7 @@ interface ClassCalendarProps {
   branches: Branch[];
   selectedBranchId: string;
   selectedActivityId: string;
-  onSelectClass: (classItem: any) => void;
+  onSelectClass: (classItem: any, dateStr: string) => void;
   onCreateClass: () => void;
 }
 
@@ -270,7 +270,11 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
             {weekDays.map((wd) => {
               const dIndex = wd.date.getDay();
               const dayClasses = filteredClasses
-                .filter((c) => c.day_of_week === dIndex)
+                .filter((c) => {
+                  if (c.day_of_week !== dIndex) return false;
+                  if (!c.is_recurring && c.date !== wd.dateStr) return false;
+                  return true;
+                })
                 .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
               const isToday = toISODateString(new Date()) === wd.dateStr;
@@ -299,13 +303,14 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   <div className="p-2 space-y-2.5 flex-1 min-h-[380px]">
                     {dayClasses.length > 0 ? (
                       dayClasses.map((cls) => {
-                        const enrolledCount = cls.bookings?.filter((b: any) => b.status === 'confirmed').length || 0;
+                        const cellDateStr = wd.dateStr;
+                        const enrolledCount = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === cellDateStr || !b.booking_date)).length || 0;
                         const isFull = enrolledCount >= cls.max_capacity;
 
                         return (
                           <div
                             key={cls.id}
-                            onClick={() => onSelectClass(cls)}
+                            onClick={() => onSelectClass(cls, cellDateStr)}
                             className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-pointer group text-left relative overflow-hidden"
                           >
                             {/* Color Accent Bar */}
@@ -384,15 +389,25 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
             </div>
             <div className="text-right">
               <span className="text-xs font-extrabold text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-xl">
-                {filteredClasses.filter((c) => c.day_of_week === selectedDateDaily.getDay()).length} clases programadas
+                {filteredClasses.filter((c) => {
+                  if (c.day_of_week !== selectedDateDaily.getDay()) return false;
+                  const dateStr = toISODateString(selectedDateDaily);
+                  if (!c.is_recurring && c.date !== dateStr) return false;
+                  return true;
+                }).length} clases programadas
               </span>
             </div>
           </div>
 
           {/* Timeline List of Classes for Selected Day */}
           {(() => {
+            const dateStr = toISODateString(selectedDateDaily);
             const dayClasses = filteredClasses
-              .filter((c) => c.day_of_week === selectedDateDaily.getDay())
+              .filter((c) => {
+                if (c.day_of_week !== selectedDateDaily.getDay()) return false;
+                if (!c.is_recurring && c.date !== dateStr) return false;
+                return true;
+              })
               .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
             if (dayClasses.length === 0) {
@@ -413,7 +428,7 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
             return (
               <div className="space-y-3">
                 {dayClasses.map((cls) => {
-                  const enrolled = cls.bookings?.filter((b: any) => b.status === 'confirmed') || [];
+                  const enrolled = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === dateStr || !b.booking_date)) || [];
                   const enrolledCount = enrolled.length;
                   const isFull = enrolledCount >= cls.max_capacity;
                   const fillPercentage = Math.min(100, Math.round((enrolledCount / cls.max_capacity) * 100));
@@ -421,7 +436,7 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   return (
                     <div
                       key={cls.id}
-                      onClick={() => onSelectClass(cls)}
+                      onClick={() => onSelectClass(cls, dateStr)}
                       className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group"
                     >
                       {/* Left: Time & Class Info */}
@@ -543,14 +558,16 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                     {tableData.map((cls) => {
-                      const enrolledCount = cls.bookings?.filter((b: any) => b.status === 'confirmed').length || 0;
+                      const nextOccurrence = getNextOccurrenceStr(cls);
+                      const enrolled = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === nextOccurrence || !b.booking_date)) || [];
+                      const enrolledCount = enrolled.length;
                       const isFull = enrolledCount >= cls.max_capacity;
 
                       return (
                         <tr
                           key={cls.id}
-                          onClick={() => onSelectClass(cls)}
-                          className="hover:bg-slate-50/80 transition-colors cursor-pointer"
+                          onClick={() => onSelectClass(cls, nextOccurrence)}
+                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4 font-black text-slate-900">
                             {daysLabels[cls.day_of_week]}

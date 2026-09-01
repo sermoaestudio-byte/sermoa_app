@@ -93,7 +93,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
   // Fields for Grilla & Por Rango
   const [commonTitle, setCommonTitle] = useState('Pilates Reformer');
   const [commonDescription, setCommonDescription] = useState('');
-  const [classDurationMinutes, setClassDurationMinutes] = useState(60);
+  const [classDurationMinutes, setClassDurationMinutes] = useState<number | ''>(60);
   const [intervalStep, setIntervalStep] = useState('1 Hora');
 
   // Grilla state: matrix of selected [dayIndex-hourString]
@@ -122,7 +122,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
   ]);
 
   // 6. Capacidad, Créditos y Tarifario
-  const [maxCapacity, setMaxCapacity] = useState(12);
+  const [maxCapacity, setMaxCapacity] = useState<number | ''>(12);
   const [creditCost, setCreditCost] = useState(1.0);
   const [singleClassPrice, setSingleClassPrice] = useState<number>(6500);
   const [allowPrivateBookings, setAllowPrivateBookings] = useState(false);
@@ -203,7 +203,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
 
         // Compute end time based on duration
         const [h, m] = start.split(':').map(Number);
-        const endMinutes = h * 60 + m + classDurationMinutes;
+        const endMinutes = h * 60 + m + (Number(classDurationMinutes) || 60);
         const endH = String(Math.floor(endMinutes / 60)).padStart(2, '0');
         const endM = String(endMinutes % 60).padStart(2, '0');
         const end = `${endH}:${endM}`;
@@ -231,13 +231,14 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
       const startTotal = startH * 60 + startM;
       const endTotal = endH * 60 + endM;
 
-      const days = classType === 'single' ? [new Date(singleDate).getDay()] : selectedDays;
+      const days = classType === 'single' ? [new Date(singleDate + 'T12:00:00').getDay()] : selectedDays;
 
-      for (let curr = startTotal; curr + classDurationMinutes <= endTotal; curr += classDurationMinutes) {
+      const duration = Number(classDurationMinutes) || 60;
+      for (let curr = startTotal; curr + duration <= endTotal; curr += duration) {
         const slotStartH = String(Math.floor(curr / 60)).padStart(2, '0');
         const slotStartM = String(curr % 60).padStart(2, '0');
-        const slotEndH = String(Math.floor((curr + classDurationMinutes) / 60)).padStart(2, '0');
-        const slotEndM = String((curr + classDurationMinutes) % 60).padStart(2, '0');
+        const slotEndH = String(Math.floor((curr + duration) / 60)).padStart(2, '0');
+        const slotEndM = String((curr + duration) % 60).padStart(2, '0');
 
         const start = `${slotStartH}:${slotStartM}`;
         const end = `${slotEndH}:${slotEndM}`;
@@ -252,7 +253,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
             day_of_week: dIndex,
             start_time: start,
             end_time: end,
-            max_capacity: maxCapacity,
+            max_capacity: Number(maxCapacity) || 12,
             single_class_price: singleClassPrice,
             is_recurring: classType === 'recurring',
             date: classType === 'single' ? singleDate : undefined,
@@ -262,7 +263,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
       }
     } else {
       // Manual slots across selected days
-      const days = classType === 'single' ? [new Date(singleDate).getDay()] : selectedDays;
+      const days = classType === 'single' ? [new Date(singleDate + 'T12:00:00').getDay()] : selectedDays;
 
       for (const slot of manualSlots) {
         for (const dIndex of days) {
@@ -338,7 +339,10 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
                   name="classType"
                   value="single"
                   checked={classType === 'single'}
-                  onChange={() => setClassType('single')}
+                  onChange={() => {
+                    setClassType('single');
+                    if (scheduleMode === 'grid') setScheduleMode('manual');
+                  }}
                   className="w-4 h-4 text-brand-olive focus:ring-brand-olive"
                 />
                 <span>Clase Única</span>
@@ -581,7 +585,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
                       max="180"
                       step="5"
                       value={classDurationMinutes}
-                      onChange={(e) => setClassDurationMinutes(Number(e.target.value))}
+                      onChange={(e) => setClassDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
                     />
                   </div>
@@ -841,7 +845,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
               max="100"
               required
               value={maxCapacity}
-              onChange={(e) => setMaxCapacity(Number(e.target.value))}
+              onChange={(e) => setMaxCapacity(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>

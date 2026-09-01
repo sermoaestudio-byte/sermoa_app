@@ -18,6 +18,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedActivityId, setSelectedActivityId] = useState('');
   const [selectedClass, setSelectedClass] = useState<ClassSchedule | null>(null);
+  const [selectedClassDate, setSelectedClassDate] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
@@ -117,7 +118,10 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
           branches={branches}
           selectedBranchId={selectedBranchId}
           selectedActivityId={selectedActivityId}
-          onSelectClass={(cls) => setSelectedClass(cls)}
+          onSelectClass={(cls, dateStr) => {
+            setSelectedClass(cls);
+            setSelectedClassDate(dateStr);
+          }}
           onCreateClass={() => setShowCreateModal(true)}
         />
 
@@ -125,6 +129,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
         {selectedClass && (
           <ClassDetailModal
             classItem={selectedClass}
+            selectedDate={selectedClassDate}
             onClose={() => setSelectedClass(null)}
           />
         )}

@@ -19,10 +19,11 @@ import { getBookingLink } from '../../utils/links';
 
 interface ClassDetailModalProps {
   classItem: ClassSchedule | null;
+  selectedDate?: string;
   onClose: () => void;
 }
 
-export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, onClose }) => {
+export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, selectedDate, onClose }) => {
   const {
     bookings,
     waitlist,
@@ -32,18 +33,26 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
     bookClass,
     cancelBooking,
     deleteClass,
+    updateClass,
+    getEnrichedClasses,
   } = useStudioStore();
+
+  const currentClass = getEnrichedClasses().find(c => c.id === classItem?.id) || classItem;
 
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [showAddStudent, setShowAddStudent] = useState(false);
+  const [isEditingInstructor, setIsEditingInstructor] = useState(false);
+  const [selectedInstructorId, setSelectedInstructorId] = useState(currentClass?.instructor_id || '');
 
-  if (!classItem) return null;
+  if (!currentClass) return null;
+
+  const targetDate = selectedDate || toISODateString(new Date());
 
   const classBookings = bookings.filter(
-    (b: Booking) => b.class_id === classItem.id && b.status === 'confirmed'
+    (b: Booking) => b.class_id === currentClass.id && b.status === 'confirmed' && (b.booking_date === targetDate || !b.booking_date)
   );
   const classWaitlist = waitlist
-    .filter((w: WaitlistEntry) => w.class_id === classItem.id && w.status === 'waiting')
+    .filter((w: WaitlistEntry) => w.class_id === currentClass.id && w.status === 'waiting' && (w.request_date === targetDate || !w.request_date))
     .sort((a, b) => a.position - b.position);
 
   const availableStudents = profiles.filter(
@@ -55,7 +64,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
 
   const handleAddStudent = () => {
     if (!selectedStudentId) return;
-    const res = bookClass(classItem.id, selectedStudentId);
+    const res = bookClass(currentClass.id, selectedStudentId, targetDate);
     if (res.success) {
       setSelectedStudentId('');
       setShowAddStudent(false);
@@ -69,9 +78,9 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
     if (tpl && student.phone) {
       const msg = formatWhatsAppTemplate(tpl.template_text, {
         nombre: student.first_name,
-        clase: classItem.title,
-        horario: classItem.start_time,
-        sede: classItem.branch?.name || '',
+        clase: currentClass.title,
+        horario: currentClass.start_time,
+        sede: currentClass.branch?.name || '',
         link: getBookingLink(studio.slug),
       });
       openWhatsApp(student.phone, msg);
@@ -87,27 +96,56 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
           <div>
             <span
               className="text-xs font-extrabold px-2.5 py-0.5 rounded-full text-white inline-block mb-1.5 shadow-xs"
-              style={{ backgroundColor: classItem.activity?.color || classItem.color }}
+              style={{ backgroundColor: currentClass.activity?.color || currentClass.color }}
             >
-              {classItem.activity?.name || 'Clase'}
+              {currentClass.activity?.name || 'Clase'}
             </span>
-            <h3 className="text-xl font-extrabold text-slate-900">{classItem.title}</h3>
+            <h3 className="text-xl font-extrabold text-slate-900">{currentClass.title}</h3>
             <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500 font-medium">
               <span className="flex items-center space-x-1">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 <span className="font-bold text-slate-700">
-                  {classItem.start_time} - {classItem.end_time} hs
+                  {currentClass.start_time} - {currentClass.end_time} hs
                 </span>
               </span>
               <span>•</span>
               <span className="flex items-center space-x-1">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>{classItem.branch?.name} ({classItem.room?.name})</span>
+                <span>{currentClass.branch?.name} ({currentClass.room?.name})</span>
               </span>
               <span>•</span>
-              <span className="font-bold text-slate-700">
-                Prof: {classItem.instructor?.first_name} {classItem.instructor?.last_name}
-              </span>
+              {isEditingInstructor ? (
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-slate-700">Prof:</span>
+                  <select
+                    value={selectedInstructorId}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      setSelectedInstructorId(newId);
+                      updateClass(currentClass.id, { instructor_id: newId });
+                      setIsEditingInstructor(false);
+                    }}
+                    onBlur={() => setIsEditingInstructor(false)}
+                    autoFocus
+                    className="text-xs bg-white border border-slate-200 rounded px-1 py-0.5"
+                  >
+                    {profiles.filter(p => p.role === 'instructor' || p.role === 'admin').map(p => (
+                      <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <span 
+                  className="font-bold text-slate-700 cursor-pointer hover:text-brand-600 transition-colors"
+                  onClick={() => {
+                    setSelectedInstructorId(currentClass.instructor_id);
+                    setIsEditingInstructor(true);
+                  }}
+                  title="Click para cambiar profesor"
+                >
+                  Prof: {currentClass.instructor?.first_name} {currentClass.instructor?.last_name}
+                </span>
+              )}
             </div>
           </div>
 
@@ -127,8 +165,8 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
                 <h4 className="font-extrabold text-slate-800 text-sm">Alumnos Inscriptos</h4>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  {classBookings.length} / {classItem.max_capacity} cupos
+                <span className="text-slate-500 font-medium">
+                  {classBookings.length} / {currentClass.max_capacity} inscritos
                 </span>
               </div>
 
@@ -284,7 +322,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, o
           <button
             onClick={() => {
               if (window.confirm('¿Estás seguro de eliminar esta clase? Se cancelarán todas las reservas asociadas.')) {
-                deleteClass(classItem.id);
+                deleteClass(currentClass.id);
                 onClose();
               }
             }}
