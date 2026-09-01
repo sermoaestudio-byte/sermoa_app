@@ -73,18 +73,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
               className="flex items-center space-x-2.5 group focus:outline-none shrink-0"
             >
               <div className="w-9 h-9 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-emerald-600 flex items-center justify-center text-white font-black text-base shadow-md shadow-brand-600/20 group-hover:scale-105 transition-transform border border-slate-100/60">
-                {studio.logo_url ? (
-                  <img src={studio.logo_url} alt={studio.name} className="w-full h-full object-cover" />
+                {studio.logo_url || '/logo.png' ? (
+                  <img src={studio.logo_url || '/logo.png'} alt={studio.name} className="w-full h-full object-cover" />
                 ) : (
                   <span>{studio.name?.[0] || 'S'}</span>
                 )}
               </div>
               <div className="text-left">
                 <span className="font-black text-slate-900 text-base tracking-tight block leading-none">
-                  {studio.name || 'SERMOA'}<span className="text-brand-600">.app</span>
+                  {studio.name || 'Sermoa'}
                 </span>
                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
-                  Estudio Propio
+                  Más movimiento, más vida
                 </span>
               </div>
             </button>

@@ -46,7 +46,7 @@ const DEFAULT_ADMIN_ID = '33333333-3333-4333-8333-333333333333';
 
 const initialStudio: Studio = {
   id: DEFAULT_STUDIO_ID,
-  name: 'SERMOA App',
+  name: 'Sermoa',
   slug: 'sermoa',
   logo_url: '/logo.png',
   brand_colors: {
