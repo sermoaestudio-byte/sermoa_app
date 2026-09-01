@@ -124,7 +124,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
   // 6. Capacidad, Créditos y Tarifario
   const [maxCapacity, setMaxCapacity] = useState<number | ''>(12);
   const [creditCost, setCreditCost] = useState(1.0);
-  const [singleClassPrice, setSingleClassPrice] = useState<number>(6500);
+  const [singleClassPrice, setSingleClassPrice] = useState<number | ''>('');
   const [allowPrivateBookings, setAllowPrivateBookings] = useState(false);
   const [allowCustomBookings, setAllowCustomBookings] = useState(false);
 
@@ -218,7 +218,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
           start_time: start,
           end_time: end,
           max_capacity: Number(maxCapacity) || 12,
-          single_class_price: singleClassPrice,
+          single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
           is_recurring: true,
           color,
         });
@@ -254,7 +254,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
             start_time: start,
             end_time: end,
             max_capacity: Number(maxCapacity) || 12,
-            single_class_price: singleClassPrice,
+            single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
             is_recurring: classType === 'recurring',
             date: classType === 'single' ? singleDate : undefined,
             color,
@@ -277,7 +277,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
             start_time: slot.startTime,
             end_time: slot.endTime,
             max_capacity: Number(maxCapacity) || 12,
-            single_class_price: singleClassPrice,
+            single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
             is_recurring: classType === 'recurring',
             date: classType === 'single' ? singleDate : undefined,
             color,
@@ -883,12 +883,14 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
                     $
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="100"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="Ej: 6500"
                     value={singleClassPrice}
-                    onChange={(e) => setSingleClassPrice(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setSingleClassPrice(val ? Number(val) : '');
+                    }}
                     className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
