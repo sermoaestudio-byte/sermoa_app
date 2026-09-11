@@ -1081,11 +1081,8 @@ export function useStudioStore() {
           end_time: c.end_time,
           date: c.date,
           max_capacity: c.max_capacity,
-          credit_cost: c.credit_cost,
-          single_class_price: c.single_class_price,
           is_recurring: c.is_recurring,
           color: c.color,
-          is_active: true,
         }))
       ).then(({ error }) => {
         if (error) console.error('Error insertando clases en Supabase:', error);
