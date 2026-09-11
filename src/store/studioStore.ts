@@ -79,7 +79,7 @@ const initialBranches: Branch[] = [];
 
 const initialActivities: Activity[] = [
   {
-    id: generateUUID(),
+    id: 'c356fc39-50c5-430c-ab9e-a894a46a6f44',
     studio_id: DEFAULT_STUDIO_ID,
     name: 'Pilates Reformer',
     description: 'Trabajo integral de tonificación, postura y flexibilidad en reformer.',
@@ -87,7 +87,7 @@ const initialActivities: Activity[] = [
     default_duration_minutes: 60,
   },
   {
-    id: generateUUID(),
+    id: 'a57161b3-40e9-4e00-bf6c-674cd78a483e',
     studio_id: DEFAULT_STUDIO_ID,
     name: 'Yoga Vinyasa Flow',
     description: 'Fluidez, respiración consciente y fuerza postural.',
@@ -95,7 +95,7 @@ const initialActivities: Activity[] = [
     default_duration_minutes: 60,
   },
   {
-    id: generateUUID(),
+    id: 'b23cd7c3-3f19-4a30-8439-d3e9816f1c4e',
     studio_id: DEFAULT_STUDIO_ID,
     name: 'Entrenamiento Funcional',
     description: 'Circuitos de fuerza, estabilidad y capacidad cardiovascular.',
