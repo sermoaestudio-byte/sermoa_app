@@ -345,6 +345,32 @@ async function syncFromSupabase() {
   }
 }
 
+let realtimeInitialized = false;
+
+function setupRealtimeSubscriptions() {
+  if (!isSupabaseConfigured || realtimeInitialized) return;
+  realtimeInitialized = true;
+
+  const handleTableChange = async (table: string, stateKey: string) => {
+    const { data } = await supabase.from(table).select('*');
+    if (data) {
+      setState((prev: any) => ({ ...prev, [stateKey]: data }));
+    }
+  };
+
+  supabase.channel('public:classes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, () => handleTableChange('classes', 'classes'))
+    .subscribe();
+
+  supabase.channel('public:bookings')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => handleTableChange('bookings', 'bookings'))
+    .subscribe();
+
+  supabase.channel('public:waitlist')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'waitlist' }, () => handleTableChange('waitlist', 'waitlist'))
+    .subscribe();
+}
+
 // React Hook
 export function useStudioStore() {
   const syncStore = useSyncExternalStore(
@@ -357,6 +383,7 @@ export function useStudioStore() {
 
   useEffect(() => {
     syncFromSupabase();
+    setupRealtimeSubscriptions();
   }, []);
 
   // Computed Getters
