@@ -10,7 +10,9 @@ import {
   MessageCircle,
   AlertCircle,
   CheckCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  Pencil,
+  Save
 } from 'lucide-react';
 import { ClassSchedule, Profile, Booking, WaitlistEntry } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
@@ -30,6 +32,8 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
     waitlist,
     profiles,
     studio,
+    branches,
+    activities,
     whatsappTemplates,
     bookClass,
     cancelBooking,
@@ -44,6 +48,14 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [isEditingInstructor, setIsEditingInstructor] = useState(false);
   const [selectedInstructorId, setSelectedInstructorId] = useState(currentClass?.instructor_id || '');
+  
+  const [isEditingClass, setIsEditingClass] = useState(false);
+  const [editData, setEditData] = useState({
+    title: currentClass?.title || '',
+    max_capacity: currentClass?.max_capacity || 12,
+    start_time: currentClass?.start_time || '',
+    end_time: currentClass?.end_time || '',
+  });
 
   if (!currentClass) return null;
 
@@ -53,7 +65,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
     (b: Booking) => b.class_id === currentClass.id && b.status === 'confirmed' && (b.booking_date === targetDate || !b.booking_date)
   );
   const classWaitlist = waitlist
-    .filter((w: WaitlistEntry) => w.class_id === currentClass.id && w.status === 'waiting' && (w.request_date === targetDate || !w.request_date))
+    .filter((w: WaitlistEntry) => w.class_id === currentClass.id && (w.status === 'waiting' || w.status === 'pending_confirmation') && (w.request_date === targetDate || !w.request_date))
     .sort((a, b) => a.position - b.position);
 
   const availableStudents = profiles.filter(
@@ -150,16 +162,86 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsEditingClass(!isEditingClass)}
+              className={`p-2 rounded-full transition-colors ${
+                isEditingClass ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              }`}
+              title="Editar Clase"
+            >
+              <Pencil className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Body */}
         <div className="p-6 space-y-6 flex-1">
+          {isEditingClass ? (
+            <div className="space-y-4 animate-fade-in">
+              <h4 className="font-extrabold text-slate-800 text-sm border-b border-slate-100 pb-2">Configuración de la Clase</h4>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Título / Descripción</label>
+                  <input
+                    type="text"
+                    value={editData.title}
+                    onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Capacidad Máxima (Alumnos)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editData.max_capacity}
+                    onChange={(e) => setEditData({ ...editData, max_capacity: Number(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Hora de Inicio</label>
+                  <input
+                    type="time"
+                    value={editData.start_time}
+                    onChange={(e) => setEditData({ ...editData, start_time: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Hora de Fin</label>
+                  <input
+                    type="time"
+                    value={editData.end_time}
+                    onChange={(e) => setEditData({ ...editData, end_time: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-slate-100">
+                <button
+                  onClick={() => {
+                    updateClass(currentClass.id, editData);
+                    setIsEditingClass(false);
+                  }}
+                  className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center space-x-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Guardar Cambios</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           
           {/* Enrolled Students Section */}
           <div>
@@ -254,7 +336,11 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
                         <button
                           onClick={() => {
                             if (window.confirm(`¿Cancelar la reserva de ${student.first_name}? Se le reembolsará el crédito.`)) {
-                              cancelBooking(b.id);
+                              const res = cancelBooking(b.id);
+                              if (res.promotedUser && res.waitlistEntry) {
+                                const confirmLink = `${window.location.origin}/portal?action=confirm_waitlist&waitlist_id=${res.waitlistEntry.id}`;
+                                alert(`[SIMULACIÓN WHATSAPP]\n\nMensaje enviado a ${res.promotedUser.first_name}:\n"¡Hola! Se liberó un turno que estabas esperando. Haz clic aquí para confirmar tu asistencia: ${confirmLink}"`);
+                              }
                             }
                           }}
                           className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
@@ -287,7 +373,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
               </p>
             ) : (
               <div className="space-y-2">
-                {classWaitlist.map((w) => {
+                {classWaitlist.map((w, index) => {
                   const student = profiles.find((p) => p.id === w.student_id);
                   if (!student) return null;
 
@@ -298,7 +384,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
                     >
                       <div className="flex items-center space-x-3">
                         <span className="w-6 h-6 rounded-full bg-amber-200 text-amber-900 font-extrabold text-xs flex items-center justify-center">
-                          #{w.position}
+                          #{index + 1}
                         </span>
                         <div>
                           <div className="font-bold text-xs text-slate-800">
@@ -315,6 +401,8 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
               </div>
             )}
           </div>
+          </>
+          )}
 
         </div>
 

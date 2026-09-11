@@ -369,7 +369,9 @@ export function useStudioStore() {
       const confirmedBookings = state.bookings.filter(
         (b: Booking) => b.class_id === cls.id && (b.status === 'confirmed' || b.status === 'attended')
       );
-      const waitlistEntries = state.waitlist.filter((w: WaitlistEntry) => w.class_id === cls.id);
+      const waitlistEntries = state.waitlist.filter((w: WaitlistEntry) => 
+        w.class_id === cls.id && (w.status === 'waiting' || w.status === 'pending_confirmation')
+      ).sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position);
 
       return {
         ...cls,
@@ -1016,7 +1018,7 @@ export function useStudioStore() {
       id: generateUUID(),
       studio_id: state.studio.id,
       branch_id: nc.branch_id || state.branches[0]?.id || DEFAULT_BRANCH_ID,
-      room_id: nc.room_id || state.branches[0]?.rooms[0]?.id,
+      room_id: nc.room_id || state.branches[0]?.rooms?.[0]?.id,
       activity_id: nc.activity_id || state.activities[0]?.id,
       instructor_id: nc.instructor_id || state.profiles[0]?.id,
       title: nc.title || 'Nueva Clase',
@@ -1092,12 +1094,59 @@ export function useStudioStore() {
     }
   };
 
-  const bookClass = (classId: string, studentId: string, bookingDate: string = todayStr): { success: boolean; isWaitlist: boolean; message: string } => {
+  const bookClass = (classId: string, studentId: string, bookingDate: string = todayStr, isAnyTime: boolean = false): { success: boolean; isWaitlist: boolean; message: string } => {
     const student = state.profiles.find((p: Profile) => p.id === studentId);
+    
+    if (!student) {
+      return { success: false, isWaitlist: false, message: 'Datos de estudiante inválidos.' };
+    }
+
+    if (isAnyTime || classId === 'ANY_TIME') {
+      // General waitlist logic
+      const waitlistId = generateUUID();
+      const waitlistEntry: WaitlistEntry = {
+        id: waitlistId,
+        studio_id: state.studio.id,
+        class_id: 'ANY_TIME',
+        student_id: studentId,
+        request_date: bookingDate,
+        position: state.waitlist.filter((w: WaitlistEntry) => w.class_id === 'ANY_TIME' && w.request_date === bookingDate).length + 1,
+        status: 'waiting',
+        any_time: true,
+        created_at: new Date().toISOString(),
+      };
+
+      setState((prev: any) => ({
+        ...prev,
+        waitlist: [...prev.waitlist, waitlistEntry],
+      }));
+
+      if (isSupabaseConfigured) {
+        supabase.from('waitlist').insert({
+          id: waitlistId,
+          studio_id: state.studio.id,
+          class_id: 'ANY_TIME',
+          student_id: studentId,
+          request_date: bookingDate,
+          position: waitlistEntry.position,
+          status: 'waiting',
+          any_time: true,
+        }).then(({ error }) => {
+          if (error) console.error('Error insertando en waitlist general de Supabase:', error);
+        });
+      }
+
+      return {
+        success: true,
+        isWaitlist: true,
+        message: '¡Añadido a la lista de espera general con éxito! Te avisaremos si se libera algún lugar.',
+      };
+    }
+
     const classSchedule = state.classes.find((c: ClassSchedule) => c.id === classId);
 
-    if (!student || !classSchedule) {
-      return { success: false, isWaitlist: false, message: 'Datos inválidos.' };
+    if (!classSchedule) {
+      return { success: false, isWaitlist: false, message: 'Clase no encontrada.' };
     }
 
     // Check if already booked
@@ -1111,9 +1160,24 @@ export function useStudioStore() {
     const currentBookings = state.bookings.filter(
       (b: Booking) => b.class_id === classId && b.booking_date === bookingDate && b.status === 'confirmed'
     );
+    
+    const activeWaitlist = state.waitlist
+      .filter((w: WaitlistEntry) => w.class_id === classId && w.request_date === bookingDate && w.status !== 'promoted' && w.status !== 'rejected')
+      .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position);
 
-    // If Class is Full -> Add to Waitlist
-    if (currentBookings.length >= classSchedule.max_capacity) {
+    const studentWaitlistIndex = activeWaitlist.findIndex((w: WaitlistEntry) => w.student_id === studentId);
+    const isUserWaitlisted = studentWaitlistIndex !== -1;
+    const availableSpots = Math.max(0, classSchedule.max_capacity - currentBookings.length);
+    
+    const isFullForUser = isUserWaitlisted 
+      ? studentWaitlistIndex >= availableSpots 
+      : availableSpots <= activeWaitlist.length;
+
+    // If Class is Full for this user -> Add to Waitlist (if not already there)
+    if (isFullForUser) {
+      if (isUserWaitlisted) {
+        return { success: false, isWaitlist: true, message: 'Ya estás en la lista de espera.' };
+      }
       const waitlistId = generateUUID();
       const waitlistEntry: WaitlistEntry = {
         id: waitlistId,
@@ -1121,8 +1185,9 @@ export function useStudioStore() {
         class_id: classId,
         student_id: studentId,
         request_date: bookingDate,
-        position: state.waitlist.filter((w: WaitlistEntry) => w.class_id === classId).length + 1,
+        position: state.waitlist.filter((w: WaitlistEntry) => w.class_id === classId && w.request_date === bookingDate).length + 1,
         status: 'waiting',
+        any_time: false,
         created_at: new Date().toISOString(),
       };
 
@@ -1140,6 +1205,7 @@ export function useStudioStore() {
           request_date: bookingDate,
           position: waitlistEntry.position,
           status: 'waiting',
+          any_time: false,
         }).then(({ error }) => {
           if (error) console.error('Error insertando en waitlist de Supabase:', error);
         });
@@ -1181,26 +1247,31 @@ export function useStudioStore() {
       profiles: prev.profiles.map((p: Profile) =>
         p.id === studentId ? { ...p, credits_balance: newCredits } : p
       ),
+      waitlist: prev.waitlist.map((w: WaitlistEntry) =>
+        w.class_id === classId && w.student_id === studentId && w.request_date === bookingDate && (w.status === 'waiting' || w.status === 'pending_confirmation')
+          ? { ...w, status: 'promoted' }
+          : w
+      ),
     }));
 
     if (isSupabaseConfigured) {
-      supabase.from('bookings').insert({
-        id: bookingId,
-        studio_id: state.studio.id,
-        class_id: classId,
-        student_id: studentId,
-        booking_date: bookingDate,
-        start_time: classSchedule.start_time,
-        status: 'confirmed',
-      }).then(({ error }) => {
-        if (error) console.error('Error insertando reserva en Supabase:', error);
+      supabase.from('bookings').insert(newBooking).then(({ error }) => {
+        if (error) console.error('Error insertando booking en Supabase:', error);
       });
-
-      supabase.from('profiles').update({
-        credits_balance: newCredits,
-      }).eq('id', studentId).then(({ error }) => {
-        if (error) console.error('Error actualizando créditos en Supabase:', error);
+      supabase.from('profiles').update({ credits_balance: newCredits }).eq('id', studentId).then(({ error }) => {
+        if (error) console.error('Error actualizando perfil en Supabase:', error);
       });
+      if (isUserWaitlisted) {
+        supabase.from('waitlist')
+          .update({ status: 'promoted' })
+          .eq('class_id', classId)
+          .eq('student_id', studentId)
+          .eq('request_date', bookingDate)
+          .in('status', ['waiting', 'pending_confirmation'])
+          .then(({ error }) => {
+            if (error) console.error('Error actualizando waitlist status en Supabase:', error);
+          });
+      }
     }
 
     return {
@@ -1210,13 +1281,32 @@ export function useStudioStore() {
     };
   };
 
-  const cancelBooking = (bookingId: string) => {
+  const cancelBooking = (bookingId: string): { success: boolean; promotedUser?: any; classDate?: string; classSchedule?: ClassSchedule } => {
     const booking = state.bookings.find((b: Booking) => b.id === bookingId);
-    if (!booking) return;
+    if (!booking) return { success: false };
 
     // Refund credit
     const student = state.profiles.find((p: Profile) => p.id === booking.student_id);
     const restoredCredits = (student?.credits_balance || 0) + 1;
+
+    // Waitlist logic:
+    // 1. Check specific class waitlist
+    let promotedWaitlist = state.waitlist
+      .filter((w: WaitlistEntry) => w.class_id === booking.class_id && w.request_date === booking.booking_date && w.status === 'waiting' && !w.any_time)
+      .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+
+    // 2. Check general waitlist
+    if (!promotedWaitlist) {
+      promotedWaitlist = state.waitlist
+        .filter((w: WaitlistEntry) => w.any_time && w.request_date === booking.booking_date && w.status === 'waiting')
+        .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+    }
+
+    const expiresAt = new Date(Date.now() + 30 * 60000).toISOString();
+
+    const waitlistUpdates = promotedWaitlist 
+      ? state.waitlist.map((w: WaitlistEntry) => w.id === promotedWaitlist.id ? { ...w, status: 'pending_confirmation', expires_at: expiresAt } : w)
+      : state.waitlist;
 
     setState((prev: any) => ({
       ...prev,
@@ -1226,6 +1316,7 @@ export function useStudioStore() {
       profiles: prev.profiles.map((p: Profile) =>
         p.id === booking.student_id ? { ...p, credits_balance: restoredCredits } : p
       ),
+      waitlist: waitlistUpdates,
     }));
 
     if (isSupabaseConfigured) {
@@ -1240,7 +1331,156 @@ export function useStudioStore() {
       }).eq('id', booking.student_id).then(({ error }) => {
         if (error) console.error('Error restaurando créditos en Supabase:', error);
       });
+
+      if (promotedWaitlist) {
+        supabase.from('waitlist').update({
+          status: 'pending_confirmation',
+          expires_at: expiresAt
+        }).eq('id', promotedWaitlist.id).then(({ error }) => {
+          if (error) console.error('Error actualizando waitlist en Supabase:', error);
+        });
+      }
     }
+
+    if (promotedWaitlist) {
+      const promotedStudent = state.profiles.find((p: Profile) => p.id === promotedWaitlist.id || p.id === promotedWaitlist?.student_id);
+      const classSchedule = state.classes.find((c: ClassSchedule) => c.id === booking.class_id);
+      return { success: true, promotedUser: promotedStudent, classDate: booking.booking_date, classSchedule, waitlistEntry: promotedWaitlist };
+    }
+
+    return { success: true };
+  };
+
+  const processWaitlistResponse = (waitlistId: string, accept: boolean) => {
+    const entry = state.waitlist.find((w: WaitlistEntry) => w.id === waitlistId);
+    if (!entry) return { success: false };
+
+    if (accept) {
+      // Create booking
+      const bookingId = generateUUID();
+      const newBooking: Booking = {
+        id: bookingId,
+        studio_id: state.studio.id,
+        class_id: entry.class_id,
+        student_id: entry.student_id,
+        booking_date: entry.request_date,
+        status: 'confirmed',
+        created_at: new Date().toISOString(),
+      };
+
+      const student = state.profiles.find((p: Profile) => p.id === entry.student_id);
+      const newCredits = Math.max(0, (student?.credits_balance || 0) - 1);
+
+      setState((prev: any) => ({
+        ...prev,
+        bookings: [...prev.bookings, newBooking],
+        profiles: prev.profiles.map((p: Profile) => p.id === entry.student_id ? { ...p, credits_balance: newCredits } : p),
+        waitlist: prev.waitlist.map((w: WaitlistEntry) => w.id === waitlistId ? { ...w, status: 'promoted', promoted_at: new Date().toISOString(), expires_at: undefined, missed_confirmation: false } : w)
+      }));
+
+      if (isSupabaseConfigured) {
+        supabase.from('bookings').insert(newBooking).then(({ error }) => {
+          if (error) console.error('Error creating booking from waitlist:', error);
+        });
+        supabase.from('profiles').update({ credits_balance: newCredits }).eq('id', entry.student_id).then();
+        supabase.from('waitlist').update({ status: 'promoted', promoted_at: new Date().toISOString(), expires_at: null, missed_confirmation: false }).eq('id', waitlistId).then();
+      }
+      return { success: true };
+    } else {
+      // Reject and find next
+      setState((prev: any) => ({
+        ...prev,
+        waitlist: prev.waitlist.map((w: WaitlistEntry) => w.id === waitlistId ? { ...w, status: 'rejected' } : w)
+      }));
+
+      if (isSupabaseConfigured) {
+        supabase.from('waitlist').update({ status: 'rejected' }).eq('id', waitlistId).then();
+      }
+
+      // Recursively find next person
+      let nextWaitlist = state.waitlist
+        .filter((w: WaitlistEntry) => w.id !== waitlistId && w.class_id === entry.class_id && w.request_date === entry.request_date && w.status === 'waiting' && !w.any_time)
+        .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+
+      if (!nextWaitlist) {
+        nextWaitlist = state.waitlist
+          .filter((w: WaitlistEntry) => w.id !== waitlistId && w.any_time && w.request_date === entry.request_date && w.status === 'waiting')
+          .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+      }
+
+      if (nextWaitlist) {
+        const nextExpiresAt = new Date(Date.now() + 30 * 60000).toISOString();
+        setState((prev: any) => ({
+          ...prev,
+          waitlist: prev.waitlist.map((w: WaitlistEntry) => w.id === nextWaitlist.id ? { ...w, status: 'pending_confirmation', expires_at: nextExpiresAt } : w)
+        }));
+        if (isSupabaseConfigured) {
+          supabase.from('waitlist').update({ status: 'pending_confirmation', expires_at: nextExpiresAt }).eq('id', nextWaitlist.id).then();
+        }
+        
+        const nextStudent = state.profiles.find((p: Profile) => p.id === nextWaitlist.id || p.id === nextWaitlist?.student_id);
+        const classSchedule = state.classes.find((c: ClassSchedule) => c.id === entry.class_id);
+        return { success: true, nextPromotedUser: nextStudent, classSchedule, waitlistEntry: nextWaitlist };
+      }
+
+      return { success: true };
+    }
+  };
+
+  const expireWaitlistEntry = (waitlistId: string) => {
+    const entry = state.waitlist.find((w: WaitlistEntry) => w.id === waitlistId);
+    if (!entry) return { success: false };
+
+    const maxPosition = Math.max(...state.waitlist.filter((w: WaitlistEntry) => w.class_id === entry.class_id && w.request_date === entry.request_date).map((w: WaitlistEntry) => w.position), 0);
+    const newPosition = maxPosition + 1;
+
+    setState((prev: any) => ({
+      ...prev,
+      waitlist: prev.waitlist.map((w: WaitlistEntry) => w.id === waitlistId ? { 
+        ...w, 
+        status: 'waiting', 
+        position: newPosition, 
+        missed_confirmation: true,
+        expires_at: undefined
+      } : w)
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('waitlist').update({ 
+        status: 'waiting', 
+        position: newPosition,
+        missed_confirmation: true,
+        expires_at: null
+      }).eq('id', waitlistId).then();
+    }
+
+    // Find next person to promote
+    let nextWaitlist = state.waitlist
+      .filter((w: WaitlistEntry) => w.id !== waitlistId && w.class_id === entry.class_id && w.request_date === entry.request_date && w.status === 'waiting' && !w.any_time)
+      .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+
+    if (!nextWaitlist) {
+      nextWaitlist = state.waitlist
+        .filter((w: WaitlistEntry) => w.id !== waitlistId && w.any_time && w.request_date === entry.request_date && w.status === 'waiting')
+        .sort((a: WaitlistEntry, b: WaitlistEntry) => a.position - b.position)[0];
+    }
+
+    if (nextWaitlist) {
+      const nextExpiresAt = new Date(Date.now() + 30 * 60000).toISOString();
+      setState((prev: any) => ({
+        ...prev,
+        waitlist: prev.waitlist.map((w: WaitlistEntry) => w.id === nextWaitlist.id ? { ...w, status: 'pending_confirmation', expires_at: nextExpiresAt } : w)
+      }));
+      if (isSupabaseConfigured) {
+        supabase.from('waitlist').update({ status: 'pending_confirmation', expires_at: nextExpiresAt }).eq('id', nextWaitlist.id).then();
+      }
+      
+      const nextStudent = state.profiles.find((p: Profile) => p.id === nextWaitlist.id || p.id === nextWaitlist?.student_id);
+      const classSchedule = state.classes.find((c: ClassSchedule) => c.id === entry.class_id);
+      return { success: true, nextPromotedUser: nextStudent, classSchedule, waitlistEntry: nextWaitlist };
+    }
+
+    return { success: true };
   };
 
   // Attendance & Check-in
@@ -1772,6 +2012,8 @@ export function useStudioStore() {
     deleteClass,
     bookClass,
     cancelBooking,
+    processWaitlistResponse,
+    expireWaitlistEntry,
     performQRCheckinWithGPS,
     markAttendance,
     addTransaction,

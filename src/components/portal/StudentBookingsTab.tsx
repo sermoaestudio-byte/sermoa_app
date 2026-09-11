@@ -36,7 +36,13 @@ export const StudentBookingsTab: React.FC<StudentBookingsTabProps> = ({ student 
 
   const handleConfirmCancel = () => {
     if (bookingToCancel) {
-      cancelBooking(bookingToCancel);
+      const res = cancelBooking(bookingToCancel);
+      if (res && res.promotedUser && res.waitlistEntry) {
+        const confirmLink = `${window.location.origin}/portal?action=confirm_waitlist&waitlist_id=${res.waitlistEntry.id}`;
+        alert(`Reserva cancelada. Tu crédito ha sido reembolsado.\n\n[SIMULACIÓN WHATSAPP]\nMensaje enviado a ${res.promotedUser.first_name}:\n"¡Hola! Se liberó un turno que estabas esperando. Haz clic aquí para confirmar tu asistencia: ${confirmLink}"`);
+      } else {
+        alert('Reserva cancelada. Tu crédito ha sido reembolsado.');
+      }
       setBookingToCancel(null);
     }
   };

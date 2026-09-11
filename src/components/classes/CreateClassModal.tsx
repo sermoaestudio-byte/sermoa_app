@@ -188,7 +188,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
     e.preventDefault();
 
     const selectedBranch = branches.find((b) => b.id === branchId) || branches[0];
-    const roomId = selectedBranch?.rooms[0]?.id || 'room-1';
+    const roomId = selectedBranch?.rooms?.[0]?.id || 'room-1';
     const act = activities.find((a) => a.id === activityId);
     const color = act?.color || '#54875e';
 

@@ -5,7 +5,7 @@
 export type UserRole = 'admin' | 'instructor' | 'client';
 export type StudentStatus = 'active' | 'pending_approval' | 'inactive' | 'rejected';
 export type BookingStatus = 'confirmed' | 'cancelled_by_user' | 'cancelled_by_admin' | 'attended' | 'no_show';
-export type WaitlistStatus = 'waiting' | 'promoted' | 'expired' | 'cancelled';
+export type WaitlistStatus = 'waiting' | 'pending_confirmation' | 'promoted' | 'expired' | 'cancelled' | 'rejected';
 export type PaymentType = 'income' | 'expense';
 export type PaymentMethod = 'mercadopago' | 'cash' | 'transfer' | 'card';
 export type PaymentStatus = 'completed' | 'pending' | 'refunded';
@@ -184,8 +184,11 @@ export interface WaitlistEntry {
   request_date?: string;
   position: number;
   status: WaitlistStatus;
+  any_time?: boolean;
   created_at?: string;
   promoted_at?: string;
+  expires_at?: string;
+  missed_confirmation?: boolean;
   // Expandidos
   student?: Profile;
   class_schedule?: ClassSchedule;
