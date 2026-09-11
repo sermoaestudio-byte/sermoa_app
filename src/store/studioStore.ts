@@ -1281,7 +1281,7 @@ export function useStudioStore() {
     };
   };
 
-  const cancelBooking = (bookingId: string): { success: boolean; promotedUser?: any; classDate?: string; classSchedule?: ClassSchedule } => {
+  const cancelBooking = (bookingId: string): { success: boolean; promotedUser?: any; classDate?: string; classSchedule?: ClassSchedule; waitlistEntry?: WaitlistEntry } => {
     const booking = state.bookings.find((b: Booking) => b.id === bookingId);
     if (!booking) return { success: false };
 

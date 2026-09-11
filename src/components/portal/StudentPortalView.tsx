@@ -36,7 +36,6 @@ export const StudentPortalView: React.FC = () => {
     bookClass,
     currentUser,
     bookings,
-    rooms,
     waitlist,
     processWaitlistResponse,
     expireWaitlistEntry,
