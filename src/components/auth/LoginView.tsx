@@ -5,6 +5,7 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Sparkles,
   AlertCircle,
@@ -17,11 +18,13 @@ import { UserRole } from '../../types';
 interface LoginViewProps {
   onLoginSuccess: (role: UserRole) => void;
   onGoToRegister: () => void;
+  onGoToLanding?: () => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   onGoToRegister,
+  onGoToLanding,
 }) => {
   const { studio, loginWithSupabase, requestPasswordReset, setRole, setCurrentStudentId } = useStudioStore();
 
@@ -79,10 +82,20 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-soft animate-fade-in space-y-6">
+      <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-soft animate-fade-in space-y-6 relative">
         
+        {onGoToLanding && (
+          <button 
+            onClick={onGoToLanding}
+            className="absolute top-6 left-6 text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1 text-xs font-bold"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver
+          </button>
+        )}
+
         {/* Brand Logo & Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 mt-4">
           <div className="w-24 h-24 mx-auto flex items-center justify-center p-1">
             <img src="/logo-login.png" alt="App Logo" className="w-full h-full object-contain" />
           </div>

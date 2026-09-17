@@ -66,15 +66,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 onNavigate('login');
                 window.location.hash = '#login';
               }}
-              className="text-sm font-bold text-slate-700 hover:text-brand-600 transition-colors px-4 py-2"
-            >
-              Ingresar
-            </button>
-            <button 
-              onClick={() => {
-                onNavigate('login');
-                window.location.hash = '#login';
-              }}
               className="text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 px-6 py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
             >
               Empezar
