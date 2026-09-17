@@ -320,7 +320,13 @@ async function syncFromSupabase() {
     let authStudentId = '';
 
     if (session && session.user && profilesData) {
-      authUser = profilesData.find((p: any) => p.email?.toLowerCase() === session.user.email?.toLowerCase());
+      const email = session.user.email?.toLowerCase();
+      const matchingProfiles = profilesData.filter((p: any) => p.email?.toLowerCase() === email);
+      
+      authUser = matchingProfiles.find((p: any) => p.role === 'admin')
+        || matchingProfiles.find((p: any) => p.role === 'instructor')
+        || matchingProfiles[0];
+
       if (authUser) {
         isAuth = true;
         authRole = authUser.role;
@@ -929,6 +935,7 @@ export function useStudioStore() {
       if (updatedData.role !== undefined) payload.role = updatedData.role;
       if (updatedData.is_instructor !== undefined) payload.is_instructor = updatedData.is_instructor;
       if (updatedData.status !== undefined) payload.status = updatedData.status;
+      if (updatedData.permissions !== undefined) payload.permissions = updatedData.permissions;
 
       supabase.from('profiles').update(payload).eq('id', id).then(({ error }) => {
         if (error) {
