@@ -892,7 +892,6 @@ export function useStudioStore() {
         id: newStaff.id,
         studio_id: newStaff.studio_id,
         role: newStaff.role,
-        is_instructor: newStaff.is_instructor,
         status: newStaff.status,
         first_name: newStaff.first_name,
         last_name: newStaff.last_name,
@@ -933,7 +932,6 @@ export function useStudioStore() {
       if (updatedData.email !== undefined) payload.email = updatedData.email;
       if (updatedData.phone !== undefined) payload.phone = updatedData.phone;
       if (updatedData.role !== undefined) payload.role = updatedData.role;
-      if (updatedData.is_instructor !== undefined) payload.is_instructor = updatedData.is_instructor;
       if (updatedData.status !== undefined) payload.status = updatedData.status;
       if (updatedData.permissions !== undefined) payload.permissions = updatedData.permissions;
 

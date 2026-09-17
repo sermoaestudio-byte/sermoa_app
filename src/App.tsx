@@ -28,24 +28,10 @@ export function App() {
 
   // Apply dynamic brand theme to :root whenever studio colors change
   useEffect(() => {
-    // Force migration to new brand colors and logo
-    if (
-      studio && 
-      (studio.brand_colors?.primary !== '#736355' || !studio.logo_url || studio.logo_url !== '/logo.png')
-    ) {
-      updateStudioSettings({
-        ...studio,
-        logo_url: '/logo.png',
-        brand_colors: {
-          primary: '#736355',
-          secondary: '#a69688',
-          accent: '#e6d9cd',
-        }
-      });
+    if (studio?.brand_colors) {
+      applyStudioTheme(studio.brand_colors);
     }
-
-    applyStudioTheme(studio.brand_colors);
-  }, [studio, updateStudioSettings]);
+  }, [studio]);
 
   // Listen for Supabase Password Recovery events
   useEffect(() => {
