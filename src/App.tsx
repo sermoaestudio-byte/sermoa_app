@@ -164,6 +164,10 @@ export function App() {
             setCurrentView('registro');
             window.location.hash = '#registro';
           }}
+          onGoToLanding={() => {
+            setCurrentView('landing');
+            window.location.hash = '#landing';
+          }}
         />
       );
     }
