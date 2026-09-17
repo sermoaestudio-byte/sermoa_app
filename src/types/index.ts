@@ -120,6 +120,7 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   // Extras para profesores
+  is_instructor?: boolean;
   specialties?: string[];
   commission_per_class?: number;
   permissions?: {

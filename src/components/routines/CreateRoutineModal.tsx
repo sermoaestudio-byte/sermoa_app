@@ -35,7 +35,7 @@ export const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
   const { profiles, activities, createRoutine, updateRoutine } = useStudioStore();
   const isEditing = !!routineToEdit;
 
-  const instructors = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin');
+  const instructors = profiles.filter((p) => p.role === 'instructor' || p.is_instructor);
   const students = profiles.filter((p) => p.role === 'client' && p.status === 'active');
 
   // Metadata Fields

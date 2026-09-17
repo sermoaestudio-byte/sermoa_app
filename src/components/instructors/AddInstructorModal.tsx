@@ -41,6 +41,7 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
   const [password, setPassword] = useState(isEditing ? '••••••••••' : '');
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<'active' | 'inactive'>(instructorToEdit?.status === 'inactive' ? 'inactive' : 'active');
+  const [isInstructor, setIsInstructor] = useState(!!instructorToEdit?.is_instructor);
 
   // Permissions (for instructors)
   const [showPermissions, setShowPermissions] = useState(true);
@@ -95,6 +96,7 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
         email,
         phone,
         role,
+        is_instructor: role === 'admin' ? isInstructor : undefined,
         status,
         permissions: role === 'admin' ? {
           view_all_students: true,
@@ -116,6 +118,7 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
         phone,
         password,
         role,
+        is_instructor: role === 'admin' ? isInstructor : undefined,
         permissions: role === 'admin' ? {
           view_all_students: true,
           manage_student_credits: true,
@@ -201,16 +204,36 @@ export const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
 
             {/* Callout / Info Banner */}
             {role === 'admin' ? (
-              <div className="p-4 bg-blue-50/90 border border-blue-200 rounded-2xl flex items-start space-x-3.5">
-                <Shield className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-xs mb-0.5">
-                    Privilegios de Administrador
-                  </h4>
-                  <p className="text-slate-600 text-[11px] leading-relaxed">
-                    Este usuario tendrá acceso ilimitado a todas las herramientas del estudio, incluyendo el módulo financiero, métricas de balance, configuración del negocio y gestión de equipo.
-                  </p>
+              <div className="space-y-3">
+                <div className="p-4 bg-blue-50/90 border border-blue-200 rounded-2xl flex items-start space-x-3.5">
+                  <Shield className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-xs mb-0.5">
+                      Privilegios de Administrador
+                    </h4>
+                    <p className="text-slate-600 text-[11px] leading-relaxed">
+                      Este usuario tendrá acceso ilimitado a todas las herramientas del estudio, incluyendo el módulo financiero, métricas de balance, configuración del negocio y gestión de equipo.
+                    </p>
+                  </div>
                 </div>
+                
+                {/* Tambien es profesor Checkbox */}
+                <label className="flex items-start space-x-3 cursor-pointer p-2.5 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200/60">
+                  <input
+                    type="checkbox"
+                    checked={isInstructor}
+                    onChange={(e) => setIsInstructor(e.target.checked)}
+                    className="mt-0.5 rounded text-brand-olive focus:ring-brand-olive w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-extrabold text-slate-800 text-xs block">
+                      También configurar como Profesor
+                    </span>
+                    <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
+                      Permite que este administrador pueda ser asignado a clases como profesor e interactuar como tal.
+                    </span>
+                  </div>
+                </label>
               </div>
             ) : (
               <div className="p-4 bg-emerald-50/80 border border-emerald-100 rounded-2xl flex items-start space-x-3.5">

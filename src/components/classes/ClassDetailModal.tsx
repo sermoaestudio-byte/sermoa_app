@@ -19,6 +19,7 @@ import { useStudioStore } from '../../store/studioStore';
 import { openWhatsApp, formatWhatsAppTemplate } from '../../utils/whatsapp';
 import { getBookingLink } from '../../utils/links';
 import { toISODateString } from '../../utils/date';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface ClassDetailModalProps {
   classItem: ClassSchedule | null;
@@ -39,27 +40,66 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
     cancelBooking,
     deleteClass,
     updateClass,
+    updateClassesBatch,
     getEnrichedClasses,
+    classes: allClasses,
   } = useStudioStore();
 
   const currentClass = getEnrichedClasses().find(c => c.id === classItem?.id) || classItem;
+  const { confirm } = useConfirm();
 
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [isEditingInstructor, setIsEditingInstructor] = useState(false);
   const [selectedInstructorId, setSelectedInstructorId] = useState(currentClass?.instructor_id || '');
   
+  const targetDate = selectedDate || toISODateString(new Date());
+
   const [isEditingClass, setIsEditingClass] = useState(false);
   const [editData, setEditData] = useState({
     title: currentClass?.title || '',
     max_capacity: currentClass?.max_capacity || 12,
+    date: currentClass?.date || targetDate || '',
     start_time: currentClass?.start_time || '',
     end_time: currentClass?.end_time || '',
   });
 
-  if (!currentClass) return null;
+  const handleSaveEdit = async () => {
+    const isSeries = await confirm(
+      "¿Deseas aplicar estos cambios a todas las clases idénticas futuras de esta serie?",
+      {
+        title: "Confirmar Edición",
+        type: "info",
+        confirmText: "Toda la Serie",
+        cancelText: "Solo esta clase"
+      }
+    );
+    
+    let finalEditData: any = { ...editData };
+    if (finalEditData.date) {
+      const [y, m, d] = finalEditData.date.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      finalEditData.day_of_week = dateObj.getDay();
+    }
 
-  const targetDate = selectedDate || toISODateString(new Date());
+    if (isSeries) {
+      const targetDateStr = currentClass.date || targetDate;
+      const similarClasses = allClasses.filter(c => 
+        c.activity_id === currentClass.activity_id &&
+        c.instructor_id === currentClass.instructor_id &&
+        c.day_of_week === currentClass.day_of_week &&
+        c.start_time === currentClass.start_time &&
+        c.title === currentClass.title &&
+        (c.date ? c.date >= targetDateStr : true) // Sólo clases iguales futuras
+      );
+      updateClassesBatch(similarClasses.map(c => c.id), finalEditData);
+    } else {
+      updateClass(currentClass.id, finalEditData);
+    }
+    setIsEditingClass(false);
+  };
+
+  if (!currentClass) return null;
 
   const classBookings = bookings.filter(
     (b: Booking) => b.class_id === currentClass.id && b.status === 'confirmed' && (b.booking_date === targetDate || !b.booking_date)
@@ -142,7 +182,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
                     autoFocus
                     className="text-xs bg-white border border-slate-200 rounded px-1 py-0.5"
                   >
-                    {profiles.filter(p => p.role === 'instructor' || p.role === 'admin').map(p => (
+                    {profiles.filter(p => p.role === 'instructor' || p.is_instructor).map(p => (
                       <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
                     ))}
                   </select>
@@ -208,6 +248,15 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Fecha</label>
+                  <input
+                    type="date"
+                    value={editData.date}
+                    onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Hora de Inicio</label>
                   <input
                     type="time"
@@ -229,10 +278,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
 
               <div className="flex justify-end pt-4 border-t border-slate-100">
                 <button
-                  onClick={() => {
-                    updateClass(currentClass.id, editData);
-                    setIsEditingClass(false);
-                  }}
+                  onClick={handleSaveEdit}
                   className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center space-x-1.5"
                 >
                   <Save className="w-4 h-4" />
@@ -334,8 +380,14 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
 
                         {/* Cancel booking */}
                         <button
-                          onClick={() => {
-                            if (window.confirm(`¿Cancelar la reserva de ${student.first_name}? Se le reembolsará el crédito.`)) {
+                          onClick={async () => {
+                            const isConfirmed = await confirm(`¿Cancelar la reserva de ${student.first_name}? Se le reembolsará el crédito.`, {
+                              title: 'Cancelar Reserva',
+                              type: 'danger',
+                              confirmText: 'Sí, Cancelar'
+                            });
+                            
+                            if (isConfirmed) {
                               const res = cancelBooking(b.id);
                               if (res.promotedUser && res.waitlistEntry) {
                                 const confirmLink = `${window.location.origin}/portal?action=confirm_waitlist&waitlist_id=${res.waitlistEntry.id}`;
@@ -409,8 +461,13 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({ classItem, s
         {/* Modal Footer */}
         <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between rounded-b-3xl">
           <button
-            onClick={() => {
-              if (window.confirm('¿Estás seguro de eliminar esta clase? Se cancelarán todas las reservas asociadas.')) {
+            onClick={async () => {
+              const isConfirmed = await confirm('¿Estás seguro de eliminar esta clase? Se cancelarán todas las reservas asociadas.', {
+                title: 'Eliminar Clase',
+                type: 'danger',
+                confirmText: 'Sí, Eliminar'
+              });
+              if (isConfirmed) {
                 deleteClass(currentClass.id);
                 onClose();
               }

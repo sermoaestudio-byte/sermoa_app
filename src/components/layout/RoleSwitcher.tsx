@@ -2,6 +2,7 @@ import React from 'react';
 import { ShieldCheck, UserCheck, Smartphone, RefreshCw } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { UserRole } from '../../types';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface RoleSwitcherProps {
   onNavigate: (view: string) => void;
@@ -9,6 +10,7 @@ interface RoleSwitcherProps {
 
 export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ onNavigate }) => {
   const { currentRole, setRole, resetToDemoData } = useStudioStore();
+  const { confirm } = useConfirm();
 
   const handleRoleChange = (newRole: UserRole) => {
     setRole(newRole);
@@ -70,8 +72,13 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ onNavigate }) => {
 
       {/* Reset Demo Button */}
       <button
-        onClick={() => {
-          if (window.confirm('¿Deseas restaurar todos los datos de demostración iniciales?')) {
+        onClick={async () => {
+          const isConfirmed = await confirm('¿Deseas restaurar todos los datos de demostración iniciales?', {
+            title: 'Restaurar Datos',
+            type: 'warning',
+            confirmText: 'Sí, Restaurar'
+          });
+          if (isConfirmed) {
             resetToDemoData();
             onNavigate('dashboard');
           }

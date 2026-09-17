@@ -49,7 +49,7 @@ export const RoutinesView: React.FC<RoutinesViewProps> = ({ onNavigate }) => {
   // Deletion confirm
   const [routineToDelete, setRoutineToDelete] = useState<Routine | null>(null);
 
-  const instructors = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin');
+  const instructors = profiles.filter((p) => p.role === 'instructor' || p.is_instructor);
   const students = profiles.filter((p) => p.role === 'client' && p.status === 'active');
 
   const filteredRoutines = routines.filter((r) => {

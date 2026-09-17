@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { ClassSchedule, Activity, Branch } from '../../types';
 import { getWeekDates, toISODateString } from '../../utils/date';
+import { useStudioStore } from '../../store/studioStore';
+import { BulkEditClassesModal } from './BulkEditClassesModal';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface ClassCalendarProps {
   classes: any[];
@@ -49,6 +52,67 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay());
   const [selectedDateDaily, setSelectedDateDaily] = useState<Date>(new Date());
   const [tableSearch, setTableSearch] = useState('');
+
+  // Studio Store actions for bulk edit and DnD
+  const { deleteClassesBatch, updateClassesBatch, updateClass, profiles } = useStudioStore();
+  const { confirm } = useConfirm();
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, cls: any, originalDateStr: string) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ classId: cls.id, originalDateStr }));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, newDateStr: string) => {
+    e.preventDefault();
+    try {
+      const data = e.dataTransfer.getData('text/plain');
+      if (!data) return;
+      const { classId, originalDateStr } = JSON.parse(data);
+      if (originalDateStr === newDateStr) return;
+
+      const isConfirmed = await confirm(`¿Estás seguro de que deseas mover esta clase a la nueva fecha?`, {
+        title: 'Mover Clase',
+        type: 'warning',
+        confirmText: 'Mover Clase'
+      });
+
+      if (isConfirmed) {
+        const [y, m, d] = newDateStr.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        
+        updateClass(classId, {
+          date: newDateStr,
+          day_of_week: dateObj.getDay(),
+        });
+      }
+    } catch (err) {
+      console.error('Error parsing drop data:', err);
+    }
+  };
+
+  // Multi-select States
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+
+  const toggleClassSelection = (classId: string) => {
+    setSelectedClassIds((prev) => 
+      prev.includes(classId) ? prev.filter((id) => id !== classId) : [...prev, classId]
+    );
+  };
+
+  const handleClassClick = (cls: any, dateStr: string) => {
+    if (isMultiSelectMode) {
+      toggleClassSelection(cls.id);
+    } else {
+      onSelectClass(cls, dateStr);
+    }
+  };
 
   const weekDays = getWeekDates(currentWeekDate);
 
@@ -140,6 +204,21 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
             </button>
 
           </div>
+          
+          <button
+            onClick={() => {
+              setIsMultiSelectMode(!isMultiSelectMode);
+              if (isMultiSelectMode) setSelectedClassIds([]);
+            }}
+            className={`hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+              isMultiSelectMode 
+                ? 'bg-brand-50 border-brand-200 text-brand-700' 
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Selección Múltiple</span>
+          </button>
         </div>
 
         {/* Center: Date Range Navigator (for weekly & daily) */}
@@ -232,6 +311,38 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
 
       </div>
 
+      {/* Bulk Action Bar (Top) */}
+      {isMultiSelectMode && selectedClassIds.length > 0 && (
+        <div className="bg-slate-900 px-6 py-3 border-b border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center space-x-2 text-white font-bold whitespace-nowrap">
+            <CheckCircle2 className="w-5 h-5 text-brand-400" />
+            <span>{selectedClassIds.length} clases seleccionadas</span>
+          </div>
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <button
+              onClick={() => setShowBulkEdit(true)}
+              className="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-colors whitespace-nowrap flex items-center space-x-1"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Editar Seleccionadas</span>
+            </button>
+            <button
+              onClick={() => {
+                if (confirm(`¿Estás seguro de que quieres eliminar ${selectedClassIds.length} clases? Esta acción no se puede deshacer.`)) {
+                  deleteClassesBatch(selectedClassIds);
+                  setIsMultiSelectMode(false);
+                  setSelectedClassIds([]);
+                }
+              }}
+              className="px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-colors whitespace-nowrap"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* 1. VISTA SEMANAL (WEEKLY VIEW) */}
       {/* ========================================================================= */}
@@ -300,7 +411,11 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   </div>
 
                   {/* Classes List */}
-                  <div className="p-2 space-y-2.5 flex-1 min-h-[380px]">
+                  <div 
+                    className="p-2 space-y-2.5 flex-1 min-h-[380px]"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, wd.dateStr)}
+                  >
                     {dayClasses.length > 0 ? (
                       dayClasses.map((cls) => {
                         const cellDateStr = wd.dateStr;
@@ -310,8 +425,12 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                         return (
                           <div
                             key={cls.id}
-                            onClick={() => onSelectClass(cls, cellDateStr)}
-                            className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-pointer group text-left relative overflow-hidden"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, cls, cellDateStr)}
+                            onClick={() => handleClassClick(cls, cellDateStr)}
+                            className={`bg-white rounded-2xl p-3 border shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-grab active:cursor-grabbing group text-left relative overflow-hidden ${
+                              isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/80'
+                            }`}
                           >
                             {/* Color Accent Bar */}
                             <div
@@ -319,8 +438,17 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                               style={{ backgroundColor: cls.color || '#54875e' }}
                             />
 
+                            {/* Checkbox (if multi-select) */}
+                            {isMultiSelectMode && (
+                              <div className="absolute top-2 right-2">
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
+                                  {selectedClassIds.includes(cls.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                </div>
+                              </div>
+                            )}
+
                             {/* Time & Capacity Badge */}
-                            <div className="flex items-center justify-between pl-1.5 mb-1.5">
+                            <div className={`flex items-center justify-between pl-1.5 mb-1.5 ${isMultiSelectMode ? 'pr-5' : ''}`}>
                               <span className="text-[11px] font-extrabold text-slate-900 flex items-center space-x-1">
                                 <Clock className="w-3 h-3 text-slate-400" />
                                 <span>{cls.start_time} - {cls.end_time}</span>
@@ -436,11 +564,22 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   return (
                     <div
                       key={cls.id}
-                      onClick={() => onSelectClass(cls, dateStr)}
-                      className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group"
+                      onClick={() => handleClassClick(cls, dateStr)}
+                      className={`bg-white rounded-3xl p-5 border shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group relative ${
+                        isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/80'
+                      }`}
                     >
+                      {/* Checkbox (if multi-select) */}
+                      {isMultiSelectMode && (
+                        <div className="absolute top-4 right-4">
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
+                            {selectedClassIds.includes(cls.id) && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Left: Time & Class Info */}
-                      <div className="flex items-start space-x-4">
+                      <div className={`flex items-start space-x-4 ${isMultiSelectMode ? 'pr-8' : ''}`}>
                         <div
                           className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center text-white font-extrabold shrink-0 shadow-sm"
                           style={{ backgroundColor: cls.color || '#54875e' }}
@@ -566,11 +705,20 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                       return (
                         <tr
                           key={cls.id}
-                          onClick={() => onSelectClass(cls, fallbackDate)}
-                          className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                          onClick={() => handleClassClick(cls, fallbackDate)}
+                          className={`hover:bg-slate-50/80 transition-colors cursor-pointer group ${
+                            isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'bg-brand-50/50' : ''
+                          }`}
                         >
-                          <td className="py-3.5 px-4 font-black text-slate-900">
-                            {daysLabels[cls.day_of_week]}
+                          <td className="px-5 py-4 whitespace-nowrap font-black text-slate-900">
+                            <div className="flex items-center space-x-3">
+                              {isMultiSelectMode && (
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
+                                  {selectedClassIds.includes(cls.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                </div>
+                              )}
+                              <span>{daysLabels[cls.day_of_week]}</span>
+                            </div>
                           </td>
 
                           <td className="py-3.5 px-4 font-extrabold text-slate-800">
@@ -638,6 +786,18 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
           })()}
 
         </div>
+      )}
+
+      {showBulkEdit && (
+        <BulkEditClassesModal
+          selectedClassIds={selectedClassIds}
+          onClose={() => setShowBulkEdit(false)}
+          onSuccess={() => {
+            setShowBulkEdit(false);
+            setIsMultiSelectMode(false);
+            setSelectedClassIds([]);
+          }}
+        />
       )}
 
     </div>

@@ -84,7 +84,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
         {/* Brand Logo & Header */}
         <div className="text-center space-y-2">
           <div className="w-24 h-24 mx-auto flex items-center justify-center p-1">
-            <img src="/logo.png" alt="App Logo" className="w-full h-full object-contain" />
+            <img src="/logo-login.png" alt="App Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">

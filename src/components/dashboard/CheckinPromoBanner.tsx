@@ -15,7 +15,7 @@ export const CheckinPromoBanner: React.FC<CheckinPromoBannerProps> = ({
 }) => {
   const { studio, branches, profiles, classes, creditPacks } = useStudioStore();
 
-  const instructorsCount = profiles.filter((p) => p.role === 'instructor').length;
+  const instructorsCount = profiles.filter((p) => p.role === 'instructor' || p.is_instructor).length;
   const bookingUrl = getBookingLink(studio.slug);
 
   // Onboarding step statuses

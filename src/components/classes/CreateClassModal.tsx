@@ -60,7 +60,7 @@ const FieldHelp: React.FC<{ text: string }> = ({ text }) => {
 
 export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) => {
   const { branches, profiles, activities, createClassesBatch } = useStudioStore();
-  const instructors = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin');
+  const instructors = profiles.filter((p) => p.role === 'instructor' || p.is_instructor);
 
   // 1. Tipo de Clase
   const [classType, setClassType] = useState<'recurring' | 'single'>('recurring');
@@ -97,14 +97,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
   const [intervalStep, setIntervalStep] = useState('1 Hora');
 
   // Grilla state: matrix of selected [dayIndex-hourString]
-  const [gridSelection, setGridSelection] = useState<Record<string, boolean>>({
-    '1-08:00': true,
-    '3-08:00': true,
-    '5-08:00': true,
-    '1-18:00': true,
-    '3-18:00': true,
-    '5-18:00': true,
-  });
+  const [gridSelection, setGridSelection] = useState<Record<string, boolean>>({});
 
   // Por Rango state
   const [rangeStartTime, setRangeStartTime] = useState('08:00');
@@ -187,12 +180,38 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (classType === 'recurring' && (startDate || endDate) && (!startDate || !endDate)) {
+      alert('Debes completar tanto la Fecha Inicial como la Fecha Final para crear un rango. Si deseas crear clases infinitas, deja ambos campos vacíos.');
+      return;
+    }
+
     const selectedBranch = branches.find((b) => b.id === branchId) || branches[0];
-    const roomId = selectedBranch?.rooms?.[0]?.id || 'room-1';
+    const roomId = selectedBranch?.rooms?.[0]?.id || null;
     const act = activities.find((a) => a.id === activityId);
     const color = act?.color || '#54875e';
 
     const classesToCreate: Partial<ClassSchedule>[] = [];
+
+    // Helper to determine dates for a given day of week
+    const getDatesForDayIndex = (dIndex: number): { date?: string; is_recurring: boolean }[] => {
+      if (classType === 'single') {
+        return [{ date: singleDate, is_recurring: false }];
+      }
+      
+      if (classType === 'recurring' && startDate && endDate) {
+        const start = new Date(startDate + 'T12:00:00');
+        const end = new Date(endDate + 'T12:00:00');
+        const dates = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          if (d.getDay() === dIndex) {
+            dates.push({ date: d.toISOString().split('T')[0], is_recurring: false });
+          }
+        }
+        return dates;
+      }
+
+      return [{ date: undefined, is_recurring: true }];
+    };
 
     if (classType === 'recurring' && scheduleMode === 'grilla') {
       // Create a class for each checked grid cell
@@ -208,20 +227,25 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
         const endM = String(endMinutes % 60).padStart(2, '0');
         const end = `${endH}:${endM}`;
 
-        classesToCreate.push({
-          title: commonTitle || act?.name || 'Clase',
-          activity_id: activityId,
-          branch_id: branchId,
-          room_id: roomId,
-          instructor_id: instructorId,
-          day_of_week: dIndex,
-          start_time: start,
-          end_time: end,
-          max_capacity: Number(maxCapacity) || 12,
-          single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
-          is_recurring: true,
-          color,
-        });
+        const dates = getDatesForDayIndex(dIndex);
+
+        for (const d of dates) {
+          classesToCreate.push({
+            title: commonTitle || act?.name || 'Clase',
+            activity_id: activityId,
+            branch_id: branchId,
+            room_id: roomId,
+            instructor_id: instructorId,
+            day_of_week: dIndex,
+            start_time: start,
+            end_time: end,
+            max_capacity: Number(maxCapacity) || 12,
+            single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
+            is_recurring: d.is_recurring,
+            date: d.date,
+            color,
+          });
+        }
       }
     } else if (scheduleMode === 'rango') {
       // Generate slots between rangeStartTime and rangeEndTime for each selected day
@@ -244,21 +268,24 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
         const end = `${slotEndH}:${slotEndM}`;
 
         for (const dIndex of days) {
-          classesToCreate.push({
-            title: commonTitle || act?.name || 'Clase',
-            activity_id: activityId,
-            branch_id: branchId,
-            room_id: roomId,
-            instructor_id: instructorId,
-            day_of_week: dIndex,
-            start_time: start,
-            end_time: end,
-            max_capacity: Number(maxCapacity) || 12,
-            single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
-            is_recurring: classType === 'recurring',
-            date: classType === 'single' ? singleDate : undefined,
-            color,
-          });
+          const dates = getDatesForDayIndex(dIndex);
+          for (const d of dates) {
+            classesToCreate.push({
+              title: commonTitle || act?.name || 'Clase',
+              activity_id: activityId,
+              branch_id: branchId,
+              room_id: roomId,
+              instructor_id: instructorId,
+              day_of_week: dIndex,
+              start_time: start,
+              end_time: end,
+              max_capacity: Number(maxCapacity) || 12,
+              single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
+              is_recurring: d.is_recurring,
+              date: d.date,
+              color,
+            });
+          }
         }
       }
     } else {
@@ -267,21 +294,24 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
 
       for (const slot of manualSlots) {
         for (const dIndex of days) {
-          classesToCreate.push({
-            title: slot.title || commonTitle || act?.name || 'Clase',
-            activity_id: activityId,
-            branch_id: branchId,
-            room_id: roomId,
-            instructor_id: instructorId,
-            day_of_week: dIndex,
-            start_time: slot.startTime,
-            end_time: slot.endTime,
-            max_capacity: Number(maxCapacity) || 12,
-            single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
-            is_recurring: classType === 'recurring',
-            date: classType === 'single' ? singleDate : undefined,
-            color,
-          });
+          const dates = getDatesForDayIndex(dIndex);
+          for (const d of dates) {
+            classesToCreate.push({
+              title: slot.title || commonTitle || act?.name || 'Clase',
+              activity_id: activityId,
+              branch_id: branchId,
+              room_id: roomId,
+              instructor_id: instructorId,
+              day_of_week: dIndex,
+              start_time: slot.startTime,
+              end_time: slot.endTime,
+              max_capacity: Number(maxCapacity) || 12,
+              single_class_price: singleClassPrice === '' ? undefined : singleClassPrice,
+              is_recurring: d.is_recurring,
+              date: d.date,
+              color,
+            });
+          }
         }
       }
     }
@@ -620,13 +650,9 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
                       <thead className="bg-slate-50 text-slate-600 font-extrabold text-[10px] sticky top-0 border-b border-slate-200 z-10">
                         <tr>
                           <th className="py-2.5 px-3 text-left">🕒 HORA</th>
-                          <th className="py-2.5 px-2">LUN</th>
-                          <th className="py-2.5 px-2">MAR</th>
-                          <th className="py-2.5 px-2">MIÉ</th>
-                          <th className="py-2.5 px-2">JUE</th>
-                          <th className="py-2.5 px-2">VIE</th>
-                          <th className="py-2.5 px-2">SÁB</th>
-                          <th className="py-2.5 px-2">DOM</th>
+                          {daysList.filter(d => selectedDays.includes(d.dayIndex)).map(d => (
+                            <th key={d.dayIndex} className="py-2.5 px-2">{d.label.slice(0, 3).toUpperCase()}</th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -635,7 +661,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({ onClose }) =
                             <td className="py-2 px-3 text-left font-bold text-slate-700 text-xs">
                               {hour} hs
                             </td>
-                            {daysList.map((d) => {
+                            {daysList.filter(d => selectedDays.includes(d.dayIndex)).map((d) => {
                               const key = `${d.dayIndex}-${hour}`;
                               const isChecked = !!gridSelection[key];
 

@@ -27,6 +27,7 @@ import {
 import { useStudioStore } from '../../store/studioStore';
 import { StudioLinksModal } from '../common/StudioLinksModal';
 import { getRegisterLink } from '../../utils/links';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface NavbarProps {
   currentView: string;
@@ -35,7 +36,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQRPoster }) => {
-  const { studio, profiles, currentRole, currentUser } = useStudioStore();
+  const { studio, profiles, currentRole, currentUser, logout } = useStudioStore();
+  const { confirm } = useConfirm();
   const [copiedLink, setCopiedLink] = useState(false);
   const [showLinksModal, setShowLinksModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -362,9 +364,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
                   </button>
                   <div className="border-t border-slate-100 mt-1 pt-1">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setShowUserMenu(false);
-                        handleNavClick('login');
+                        const isConfirmed = await confirm('¿Estás seguro de que quieres cerrar sesión?', {
+                          title: 'Cerrar Sesión',
+                          type: 'warning',
+                          confirmText: 'Sí, Cerrar Sesión'
+                        });
+                        if (isConfirmed) {
+                          logout();
+                          window.location.hash = '';
+                        }
                       }}
                       className="w-full px-4 py-2 text-left text-rose-600 hover:bg-rose-50 flex items-center space-x-2 font-extrabold transition-colors"
                     >
@@ -476,7 +486,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
           </button>
           <div className="border-t border-slate-100 pt-2 mt-1">
             <button
-              onClick={() => handleNavClick('login')}
+              onClick={async () => {
+                setShowMobileMenu(false);
+                const isConfirmed = await confirm('¿Estás seguro de que quieres cerrar sesión?', {
+                  title: 'Cerrar Sesión',
+                  type: 'warning',
+                  confirmText: 'Sí, Cerrar Sesión'
+                });
+                if (isConfirmed) {
+                  handleNavClick('login');
+                }
+              }}
               className="w-full text-left px-3 py-2 rounded-xl text-xs font-extrabold text-rose-600 hover:bg-rose-50 flex items-center space-x-2 transition-colors"
             >
               <LogOut className="w-4 h-4" />

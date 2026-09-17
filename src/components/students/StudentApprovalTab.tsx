@@ -13,6 +13,7 @@ import {
 import { Profile } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
 import { openWhatsApp, formatWhatsAppTemplate } from '../../utils/whatsapp';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface StudentApprovalTabProps {
   pendingStudents: Profile[];
@@ -24,13 +25,19 @@ export const StudentApprovalTab: React.FC<StudentApprovalTabProps> = ({
   onSelectStudent,
 }) => {
   const { studio, whatsappTemplates, approveStudentRegistration, rejectStudentRegistration } = useStudioStore();
+  const { confirm } = useConfirm();
 
   const handleApprove = (student: Profile) => {
     approveStudentRegistration(student.id, 1); // 1 clase de prueba/bienvenida asignada
   };
 
-  const handleReject = (student: Profile) => {
-    if (window.confirm(`¿Rechazar la solicitud de ${student.first_name} ${student.last_name}?`)) {
+  const handleReject = async (student: Profile) => {
+    const isConfirmed = await confirm(`¿Rechazar la solicitud de ${student.first_name} ${student.last_name}?`, {
+      title: 'Rechazar Solicitud',
+      type: 'danger',
+      confirmText: 'Sí, Rechazar'
+    });
+    if (isConfirmed) {
       rejectStudentRegistration(student.id);
     }
   };

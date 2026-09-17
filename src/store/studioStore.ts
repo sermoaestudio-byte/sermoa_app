@@ -50,9 +50,9 @@ const initialStudio: Studio = {
   slug: 'sermoa',
   logo_url: '/logo.png',
   brand_colors: {
-    primary: '#4d5d43',
-    secondary: '#2d3827',
-    accent: '#738a65',
+    primary: '#736355',
+    secondary: '#a69688',
+    accent: '#e6d9cd',
   },
   phone: '5491155550199',
   email: 'contacto@sermoa.com',
@@ -247,33 +247,21 @@ let state: any = {
   routines: initialRoutines,
   attendances: initialAttendances,
   isAuthenticated: false,
+  isInitialized: false,
   currentUser: null as Profile | null,
   currentRole: 'admin' as UserRole,
   currentStudentId: DEFAULT_ADMIN_ID,
   currentInstructorId: DEFAULT_ADMIN_ID,
 };
 
-// Load saved local cache on first load
-try {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    state = { ...state, ...parsed };
-  }
-} catch (e) {
-  console.warn('Could not read state from localStorage', e);
-}
+// Se eliminó la caché local para forzar lectura de Supabase
+
 
 const listeners = new Set<() => void>();
 
 function setState(updater: any) {
   const nextState = typeof updater === 'function' ? updater(state) : updater;
   state = nextState;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {
-    console.warn('Could not persist state to localStorage', e);
-  }
   listeners.forEach((l) => l());
 }
 
@@ -305,8 +293,8 @@ async function syncFromSupabase() {
 
     // 2. Fetch Profiles
     const { data: profilesData } = await supabase.from('profiles').select('*');
-    // 3. Fetch Branches
-    const { data: branchesData } = await supabase.from('branches').select('*');
+    // 3. Fetch Branches with rooms
+    const { data: branchesData } = await supabase.from('branches').select('*, rooms(*)');
     // 4. Fetch Activities
     const { data: activitiesData } = await supabase.from('activities').select('*');
     // 5. Fetch Classes
@@ -324,6 +312,22 @@ async function syncFromSupabase() {
     // 11. Fetch Goals
     const { data: goalsData } = await supabase.from('financial_monthly_goals').select('*').limit(1);
 
+    // 12. Restaurar sesión desde Supabase Auth
+    const { data: { session } } = await supabase.auth.getSession();
+    let authUser = null;
+    let isAuth = false;
+    let authRole = 'client';
+    let authStudentId = '';
+
+    if (session && session.user && profilesData) {
+      authUser = profilesData.find((p: any) => p.email?.toLowerCase() === session.user.email?.toLowerCase());
+      if (authUser) {
+        isAuth = true;
+        authRole = authUser.role;
+        authStudentId = authUser.id;
+      }
+    }
+
     setState((prev: any) => ({
       ...prev,
       studio: currentStudio || prev.studio,
@@ -337,6 +341,12 @@ async function syncFromSupabase() {
       payments: paymentsData && paymentsData.length > 0 ? paymentsData : prev.payments,
       financialCategories: categoriesData && categoriesData.length > 0 ? categoriesData : prev.financialCategories,
       financialGoals: goalsData && goalsData.length > 0 ? goalsData[0] : prev.financialGoals,
+      isAuthenticated: isAuth || prev.isAuthenticated,
+      isInitialized: true,
+      currentUser: authUser || prev.currentUser,
+      currentRole: authUser ? authUser.role : prev.currentRole,
+      currentStudentId: authUser ? authUser.id : prev.currentStudentId,
+      currentInstructorId: authUser && (authUser.role === 'admin' || authUser.is_instructor) ? authUser.id : prev.currentInstructorId,
     }));
   } catch (err) {
     console.error('Error syncing data from Supabase:', err);
@@ -827,6 +837,7 @@ export function useStudioStore() {
     phone: string;
     password?: string;
     role?: UserRole;
+    is_instructor?: boolean;
     specialties?: string[];
     permissions?: {
       view_all_students?: boolean;
@@ -841,6 +852,7 @@ export function useStudioStore() {
       id,
       studio_id: state.studio.id,
       role,
+      is_instructor: staffData.is_instructor,
       status: 'active',
       first_name: staffData.first_name,
       last_name: staffData.last_name,
@@ -874,6 +886,7 @@ export function useStudioStore() {
         id: newStaff.id,
         studio_id: newStaff.studio_id,
         role: newStaff.role,
+        is_instructor: newStaff.is_instructor,
         status: newStaff.status,
         first_name: newStaff.first_name,
         last_name: newStaff.last_name,
@@ -914,6 +927,7 @@ export function useStudioStore() {
       if (updatedData.email !== undefined) payload.email = updatedData.email;
       if (updatedData.phone !== undefined) payload.phone = updatedData.phone;
       if (updatedData.role !== undefined) payload.role = updatedData.role;
+      if (updatedData.is_instructor !== undefined) payload.is_instructor = updatedData.is_instructor;
       if (updatedData.status !== undefined) payload.status = updatedData.status;
 
       supabase.from('profiles').update(payload).eq('id', id).then(({ error }) => {
@@ -1114,6 +1128,34 @@ export function useStudioStore() {
     if (isSupabaseConfigured) {
       supabase.from('classes').delete().eq('id', classId).then(({ error }) => {
         if (error) console.error('Error eliminando clase en Supabase:', error);
+      });
+    }
+  };
+
+  const updateClassesBatch = (classIds: string[], updatedData: Partial<ClassSchedule>) => {
+    setState((prev: any) => ({
+      ...prev,
+      classes: prev.classes.map((c: ClassSchedule) => (classIds.includes(c.id) ? { ...c, ...updatedData } : c)),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('classes').update(updatedData).in('id', classIds).then(({ error }) => {
+        if (error) console.error('Error actualizando clases en lote en Supabase:', error);
+      });
+    }
+  };
+
+  const deleteClassesBatch = (classIds: string[]) => {
+    setState((prev: any) => ({
+      ...prev,
+      classes: prev.classes.filter((c: ClassSchedule) => !classIds.includes(c.id)),
+      bookings: prev.bookings.filter((b: Booking) => !classIds.includes(b.class_id)),
+      waitlist: prev.waitlist.filter((w: WaitlistEntry) => !classIds.includes(w.class_id)),
+    }));
+
+    if (isSupabaseConfigured) {
+      supabase.from('classes').delete().in('id', classIds).then(({ error }) => {
+        if (error) console.error('Error eliminando clases en lote en Supabase:', error);
       });
     }
   };
@@ -2005,6 +2047,7 @@ export function useStudioStore() {
     routines: state.routines,
     attendances: state.attendances,
     isAuthenticated: state.isAuthenticated,
+    isInitialized: state.isInitialized,
     currentUser: state.currentUser,
     currentRole: state.currentRole,
     currentStudentId: state.currentStudentId,
@@ -2033,7 +2076,9 @@ export function useStudioStore() {
     createClass,
     createClassesBatch,
     updateClass,
+    updateClassesBatch,
     deleteClass,
+    deleteClassesBatch,
     bookClass,
     cancelBooking,
     processWaitlistResponse,

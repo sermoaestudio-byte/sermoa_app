@@ -62,7 +62,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
   });
 
   const adminsCount = staffMembers.filter((s) => s.role === 'admin').length;
-  const instructorsCount = staffMembers.filter((s) => s.role === 'instructor').length;
+  const instructorsCount = staffMembers.filter((s) => s.role === 'instructor' || s.is_instructor).length;
   const activeCount = staffMembers.filter((i) => i.status === 'active' || !i.status).length;
   const inactiveCount = staffMembers.filter((i) => i.status === 'inactive').length;
 
@@ -71,7 +71,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
     const matchesTab =
       activeTab === 'all' ||
       (activeTab === 'admins' && member.role === 'admin') ||
-      (activeTab === 'instructors' && member.role === 'instructor') ||
+      (activeTab === 'instructors' && (member.role === 'instructor' || member.is_instructor)) ||
       (activeTab === 'active' && !isInactive) ||
       (activeTab === 'inactive' && isInactive);
 

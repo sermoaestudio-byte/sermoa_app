@@ -29,7 +29,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
 
   const todayStr = toISODateString(new Date());
   const activeStudentsCount = profiles.filter((p) => p.role === 'client' && p.status === 'active').length;
-  const instructorsCount = profiles.filter((p) => p.role === 'instructor').length;
+  const instructorsCount = profiles.filter((p) => p.role === 'instructor' || p.is_instructor).length;
   const todayClasses = classes.filter((c) => !c.is_cancelled && (c.date === todayStr || c.day_of_week === new Date().getDay()));
   const todayBookings = bookings.filter((b) => b.booking_date === todayStr && b.status === 'confirmed');
 

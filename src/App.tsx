@@ -13,6 +13,7 @@ import { FinanceView } from './components/finance/FinanceView';
 import { SettingsView } from './components/settings/SettingsView';
 import { StudentPortalView } from './components/portal/StudentPortalView';
 import { StudentRegisterView } from './components/portal/StudentRegisterView';
+import { LandingView } from './components/landing/LandingView';
 import { LoginView } from './components/auth/LoginView';
 import { ResetPasswordView } from './components/auth/ResetPasswordView';
 import { StudioQRPosterModal } from './components/checkin/StudioQRPosterModal';
@@ -21,14 +22,30 @@ import { applyStudioTheme } from './utils/theme';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 export function App() {
-  const { currentRole, studio, isAuthenticated, logout } = useStudioStore();
+  const { currentRole, studio, isAuthenticated, isInitialized, logout, updateStudioSettings } = useStudioStore();
   const [currentView, setCurrentView] = useState('dashboard');
   const [showQRPoster, setShowQRPoster] = useState(false);
 
   // Apply dynamic brand theme to :root whenever studio colors change
   useEffect(() => {
+    // Force migration to new brand colors and logo
+    if (
+      studio && 
+      (studio.brand_colors?.primary !== '#736355' || !studio.logo_url || studio.logo_url !== '/logo.png')
+    ) {
+      updateStudioSettings({
+        ...studio,
+        logo_url: '/logo.png',
+        brand_colors: {
+          primary: '#736355',
+          secondary: '#a69688',
+          accent: '#e6d9cd',
+        }
+      });
+    }
+
     applyStudioTheme(studio.brand_colors);
-  }, [studio.brand_colors]);
+  }, [studio, updateStudioSettings]);
 
   // Listen for Supabase Password Recovery events
   useEffect(() => {
@@ -88,7 +105,30 @@ export function App() {
 
   // Strict Role & URL Security Guard
   const renderMainView = () => {
+    // 0. Wait for initialization (prevents flash of Landing Page for logged-in users)
+    if (!isInitialized) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-500 font-medium">Cargando...</p>
+          </div>
+        </div>
+      );
+    }
+
     // 1. Public Isolated Views
+    if (currentView === 'intro' || currentView === 'landing') {
+      return (
+        <LandingView
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
+        />
+      );
+    }
+
     if (currentView === 'registro') {
       return (
         <div className="py-8 px-4">
@@ -141,6 +181,18 @@ export function App() {
         );
       }
       return <StudentPortalView />;
+    }
+
+    // 1.5 General Unauthenticated Guard
+    if (!isAuthenticated && !['login', 'registro', 'actualizar-clave'].includes(currentView)) {
+      return (
+        <LandingView
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
+        />
+      );
     }
 
     // 2. Client (Alumno) Security Guard: Block any internal dashboard or management views
@@ -212,13 +264,13 @@ export function App() {
     }
   };
 
-  const isIsolatedView = ['portal-alumno', 'registro', 'login', 'actualizar-clave'].includes(currentView);
+  const isIsolatedView = ['intro', 'landing', 'portal-alumno', 'registro', 'login', 'actualizar-clave'].includes(currentView);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
       
       {/* Top Navbar (hidden on student portal, isolated registration, and login) */}
-      {!isIsolatedView && currentRole !== 'client' && (
+      {!isIsolatedView && currentRole !== 'client' && isAuthenticated && (
         <Navbar
           currentView={currentView}
           onNavigate={(view) => {
