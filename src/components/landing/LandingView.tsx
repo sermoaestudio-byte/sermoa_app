@@ -55,8 +55,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
 
           <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-slate-600">
             <a href="#about" className={`hover:text-brand-600 transition-colors ${activeSection === 'about' ? 'text-brand-600 font-bold border-b-2 border-brand-600 pb-1' : ''}`}>Nosotros</a>
-            <a href="#programs" className={`hover:text-brand-600 transition-colors ${activeSection === 'programs' ? 'text-brand-600 font-bold border-b-2 border-brand-600 pb-1' : ''}`}>Programas</a>
             <a href="#benefits" className={`hover:text-brand-600 transition-colors ${activeSection === 'benefits' ? 'text-brand-600 font-bold border-b-2 border-brand-600 pb-1' : ''}`}>Beneficios</a>
+            <a href="#programs" className={`hover:text-brand-600 transition-colors ${activeSection === 'programs' ? 'text-brand-600 font-bold border-b-2 border-brand-600 pb-1' : ''}`}>Programas</a>
             <a href="#trainers" className={`hover:text-brand-600 transition-colors ${activeSection === 'trainers' ? 'text-brand-600 font-bold border-b-2 border-brand-600 pb-1' : ''}`}>Staff</a>
           </nav>
 
@@ -292,8 +292,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
               <h4 className="text-white font-bold mb-6">Explorar</h4>
               <ul className="space-y-4">
                 <li><a href="#about" className="hover:text-brand-400 transition-colors">Sobre Nosotros</a></li>
-                <li><a href="#programs" className="hover:text-brand-400 transition-colors">Programas</a></li>
                 <li><a href="#benefits" className="hover:text-brand-400 transition-colors">Beneficios</a></li>
+                <li><a href="#programs" className="hover:text-brand-400 transition-colors">Programas</a></li>
               </ul>
             </div>
 
