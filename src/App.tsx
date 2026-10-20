@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStudioStore } from './store/studioStore';
 import { Navbar } from './components/layout/Navbar';
+import { SidebarLeft } from './components/layout/SidebarLeft';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { ClassesView } from './components/classes/ClassesView';
 import { StudentsView } from './components/students/StudentsView';
@@ -256,24 +257,95 @@ export function App() {
 
   const isIsolatedView = ['intro', 'landing', 'portal-alumno', 'registro', 'login', 'actualizar-clave'].includes(currentView);
 
+  const showSidebar = !isIsolatedView && currentRole !== 'client' && isAuthenticated;
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
-      
-      {/* Top Navbar (hidden on student portal, isolated registration, and login) */}
-      {!isIsolatedView && currentRole !== 'client' && isAuthenticated && (
-        <Navbar
-          currentView={currentView}
-          onNavigate={(view) => {
-            setCurrentView(view);
-            window.location.hash = `#${view}`;
-          }}
-          onOpenQRPoster={() => setShowQRPoster(true)}
-        />
+    <div className={`min-h-screen relative overflow-x-hidden flex font-sans selection:bg-[#F9A8D4] selection:text-[#831843] ${
+      currentRole === 'instructor' 
+        ? 'bg-instructor-theme text-[#2A2421]' 
+        : 'bg-[#F5F2EB] text-[#242E38]'
+    }`}>
+      {/* Decorative Pastel Watercolour Blobs & Organic Lines for Instructor Role */}
+      {currentRole === 'instructor' && (
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+          {/* Subtle warm watercolor wash shapes */}
+          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-gradient-to-br from-amber-200/40 via-yellow-100/30 to-pink-100/20 blur-3xl" />
+          <div className="absolute top-1/3 -right-24 w-80 h-80 rounded-full bg-gradient-to-bl from-pink-200/50 via-rose-100/30 to-transparent blur-3xl" />
+          <div className="absolute -bottom-20 right-10 w-96 h-96 rounded-full bg-gradient-to-tr from-pink-300/40 via-purple-100/30 to-amber-100/20 blur-3xl" />
+          <div className="absolute bottom-10 left-1/4 w-72 h-72 rounded-full bg-gradient-to-r from-amber-100/35 to-rose-100/25 blur-2xl" />
+
+          {/* Organic aesthetic line curves matching the reference image */}
+          <svg className="absolute inset-0 w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
+            {/* Top-right warm terracotta flowing stroke */}
+            <path
+              d="M 850,-50 C 920,80 820,180 890,320 C 940,420 1020,480 1150,520"
+              fill="none"
+              stroke="#D97706"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 920,-30 C 960,110 870,220 940,360 C 990,460 1060,510 1200,540"
+              fill="none"
+              stroke="#E11D48"
+              strokeWidth="1.2"
+              strokeOpacity="0.6"
+              strokeLinecap="round"
+            />
+            {/* Bottom-left soft violet wavy contour */}
+            <path
+              d="M -50,650 C 120,620 220,740 180,850 C 140,950 260,990 420,960"
+              fill="none"
+              stroke="#9333EA"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M -30,700 C 160,670 240,790 200,890 C 170,970 300,1030 460,990"
+              fill="none"
+              stroke="#C026D3"
+              strokeWidth="1.2"
+              strokeOpacity="0.5"
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {/* Golden / blush watercolor splatter texture dots */}
+          <div className="absolute inset-0 instructor-watermark pointer-events-none" />
+        </div>
       )}
 
-      {/* Main View Render */}
-      <div className="flex-1">
-        {renderMainView()}
+      {/* 1. Left Navbar Sidebar (fijo a la izquierda con Operativa Diaria) */}
+      {showSidebar && (
+        <div className="hidden lg:block shrink-0 relative z-10">
+          <SidebarLeft
+            currentView={currentView}
+            onNavigate={(view) => {
+              setCurrentView(view);
+              window.location.hash = `#${view}`;
+            }}
+          />
+        </div>
+      )}
+
+      {/* 2. Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+        {/* Top Navbar */}
+        {showSidebar && (
+          <Navbar
+            currentView={currentView}
+            onNavigate={(view) => {
+              setCurrentView(view);
+              window.location.hash = `#${view}`;
+            }}
+            onOpenQRPoster={() => setShowQRPoster(true)}
+          />
+        )}
+
+        {/* Main View Render */}
+        <div className="flex-1 min-w-0">
+          {renderMainView()}
+        </div>
       </div>
 
       {/* Printable / Downloadable Studio QR Poster Modal */}

@@ -60,35 +60,35 @@ export const CheckinPromoBanner: React.FC<CheckinPromoBannerProps> = ({
   return (
     <section aria-labelledby="checkin-promo-heading" className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
       
-      {/* LEFT: Olive Green QR Hero Banner (Exact match to AgendaFit screenshot) */}
-      <div className="lg:col-span-7 bg-brand-olive rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-soft flex flex-col justify-between">
+      {/* LEFT: Navy QR Hero Banner */}
+      <div className="lg:col-span-7 bg-[#1F2933] rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-soft flex flex-col justify-between">
         
         {/* Background decorative watermark */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full blur-2xl pointer-events-none -mr-20 -mt-20"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-[#5EBA8C]/10 rounded-full blur-2xl pointer-events-none -mr-20 -mt-20"></div>
 
         <div>
-          <div className="flex items-center space-x-2 text-brand-200 text-xs font-extrabold uppercase tracking-wider mb-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-300" />
+          <div className="flex items-center space-x-2 text-[#5EBA8C] text-xs font-extrabold uppercase tracking-wider mb-2">
+            <ShieldCheck className="w-4 h-4 text-[#5EBA8C]" />
             <span>Validación de Presencia + GPS</span>
           </div>
 
-          <h3 id="checkin-promo-heading" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
+          <h3 id="checkin-promo-heading" className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#FAF8F5] mb-3">
             Check-in Inteligente por QR
           </h3>
 
-          <p className="text-sm text-slate-100/90 leading-relaxed max-w-md mb-6">
+          <p className="text-sm text-stone-300 leading-relaxed max-w-md mb-6">
             Optimiza el ingreso de tus alumnos con el sistema de código QR. Automatiza la toma de asistencia y ahorra tiempo valioso.
           </p>
 
-          <div className="space-y-2.5 text-xs text-white/90 mb-6">
+          <div className="space-y-2.5 text-xs text-stone-200 mb-6">
             <div className="flex items-center space-x-2.5">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[11px]">
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[11px] text-[#FAF8F5]">
                 1
               </span>
               <span>Descarga e imprime tu código</span>
             </div>
             <div className="flex items-center space-x-2.5">
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[11px]">
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[11px] text-[#FAF8F5]">
                 2
               </span>
               <span>Colócalo en la recepción</span>
@@ -97,29 +97,29 @@ export const CheckinPromoBanner: React.FC<CheckinPromoBannerProps> = ({
         </div>
 
         {/* Bottom Banner Actions & QR Preview */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-white/15">
-          <div className="flex items-center space-x-2 bg-black/20 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit">
-            <span className="text-amber-300 text-xs">⚡</span>
-            <span className="text-xs font-bold uppercase tracking-wide text-amber-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-white/10">
+          <div className="flex items-center space-x-2 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit">
+            <span className="text-[#F7C59F] text-xs">⚡</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-[#F7C59F]">
               ACCESO INSTANTÁNEO
             </span>
           </div>
 
           <button
             onClick={onOpenQRPoster}
-            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-white text-slate-900 font-extrabold text-xs shadow-lg hover:bg-slate-50 hover:scale-102 active:scale-98 transition-all"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#5EBA8C] text-[#1F2933] font-extrabold text-xs shadow-lg hover:bg-[#72C89E] hover:scale-102 active:scale-98 transition-all"
           >
-            <QrCode className="w-4 h-4 text-brand-darkolive" />
+            <QrCode className="w-4 h-4 text-[#1F2933]" />
             <span>Ver & Imprimir Cartel QR</span>
           </button>
         </div>
       </div>
 
       {/* RIGHT: Onboarding Stepper Checklist (Steps 1 to 5) */}
-      <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-soft">
-        <h4 className="font-extrabold text-slate-900 text-base mb-4 flex items-center justify-between">
+      <div className="lg:col-span-5 bg-[#FAF8F5] rounded-3xl p-6 sm:p-7 border border-[#E8DFD1] shadow-soft">
+        <h4 className="font-extrabold text-[#1F2933] text-base mb-4 flex items-center justify-between">
           <span>Pasos de Configuración</span>
-          <span className="text-xs font-bold text-brand-600 bg-brand-50 px-2.5 py-0.5 rounded-full">
+          <span className="text-xs font-bold text-[#2B6D4E] bg-[#5EBA8C]/20 px-2.5 py-0.5 rounded-full">
             {steps.filter((s) => s.done).length} de {steps.length} listos
           </span>
         </h4>
@@ -129,13 +129,13 @@ export const CheckinPromoBanner: React.FC<CheckinPromoBannerProps> = ({
             <div
               key={step.num}
               onClick={() => onNavigate(step.targetView)}
-              className="flex items-start space-x-3 group cursor-pointer p-2 rounded-xl hover:bg-slate-50 transition-colors"
+              className="flex items-start space-x-3 group cursor-pointer p-2 rounded-xl hover:bg-[#EFE9DF] transition-colors"
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 transition-colors ${
                   step.done
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'border-2 border-slate-300 text-slate-500'
+                    ? 'bg-[#5EBA8C] text-[#1F2933]'
+                    : 'border-2 border-[#D6CAB7] text-stone-500'
                 }`}
               >
                 {step.done ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : step.num}

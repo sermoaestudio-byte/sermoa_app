@@ -45,45 +45,45 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
     <aside className="w-full lg:w-80 space-y-5">
       
       {/* 1. Card: Resumen del Estudio (Uso Particular SERMOA) */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-soft">
+      <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft">
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-extrabold text-slate-900">Estado del Estudio</span>
-            <span className="bg-emerald-50 text-emerald-700 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-emerald-200">
+            <span className="text-sm font-extrabold text-[#1F2933]">Estado del Estudio</span>
+            <span className="bg-[#5EBA8C]/20 text-[#2B6D4E] font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-[#5EBA8C]/40">
               Activo
             </span>
           </div>
-          <span className="text-xs font-bold text-slate-400">
+          <span className="text-xs font-bold text-stone-400">
             {todayClasses.length} clases hoy
           </span>
         </div>
 
         {/* Studio Quick Highlights */}
-        <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/60 mb-4 space-y-2">
+        <div className="bg-[#F5F1EB] rounded-2xl p-3.5 border border-[#E8DFD1] mb-4 space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium flex items-center space-x-1.5">
-              <Users className="w-3.5 h-3.5 text-blue-500" />
+            <span className="text-stone-500 font-medium flex items-center space-x-1.5">
+              <Users className="w-3.5 h-3.5 text-[#1F2933]" />
               <span>Alumnos Activos</span>
             </span>
-            <span className="font-extrabold text-slate-800">{activeStudentsCount}</span>
+            <span className="font-extrabold text-[#1F2933]">{activeStudentsCount}</span>
           </div>
 
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+            <span className="text-stone-500 font-medium flex items-center space-x-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#F7C59F]" />
               <span>Equipo Docente</span>
             </span>
-            <span className="font-extrabold text-slate-800">{instructorsCount} profesores</span>
+            <span className="font-extrabold text-[#1F2933]">{instructorsCount} profesores</span>
           </div>
 
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium flex items-center space-x-1.5">
-              <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-stone-500 font-medium flex items-center space-x-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[#5EBA8C]" />
               <span>Turnos Confirmados Hoy</span>
             </span>
-            <span className="font-extrabold text-emerald-700 font-bold">{todayBookings.length} reservas</span>
+            <span className="font-extrabold text-[#2B6D4E] font-bold">{todayBookings.length} reservas</span>
           </div>
         </div>
 
@@ -91,13 +91,13 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onNavigate('classes')}
-            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors text-center"
+            className="py-2 px-3 bg-[#EFE9DF] hover:bg-[#E5DDCF] text-[#1F2933] rounded-xl text-xs font-bold transition-colors text-center"
           >
             Ver Horarios
           </button>
           <button
             onClick={() => onNavigate('attendance')}
-            className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors text-center"
+            className="py-2 px-3 bg-[#EFE9DF] hover:bg-[#E5DDCF] text-[#1F2933] rounded-xl text-xs font-bold transition-colors text-center"
           >
             Pasar Lista
           </button>
@@ -105,27 +105,27 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
       </div>
 
       {/* 2. Card: Link de Inscripción para Redes Sociales & Alumnos */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-soft space-y-3">
+      <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft space-y-3">
         <div className="flex items-start space-x-3">
-          <div className="p-2.5 rounded-2xl bg-brand-50 text-brand-700 shadow-xs border border-brand-100">
+          <div className="p-2.5 rounded-2xl bg-[#F7C59F]/40 text-[#8C502E] shadow-xs border border-[#F7C59F]">
             <Share2 className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-700 bg-brand-100/60 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8C502E] bg-[#F7C59F]/40 px-2 py-0.5 rounded-full">
               Inscripciones & Redes
             </span>
-            <h4 className="font-extrabold text-slate-900 text-sm mt-1">
+            <h4 className="font-extrabold text-[#1F2933] text-sm mt-1">
               Link de Alta para Alumnos
             </h4>
-            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+            <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
               Publica este enlace en tu Instagram o envíalo por WhatsApp para que los interesados completen su ficha médica.
             </p>
           </div>
         </div>
 
         {/* Link Box Display */}
-        <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between text-xs font-mono text-slate-600 truncate">
-          <span className="truncate mr-2 text-[11px] font-bold text-brand-800">
+        <div className="p-2.5 bg-[#F5F1EB] rounded-2xl border border-[#E8DFD1] flex items-center justify-between text-xs font-mono text-stone-600 truncate">
+          <span className="truncate mr-2 text-[11px] font-bold text-[#1F2933]">
             {registrationLink}
           </span>
         </div>
@@ -134,7 +134,7 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
         <div className="space-y-2 pt-1">
           <button
             onClick={handleCopyRegistrationLink}
-            className="w-full py-2.5 px-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold flex items-center justify-center space-x-1.5 shadow-sm transition-all"
+            className="w-full py-2.5 px-3 rounded-2xl bg-[#1F2933] hover:bg-[#32404E] text-[#FAF8F5] text-xs font-extrabold flex items-center justify-center space-x-1.5 shadow-sm transition-all"
           >
             {copiedLink ? (
               <>

@@ -62,149 +62,37 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <header className={`sticky top-0 z-40 backdrop-blur-md border-b shadow-xs transition-colors ${
+      currentRole === 'instructor'
+        ? 'bg-[#FAF8F5]/85 border-rose-200/50'
+        : 'bg-[#FAF8F5]/95 border-[#E8DFD1]'
+    }`}>
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* LEFT: Brand Logo & Desktop Navigation */}
+          {/* LEFT: Brand Logo (visible en pantallas móviles/tablets donde la barra lateral se oculta) */}
           <div className="flex items-center space-x-3 sm:space-x-6">
             
-            {/* Studio Logo Badge & Name */}
+            {/* Studio Logo Badge & Name en Mobile */}
             <button
               onClick={() => handleNavClick('dashboard')}
-              className="flex items-center space-x-2.5 group focus:outline-none shrink-0"
+              className="flex lg:hidden items-center space-x-2.5 group focus:outline-none shrink-0"
             >
-              <div className="w-12 h-12 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-10 h-10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
                 <img src={studio.logo_url || '/logo.png'} alt={studio.name} className="w-full h-full object-contain" />
               </div>
               <div className="text-left">
-                <span className="font-black text-slate-900 text-base tracking-tight block leading-none">
+                <span className="font-black text-[#1F2933] text-sm tracking-tight block leading-none">
                   {studio.name || 'Sermoa'}
                 </span>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">
+                <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider block mt-0.5">
                   Más movimiento, más vida
                 </span>
               </div>
             </button>
 
-            {/* Desktop Navigation Links */}
+            {/* Desktop Navigation Links (Configuración & Caja) */}
             <nav className="hidden lg:flex items-center space-x-1">
-              
-              {/* Inicio */}
-              <button
-                onClick={() => handleNavClick('dashboard')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  currentView === 'dashboard'
-                    ? 'bg-slate-100 text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                Inicio
-              </button>
-
-              {/* Dropdown: Operativa Diaria */}
-              <div className="relative">
-                <button
-                  onClick={() => setOpenDropdown(openDropdown === 'operativa' ? null : 'operativa')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
-                    ['classes', 'students', 'attendance', 'instructors', 'branches', 'routines', 'history'].includes(currentView)
-                      ? 'bg-slate-100 text-slate-900 font-extrabold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Operativa Diaria</span>
-                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openDropdown === 'operativa' ? 'rotate-180' : ''}`} />
-                </button>
-
-                {openDropdown === 'operativa' && (
-                  <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-fade-in">
-                    <button
-                      onClick={() => handleNavClick('classes')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <Calendar className="w-4 h-4 text-brand-600" />
-                      <div>
-                        <div className="font-bold text-slate-800">Clases y reservas</div>
-                        <div className="text-[10px] text-slate-400">Horarios, cupos y calendario</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('students')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-between transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Users className="w-4 h-4 text-blue-500" />
-                        <div>
-                          <div className="font-bold text-slate-800">Alumnos</div>
-                          <div className="text-[10px] text-slate-400">Saldos, perfiles y CRM</div>
-                        </div>
-                      </div>
-                      {pendingStudents.length > 0 && (
-                        <span className="bg-amber-100 text-amber-900 font-extrabold text-[9px] px-2 py-0.5 rounded-full">
-                          {pendingStudents.length} req
-                        </span>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('attendance')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <ClipboardList className="w-4 h-4 text-rose-500" />
-                      <div>
-                        <div className="font-bold text-slate-800">Pasar lista</div>
-                        <div className="text-[10px] text-slate-400">Asistencia rápida del día</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('instructors')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <UserCheck className="w-4 h-4 text-purple-500" />
-                      <div>
-                        <div className="font-bold text-slate-800">Profesores</div>
-                        <div className="text-[10px] text-slate-400">Staff, roles y asignaciones</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('branches')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <MapPin className="w-4 h-4 text-amber-500" />
-                      <div>
-                        <div className="font-bold text-slate-800">Sucursales</div>
-                        <div className="text-[10px] text-slate-400">Sedes, salas y GPS</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('routines')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <Dumbbell className="w-4 h-4 text-cyan-500" />
-                      <div>
-                        <div className="font-bold text-slate-800">Rutinas</div>
-                        <div className="text-[10px] text-slate-400">Planes de entrenamiento</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavClick('history')}
-                      className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
-                    >
-                      <Wallet className="w-4 h-4 text-emerald-600" />
-                      <div>
-                        <div className="font-bold text-slate-800">Historial de movimientos</div>
-                        <div className="text-[10px] text-slate-400">Auditoría y compras</div>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
 
               {/* Dropdown: Estrategia & Configuración (Solo Administradores) */}
               {currentRole === 'admin' && (
@@ -213,38 +101,38 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
                     onClick={() => setOpenDropdown(openDropdown === 'estrategia' ? null : 'estrategia')}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
                       ['settings', 'finance'].includes(currentView)
-                        ? 'bg-slate-100 text-slate-900 font-extrabold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-[#1F2933] text-white font-extrabold'
+                        : 'text-stone-700 hover:text-[#1F2933] hover:bg-[#EFE9DF]'
                     }`}
                   >
-                    <Settings className="w-3.5 h-3.5 text-slate-500" />
+                    <Settings className="w-3.5 h-3.5 text-stone-500" />
                     <span>Configuración & Caja</span>
-                    <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openDropdown === 'estrategia' ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${openDropdown === 'estrategia' ? 'rotate-180' : ''}`} />
                   </button>
 
                   {openDropdown === 'estrategia' && (
-                    <div className="absolute left-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-fade-in">
+                    <div className="absolute left-0 mt-2 w-64 bg-[#FAF8F5] rounded-2xl shadow-xl border border-[#E8DFD1] py-2 z-50 animate-fade-in">
                       <button
                         onClick={() => handleNavClick('settings')}
-                        className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
+                        className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
                       >
-                        <Settings className="w-4 h-4 text-slate-600" />
+                        <Settings className="w-4 h-4 text-stone-600" />
                         <div>
-                          <div className="font-bold text-slate-800">Configuración del estudio</div>
-                          <div className="text-[10px] text-slate-400">Marca, políticas y WhatsApp</div>
+                          <div className="font-bold text-stone-800">Configuración del estudio</div>
+                          <div className="text-[10px] text-stone-500">Marca, políticas y WhatsApp</div>
                         </div>
                       </button>
 
                       <button
                         onClick={() => handleNavClick('finance')}
-                        className="w-full px-4 py-2.5 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center space-x-3 transition-colors"
+                        className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
                       >
-                        <BarChart3 className="w-4 h-4 text-brand-600" />
+                        <BarChart3 className="w-4 h-4 text-[#5EBA8C]" />
                         <div>
                           <div className="flex items-center space-x-1.5">
-                            <span className="font-bold text-slate-800">Control financiero & Caja</span>
+                            <span className="font-bold text-stone-800">Control financiero & Caja</span>
                           </div>
-                          <div className="text-[10px] text-slate-400">Ingresos, egresos y métricas</div>
+                          <div className="text-[10px] text-stone-500">Ingresos, egresos y métricas</div>
                         </div>
                       </button>
                     </div>
@@ -261,20 +149,20 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
             {/* Quick Action: Cartel QR */}
             <button
               onClick={onOpenQRPoster}
-              className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors shrink-0"
+              className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-stone-700 bg-[#EFE9DF]/80 hover:bg-[#E5DDCF] border border-[#DDD3C2] transition-colors shrink-0"
               title="Ver o imprimir Cartel QR"
             >
-              <QrCode className="w-3.5 h-3.5 text-brand-700" />
+              <QrCode className="w-3.5 h-3.5 text-[#1F2933]" />
               <span className="hidden md:inline">Cartel QR</span>
             </button>
 
             {/* Studio Links Center Button */}
             <button
               onClick={() => setShowLinksModal(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-800 bg-brand-50 hover:bg-brand-100/80 border border-brand-200 shadow-xs transition-all shrink-0"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#1F2933] bg-[#F7C59F]/60 hover:bg-[#F7C59F] border border-[#E8B48B] shadow-xs transition-all shrink-0"
               title="Ver y copiar enlaces para Instagram Bio y WhatsApp"
             >
-              <Share2 className="w-3.5 h-3.5 text-brand-700" />
+              <Share2 className="w-3.5 h-3.5 text-[#1F2933]" />
               <span className="hidden sm:inline text-[11px]">Links para Redes</span>
             </button>
 
@@ -334,35 +222,35 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-1.5 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
+                className="flex items-center space-x-1.5 p-1 rounded-full hover:bg-[#EFE9DF] transition-colors focus:outline-none"
               >
-                <div className="w-8 h-8 rounded-full bg-brand-800 text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-[#1F2933] text-[#FAF8F5] flex items-center justify-center font-bold text-xs uppercase shadow-xs">
                   {userProfile?.first_name?.[0] || 'U'}{userProfile?.last_name?.[0] || ''}
                 </div>
-                <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block" />
+                <ChevronDown className="w-3 h-3 text-stone-400 hidden sm:block" />
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-fade-in text-xs font-semibold">
-                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
-                    <p className="font-extrabold text-slate-800">{userProfile?.first_name} {userProfile?.last_name}</p>
-                    <p className="text-[10px] text-slate-400">{userProfile?.email}</p>
+                <div className="absolute right-0 mt-2 w-52 bg-[#FAF8F5] rounded-2xl shadow-xl border border-[#E8DFD1] py-2 z-50 animate-fade-in text-xs font-semibold">
+                  <div className="px-4 py-2 border-b border-[#E8DFD1] mb-1">
+                    <p className="font-extrabold text-[#1F2933]">{userProfile?.first_name} {userProfile?.last_name}</p>
+                    <p className="text-[10px] text-stone-500">{userProfile?.email}</p>
                   </div>
                   <button
                     onClick={() => { handleNavClick('settings'); setShowUserMenu(false); }}
-                    className="w-full px-4 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-2"
                   >
-                    <Settings className="w-3.5 h-3.5 text-slate-400" />
+                    <Settings className="w-3.5 h-3.5 text-stone-400" />
                     <span>Configuración</span>
                   </button>
                   <button
                     onClick={() => { handleNavClick('portal-alumno'); setShowUserMenu(false); }}
-                    className="w-full px-4 py-2 text-left text-brand-700 hover:bg-brand-50 flex items-center space-x-2 font-bold"
+                    className="w-full px-4 py-2 text-left text-[#1F2933] hover:bg-[#EFE9DF] flex items-center space-x-2 font-bold"
                   >
-                    <Smartphone className="w-3.5 h-3.5 text-brand-600" />
+                    <Smartphone className="w-3.5 h-3.5 text-[#5EBA8C]" />
                     <span>Ver App Alumno</span>
                   </button>
-                  <div className="border-t border-slate-100 mt-1 pt-1">
+                  <div className="border-t border-[#E8DFD1] mt-1 pt-1">
                     <button
                       onClick={async () => {
                         setShowUserMenu(false);
@@ -389,7 +277,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
             {/* Mobile Hamburger Menu Toggle */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+              className="lg:hidden p-2 text-stone-600 hover:text-stone-900 hover:bg-[#EFE9DF] rounded-xl transition-colors"
             >
               {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -400,13 +288,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
 
       {/* Mobile Drawer Menu */}
       {showMobileMenu && (
-        <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-2 animate-fade-in shadow-xl">
-          <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1">
+        <div className="lg:hidden bg-[#FAF8F5] border-b border-[#E8DFD1] px-4 pt-2 pb-6 space-y-2 animate-fade-in shadow-xl">
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-stone-400 px-3 py-1">
             Navegación
           </div>
           <button
             onClick={() => handleNavClick('dashboard')}
-            className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-50"
+            className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-stone-800 hover:bg-[#EFE9DF]"
           >
             Inicio
           </button>

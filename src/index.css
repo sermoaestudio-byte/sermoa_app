@@ -18,7 +18,7 @@
 
 @layer base {
   body {
-    @apply bg-[#f8fafc] text-slate-800 antialiased font-sans;
+    @apply bg-[#F5F2EB] text-[#242E38] antialiased font-sans;
   }
 }
 
@@ -59,4 +59,23 @@
 
 .animate-pulse-glow {
   animation: pulseGlow 2s infinite ease-in-out;
+}
+
+/* Fondo Acuarela Pastel para Profesor */
+.bg-instructor-theme {
+  background-color: #FDFBF7;
+  background-image: 
+    radial-gradient(circle at 10% 8%, rgba(254, 240, 138, 0.45) 0%, rgba(253, 230, 138, 0.25) 28%, transparent 55%),
+    radial-gradient(circle at 95% 15%, rgba(251, 207, 232, 0.5) 0%, rgba(244, 114, 182, 0.15) 30%, transparent 60%),
+    radial-gradient(circle at 85% 85%, rgba(249, 168, 212, 0.45) 0%, rgba(244, 114, 182, 0.2) 35%, transparent 65%),
+    radial-gradient(circle at 20% 90%, rgba(254, 215, 170, 0.35) 0%, rgba(251, 207, 232, 0.2) 30%, transparent 55%),
+    radial-gradient(circle at 50% 50%, rgba(253, 242, 248, 0.6) 0%, transparent 70%);
+  background-attachment: fixed;
+}
+
+.instructor-watermark {
+  background-image: radial-gradient(#F59E0B 1px, transparent 1px), radial-gradient(#EC4899 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  opacity: 0.12;
 }
