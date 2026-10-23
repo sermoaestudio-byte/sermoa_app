@@ -24,7 +24,7 @@ interface SidebarRightProps {
 }
 
 export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
-  const { studio, profiles, branches, classes, bookings } = useStudioStore();
+  const { studio, profiles, branches, classes, bookings, currentRole } = useStudioStore();
   const [copiedLink, setCopiedLink] = useState(false);
 
   const todayStr = toISODateString(new Date());
@@ -104,68 +104,70 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* 2. Card: Link de Inscripción para Redes Sociales & Alumnos */}
-      <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft space-y-3">
-        <div className="flex items-start space-x-3">
-          <div className="p-2.5 rounded-2xl bg-[#F7C59F]/40 text-[#8C502E] shadow-xs border border-[#F7C59F]">
-            <Share2 className="w-5 h-5" />
+      {/* 2. Card: Link de Inscripción para Redes Sociales & Alumnos (Oculto para rol Profesor) */}
+      {currentRole !== 'instructor' && (
+        <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft space-y-3">
+          <div className="flex items-start space-x-3">
+            <div className="p-2.5 rounded-2xl bg-[#F7C59F]/40 text-[#8C502E] shadow-xs border border-[#F7C59F]">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8C502E] bg-[#F7C59F]/40 px-2 py-0.5 rounded-full">
+                Inscripciones & Redes
+              </span>
+              <h4 className="font-extrabold text-[#1F2933] text-sm mt-1">
+                Link de Alta para Alumnos
+              </h4>
+              <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                Publica este enlace en tu Instagram o envíalo por WhatsApp para que los interesados completen su ficha médica.
+              </p>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8C502E] bg-[#F7C59F]/40 px-2 py-0.5 rounded-full">
-              Inscripciones & Redes
+
+          {/* Link Box Display */}
+          <div className="p-2.5 bg-[#F5F1EB] rounded-2xl border border-[#E8DFD1] flex items-center justify-between text-xs font-mono text-stone-600 truncate">
+            <span className="truncate mr-2 text-[11px] font-bold text-[#1F2933]">
+              {registrationLink}
             </span>
-            <h4 className="font-extrabold text-[#1F2933] text-sm mt-1">
-              Link de Alta para Alumnos
-            </h4>
-            <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
-              Publica este enlace en tu Instagram o envíalo por WhatsApp para que los interesados completen su ficha médica.
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2 pt-1">
+            <button
+              onClick={handleCopyRegistrationLink}
+              className="w-full py-2.5 px-3 rounded-2xl bg-[#1F2933] hover:bg-[#32404E] text-[#FAF8F5] text-xs font-extrabold flex items-center justify-center space-x-1.5 shadow-sm transition-all"
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-white" />
+                  <span>¡Link Copiado al Portapapeles!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copiar Enlace de Inscripción</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('portal-alumno')}
+              className="w-full py-2 px-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <span>Previsualizar Portal Alumno</span>
+            </button>
+          </div>
+
+          {/* Explanatory note */}
+          <div className="pt-2 border-t border-slate-100 flex items-start space-x-2 text-[10px] text-slate-500">
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
+            <p className="leading-tight">
+              Una vez que el alumno envía su solicitud y tú la apruebas desde <strong>Alumnos</strong>, el alumno podrá ingresar a su agenda de clases.
             </p>
           </div>
         </div>
-
-        {/* Link Box Display */}
-        <div className="p-2.5 bg-[#F5F1EB] rounded-2xl border border-[#E8DFD1] flex items-center justify-between text-xs font-mono text-stone-600 truncate">
-          <span className="truncate mr-2 text-[11px] font-bold text-[#1F2933]">
-            {registrationLink}
-          </span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-2 pt-1">
-          <button
-            onClick={handleCopyRegistrationLink}
-            className="w-full py-2.5 px-3 rounded-2xl bg-[#1F2933] hover:bg-[#32404E] text-[#FAF8F5] text-xs font-extrabold flex items-center justify-center space-x-1.5 shadow-sm transition-all"
-          >
-            {copiedLink ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-white" />
-                <span>¡Link Copiado al Portapapeles!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copiar Enlace de Inscripción</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={() => onNavigate('portal-alumno')}
-            className="w-full py-2 px-3 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-            <span>Previsualizar Portal Alumno</span>
-          </button>
-        </div>
-
-        {/* Explanatory note */}
-        <div className="pt-2 border-t border-slate-100 flex items-start space-x-2 text-[10px] text-slate-500">
-          <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
-          <p className="leading-tight">
-            Una vez que el alumno envía su solicitud y tú la apruebas desde <strong>Alumnos</strong>, el alumno podrá ingresar a su agenda de clases.
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* 3. Card: Material de Ayuda y Configuración */}
       <button

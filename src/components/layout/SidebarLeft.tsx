@@ -88,20 +88,16 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onNavigat
   const filteredItems = navItems;
 
   return (
-    <aside className={`w-64 border-r flex flex-col justify-between shrink-0 min-h-screen sticky top-0 z-30 transition-colors ${currentRole === 'instructor'
-        ? 'bg-[#FAF8F5]/80 backdrop-blur-md border-rose-200/50'
-        : 'bg-[#FAF8F5] border-[#E8DFD1]'
-      }`}>
+    <aside className={`w-64 border-r flex flex-col justify-between shrink-0 min-h-screen sticky top-0 z-30 transition-colors bg-[#FAF8F5] border-[#E8D5B5]`}>
 
       {/* Brand Header */}
       <div>
-        <div className={`h-16 px-4 border-b flex items-center justify-between ${currentRole === 'instructor' ? 'border-rose-200/40' : 'border-[#E8DFD1]'
-          }`}>
+        <div className="h-16 px-4 border-b border-[#E8D5B5] flex items-center justify-between">
           <button
             onClick={() => onNavigate('dashboard')}
-            className="flex items-center space-x-2.5 group focus:outline-none text-left"
+            className="flex items-center space-x-2.5 group focus:outline-none text-left cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-white border border-[#E8DFD1] flex items-center justify-center p-1 shadow-xs group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-white border border-[#E8D5B5] flex items-center justify-center p-1 shadow-2xs group-hover:scale-105 transition-transform shrink-0">
               <img
                 src={studio.logo_url || '/logo.png'}
                 alt={studio.name}
@@ -109,20 +105,18 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onNavigat
               />
             </div>
             <div>
-              <span className="font-black text-[#1F2933] text-sm tracking-tight block leading-tight">
+              <span className="font-black text-[#44261B] text-sm tracking-tight block leading-tight">
                 {studio.name || 'Sermoa'}
               </span>
-              <span className="text-[9px] text-stone-500 font-bold uppercase tracking-wider block">
+              <span className="text-[9px] text-[#A68D74] font-bold uppercase tracking-wider block">
                 Pilates & Studio
               </span>
             </div>
           </button>
         </div>
 
-
-
         {/* Nav list */}
-        <nav className="px-2.5 space-y-1 max-h-[calc(100vh-220px)] overflow-y-auto">
+        <nav className="px-2.5 py-3 space-y-1 max-h-[calc(100vh-220px)] overflow-y-auto">
           {filteredItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -131,17 +125,19 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onNavigat
               <button
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`w-full px-3 py-2.5 rounded-2xl text-left flex items-center justify-between transition-all group ${isActive
-                    ? 'bg-[#1F2933] text-white shadow-sm'
-                    : 'text-stone-700 hover:text-[#1F2933] hover:bg-[#EFE9DF]'
-                  }`}
+                className={`w-full px-3 py-2.5 rounded-2xl text-left flex items-center justify-between transition-all group cursor-pointer ${
+                  isActive
+                    ? 'bg-[#5E612B] text-[#F4E8D1] shadow-xs'
+                    : 'text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1]/60'
+                }`}
               >
                 <div className="flex items-center space-x-3 min-w-0">
                   <div
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isActive
-                        ? 'bg-white/10 text-[#5EBA8C]'
-                        : 'bg-[#EFE9DF] text-stone-600 group-hover:bg-[#E5DDCF] group-hover:text-[#1F2933]'
-                      }`}
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      isActive
+                        ? 'bg-white/15 text-[#F4E8D1]'
+                        : 'bg-[#F4E8D1] text-[#5E612B] group-hover:bg-[#E8D5B5]'
+                    }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                   </div>
@@ -150,8 +146,9 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onNavigat
                       {item.label}
                     </span>
                     <span
-                      className={`text-[10px] block leading-none truncate ${isActive ? 'text-stone-300' : 'text-stone-500'
-                        }`}
+                      className={`text-[10px] block leading-none truncate ${
+                        isActive ? 'text-[#F4E8D1]/80' : 'text-[#A68D74]'
+                      }`}
                     >
                       {item.description}
                     </span>
@@ -160,10 +157,11 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onNavigat
 
                 {item.badge && (
                   <span
-                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 ${isActive
-                        ? 'bg-[#F7C59F] text-[#8C502E]'
-                        : 'bg-[#F7C59F]/60 text-[#8C502E]'
-                      }`}
+                    className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 ${
+                      isActive
+                        ? 'bg-[#F4E8D1] text-[#44261B]'
+                        : 'bg-[#F4E8D1] text-[#5E612B] border border-[#E8D5B5]'
+                    }`}
                   >
                     {item.badge}
                   </span>
@@ -172,6 +170,13 @@ export const SidebarLeft: React.FC<SidebarLeftProps> = ({ currentView, onNavigat
             );
           })}
         </nav>
+      </div>
+
+      {/* Footer studio info */}
+      <div className="p-3 border-t border-[#E8D5B5] bg-[#F4E8D1]/30 text-center">
+        <span className="text-[10px] font-bold text-[#A68D74]">
+          Panel de Operativa • Sermoa
+        </span>
       </div>
 
     </aside>

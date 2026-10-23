@@ -33,6 +33,21 @@ export default {
           700: '#4b5945',
           800: '#3e493a',
           900: '#343e32',
+        },
+        autumn: {
+          beige: '#E8D5B5',
+          camel: '#C18749',
+          chocolate: '#44261B',
+          oliva: '#5E612B',
+          marfil: '#F4E8D1',
+          taupe: '#A68D74',
+          mostaza: '#D98E2A',
+          terracota: '#B74E2A',
+          musgo: '#545D31',
+          coral: '#CB563C',
+          turquesa: '#4E7E7E',
+          petrol: '#253C3C',
+          cream: '#F7F3EC',
         }
       },
       fontFamily: {

@@ -51,23 +51,23 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {/* Card 1: Total de Alumnos */}
         <button
           onClick={() => onNavigate('students')}
-          className="bg-[#FAF8F5] rounded-2xl p-4 sm:p-5 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#1F2933]/30 transition-all flex items-center justify-between text-left group"
+          className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all flex items-center justify-between text-left group cursor-pointer"
         >
           <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#1F2933] text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
-              <Users className="w-5 h-5 text-[#FAF8F5]" />
+            <div className="w-11 h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+              <Users className="w-5 h-5 text-[#5E612B]" />
             </div>
             <div>
               <div className="flex items-center space-x-1">
-                <span className="text-xs font-bold text-stone-500 uppercase tracking-tight">
+                <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight">
                   {isInstructor ? 'TOTAL DE ALUMNOS' : 'Alumnos Activos'}
                 </span>
-                <HelpCircle className="w-3 h-3 text-stone-400" />
+                <HelpCircle className="w-3 h-3 text-[#A68D74]" />
               </div>
-              <div className="text-2xl font-extrabold text-[#1F2933] leading-tight mt-0.5">
+              <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
                 {isInstructor ? totalEnrolledStudents : activeStudents.length}
               </div>
-              <span className="text-[11px] text-stone-500 font-medium">
+              <span className="text-[11px] text-[#A68D74] font-medium">
                 {isInstructor ? 'Inscriptos a clases' : `Total: ${totalStudents}`}
               </span>
             </div>
@@ -77,20 +77,20 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {/* Card 2: Clases Hoy & Gente en el día */}
         <button
           onClick={() => onNavigate('classes')}
-          className="bg-[#FAF8F5] rounded-2xl p-4 sm:p-5 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#5EBA8C]/50 transition-all flex items-center justify-between text-left group"
+          className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all flex items-center justify-between text-left group cursor-pointer"
         >
           <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#5EBA8C]/20 text-[#2B6D4E] flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="w-11 h-11 rounded-2xl bg-[#eaede7] border border-[#cadbcd] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs font-bold text-stone-500 uppercase tracking-tight block">
+              <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight block">
                 {isInstructor ? 'ALUMNOS DE HOY' : 'Clases Hoy'}
               </span>
-              <div className="text-2xl font-extrabold text-[#1F2933] leading-tight mt-0.5">
+              <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
                 {isInstructor ? totalStudentsToday : classesToday.length}
               </div>
-              <span className="text-[11px] text-stone-500 font-medium">
+              <span className="text-[11px] text-[#A68D74] font-medium">
                 {isInstructor ? `${classesToday.length} turnos programados` : 'Programadas'}
               </span>
             </div>
@@ -101,18 +101,18 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {!isInstructor && (
           <button
             onClick={() => onNavigate('instructors')}
-            className="bg-[#FAF8F5] rounded-2xl p-4 sm:p-5 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#F7C59F] transition-all flex items-center justify-between text-left group"
+            className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#C18749]/50 transition-all flex items-center justify-between text-left group cursor-pointer"
           >
             <div className="flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-[#F7C59F]/30 text-[#8C502E] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#C18749] flex items-center justify-center group-hover:scale-105 transition-transform">
                 <UserCheck className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs font-bold text-stone-500 uppercase tracking-tight block">Profesores</span>
-                <div className="text-2xl font-extrabold text-[#1F2933] leading-tight mt-0.5">
+                <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight block">Profesores</span>
+                <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
                   {instructorsCount}
                 </div>
-                <span className="text-[11px] text-stone-500 font-medium">Staff activo</span>
+                <span className="text-[11px] text-[#A68D74] font-medium">Staff activo</span>
               </div>
             </div>
           </button>
@@ -122,18 +122,18 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {!isInstructor && (
           <button
             onClick={() => onNavigate('branches')}
-            className="bg-[#FAF8F5] rounded-2xl p-4 sm:p-5 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#1F2933]/30 transition-all flex items-center justify-between text-left group"
+            className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all flex items-center justify-between text-left group cursor-pointer"
           >
             <div className="flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-[#EFE9DF] text-[#1F2933] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-2xl bg-[#FAF8F5] border border-[#E8D5B5] text-[#44261B] flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs font-bold text-stone-500 uppercase tracking-tight block">Sucursales</span>
-                <div className="text-2xl font-extrabold text-[#1F2933] leading-tight mt-0.5">
+                <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight block">Sucursales</span>
+                <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
                   {branchesCount}
                 </div>
-                <span className="text-[11px] text-stone-500 font-medium">Sedes activas</span>
+                <span className="text-[11px] text-[#A68D74] font-medium">Sedes activas</span>
               </div>
             </div>
           </button>

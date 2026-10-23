@@ -76,21 +76,21 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
             {onNavigate && (
               <button
                 onClick={() => onNavigate('dashboard')}
-                className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl shadow-xs transition-colors shrink-0 mt-0.5"
+                className="p-2.5 bg-white border border-[#E8D5B5] hover:bg-[#F4E8D1] text-[#44261B] rounded-2xl shadow-xs transition-colors shrink-0 mt-0.5 cursor-pointer"
                 title="Volver al Inicio"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4 text-[#44261B]" />
               </button>
             )}
             <div>
-              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
-                <Users className="w-3.5 h-3.5 text-blue-600" />
+              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-[#A68D74] mb-1">
+                <Users className="w-3.5 h-3.5 text-[#5E612B]" />
                 <span>Operativa Diaria</span>
               </div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl font-extrabold text-[#44261B] tracking-tight">
                 Gestión de Alumnos (CRM)
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-[#A68D74] mt-0.5">
                 Administra perfiles, cobros de cuotas, saldos de créditos, deudas y solicitudes
               </p>
             </div>
@@ -99,16 +99,16 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
           <div className="flex items-center space-x-2.5 self-start sm:self-center">
             <button
               onClick={() => setShowHelp(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold shadow-xs transition-all"
+              className="inline-flex items-center space-x-1.5 px-3 py-2 bg-white hover:bg-[#F4E8D1] text-[#44261B] border border-[#E8D5B5] rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
               title="Ver guía de uso de Alumnos"
             >
-              <HelpCircle className="w-4 h-4 text-blue-600" />
+              <HelpCircle className="w-4 h-4 text-[#5E612B]" />
               <span>Ayuda del Módulo</span>
             </button>
 
             <button
               onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               <span>Nuevo Alumno</span>
@@ -120,10 +120,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
         <div className="flex items-center space-x-2 overflow-x-auto pb-2 mb-6 text-xs font-bold scrollbar-none">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-xl transition-all ${
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
               activeTab === 'all'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                ? 'bg-[#44261B] text-white shadow-sm'
+                : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
             }`}
           >
             Todos ({clients.length})
@@ -131,15 +131,15 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'pending'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                ? 'bg-[#C18749] text-white shadow-sm'
+                : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
             }`}
           >
             <span>Solicitudes Pendientes</span>
             {pendingCount > 0 && (
-              <span className="bg-amber-100 text-amber-900 text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+              <span className="bg-[#F4E8D1] text-[#44261B] text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
                 {pendingCount}
               </span>
             )}
@@ -147,10 +147,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-xl transition-all ${
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
               activeTab === 'active'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                ? 'bg-[#5E612B] text-[#F4E8D1] shadow-sm'
+                : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
             }`}
           >
             Activos ({clients.filter((c) => c.status === 'active').length})
@@ -158,15 +158,15 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setActiveTab('debt')}
-            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'debt'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                ? 'bg-[#B74E2A] text-white shadow-sm'
+                : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
             }`}
           >
             <span>Con Deuda / Pendientes</span>
             {debtCount > 0 && (
-              <span className="bg-rose-100 text-rose-900 text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+              <span className="bg-[#FAF8F5] text-[#B74E2A] text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
                 {debtCount}
               </span>
             )}
@@ -174,10 +174,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setActiveTab('no_credits')}
-            className={`px-4 py-2 rounded-xl transition-all ${
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
               activeTab === 'no_credits'
-                ? 'bg-purple-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                ? 'bg-[#A68D74] text-white shadow-sm'
+                : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
             }`}
           >
             Sin Créditos
@@ -192,30 +192,30 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
           />
         ) : (
           /* Normal Students Table & Search */
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-soft overflow-hidden">
+          <div className="bg-white rounded-3xl border border-[#E8D5B5] shadow-soft overflow-hidden">
             
             {/* Search Bar */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div className="p-4 sm:p-5 border-b border-[#E8D5B5] flex items-center justify-between gap-4">
               <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#A68D74] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Buscar alumno por nombre, email o teléfono..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 bg-[#FAF8F5] border border-[#E8D5B5] rounded-xl text-xs font-medium text-[#44261B] focus:outline-none focus:ring-2 focus:ring-[#5E612B]"
                 />
               </div>
 
-              <span className="text-xs text-slate-400 font-medium hidden sm:block">
-                Mostrando <strong>{filteredClients.length}</strong> alumnos
+              <span className="text-xs text-[#A68D74] font-medium hidden sm:block">
+                Mostrando <strong className="text-[#44261B]">{filteredClients.length}</strong> alumnos
               </span>
             </div>
 
             {/* Students Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/80 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-100">
+                <thead className="bg-[#FAF8F5] text-[#A68D74] font-bold uppercase text-[10px] tracking-wider border-b border-[#E8D5B5]">
                   <tr>
                     <th className="px-6 py-3.5">Alumno</th>
                     <th className="px-6 py-3.5">Contacto / WhatsApp</th>
@@ -225,10 +225,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                     <th className="px-6 py-3.5 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-[#E8D5B5]/60 font-medium text-[#44261B]">
                   {filteredClients.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                      <td colSpan={6} className="px-6 py-12 text-center text-[#A68D74]">
                         No se encontraron alumnos con los criterios seleccionados.
                       </td>
                     </tr>
@@ -237,37 +237,41 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                       <tr
                         key={student.id}
                         onClick={() => setSelectedStudent(student)}
-                        className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                        className="hover:bg-[#FAF8F5]/90 transition-colors cursor-pointer group"
                       >
                         {/* Alumno Info */}
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center group-hover:scale-105 transition-transform">
-                              {student.first_name[0]}{student.last_name[0]}
+                            <div className="w-9 h-9 rounded-full bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] font-bold text-xs flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                              {student.avatar_url ? (
+                                <img src={student.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span>{student.first_name[0]}{student.last_name[0]}</span>
+                              )}
                             </div>
                             <div>
-                              <span className="font-extrabold text-slate-900 block group-hover:text-blue-600 transition-colors">
+                              <span className="font-extrabold text-[#44261B] block group-hover:text-[#5E612B] transition-colors">
                                 {student.first_name} {student.last_name}
                               </span>
-                              <span className="text-[11px] text-slate-400">{student.email}</span>
+                              <span className="text-[11px] text-[#A68D74]">{student.email}</span>
                             </div>
                           </div>
                         </td>
 
                         {/* Phone */}
-                        <td className="px-6 py-4 font-semibold text-slate-800">
+                        <td className="px-6 py-4 font-semibold text-[#44261B]">
                           {student.phone}
                         </td>
 
                         {/* Status */}
                         <td className="px-6 py-4">
                           <span
-                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase ${
+                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${
                               student.status === 'active'
-                                ? 'bg-emerald-100 text-emerald-800'
+                                ? 'bg-[#eaede7] text-[#5E612B] border-[#cadbcd]'
                                 : student.status === 'pending_approval'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-100 text-slate-600'
+                                ? 'bg-[#F4E8D1] text-[#C18749] border-[#E8D5B5]'
+                                : 'bg-[#FAF8F5] text-[#A68D74] border-[#E8D5B5]'
                             }`}
                           >
                             {student.status === 'active' ? 'Activo' : student.status === 'pending_approval' ? 'Pendiente' : student.status}
@@ -279,18 +283,18 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                           <div>
                             <span
                               className={`font-extrabold text-sm block leading-tight ${
-                                student.credits_balance > 0 ? 'text-emerald-700' : 'text-slate-400'
+                                student.credits_balance > 0 ? 'text-[#5E612B]' : 'text-[#A68D74]'
                               }`}
                             >
-                              {student.credits_balance} clases
+                              {student.credits_balance === 999 ? 'Pase Libre' : `${student.credits_balance} clases`}
                             </span>
                             {student.debt_amount > 0 ? (
-                              <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded-md mt-0.5">
+                              <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-[#B74E2A] bg-[#B74E2A]/10 border border-[#B74E2A]/30 px-1.5 py-0.2 rounded-md mt-0.5">
                                 <AlertCircle className="w-3 h-3" />
                                 <span>Deuda: -${student.debt_amount.toLocaleString('es-AR')}</span>
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-emerald-600 mt-0.5 block">
+                              <span className="text-[10px] font-bold text-[#5E612B] mt-0.5 block">
                                 ✓ Al día
                               </span>
                             )}
@@ -302,10 +306,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                           <span
                             className={`text-[11px] font-bold ${
                               student.has_medical_certificate
-                                ? 'text-emerald-600'
+                                ? 'text-[#5E612B]'
                                 : student.medical_notes
-                                ? 'text-rose-600'
-                                : 'text-slate-400'
+                                ? 'text-[#B74E2A]'
+                                : 'text-[#A68D74]'
                             }`}
                           >
                             {student.has_medical_certificate ? '✅ Apto al día' : student.medical_notes ? '⚠️ Con nota médica' : 'Sin apto'}
@@ -318,7 +322,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                             {/* Registrar Cobro / Pago Directo */}
                             <button
                               onClick={() => setPaymentStudentId(student.id)}
-                              className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-2xs transition-all flex items-center space-x-1"
+                              className="px-2.5 py-1.5 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] font-extrabold text-[11px] rounded-xl shadow-2xs transition-all flex items-center space-x-1 cursor-pointer"
                               title="Registrar cobro / ingreso"
                             >
                               <DollarSign className="w-3.5 h-3.5" />
@@ -331,7 +335,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                                 const msg = `Hola ${student.first_name}, te escribimos de ${studio.name}.`;
                                 openWhatsApp(student.phone, msg);
                               }}
-                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-emerald-200/80"
+                              className="p-1.5 text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer"
                               title="WhatsApp directo"
                             >
                               <MessageCircle className="w-4 h-4" />
@@ -340,25 +344,25 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                             {/* Editar Alumno */}
                             <button
                               onClick={() => setStudentToEdit(student)}
-                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-slate-200"
+                              className="p-1.5 text-[#A68D74] hover:text-[#44261B] hover:bg-[#F4E8D1] rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer"
                               title="Editar datos del alumno"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
 
                             {/* Eliminar Alumno */}
                             <button
                               onClick={() => setStudentToDelete(student)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-slate-200"
+                              className="p-1.5 text-[#A68D74] hover:text-[#B74E2A] hover:bg-[#B74E2A]/10 rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer"
                               title="Eliminar alumno"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
 
                             {/* Ver Ficha Lateral */}
                             <button
                               onClick={() => setSelectedStudent(student)}
-                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-xl transition-colors"
+                              className="px-2.5 py-1.5 bg-[#FAF8F5] hover:bg-[#F4E8D1] text-[#44261B] border border-[#E8D5B5] font-bold text-[11px] rounded-xl transition-colors cursor-pointer"
                             >
                               Ver Ficha
                             </button>

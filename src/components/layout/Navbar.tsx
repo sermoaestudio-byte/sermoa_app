@@ -62,11 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
   };
 
   return (
-    <header className={`sticky top-0 z-40 backdrop-blur-md border-b shadow-xs transition-colors ${
-      currentRole === 'instructor'
-        ? 'bg-[#FAF8F5]/85 border-rose-200/50'
-        : 'bg-[#FAF8F5]/95 border-[#E8DFD1]'
-    }`}>
+    <header className="sticky top-0 z-40 backdrop-blur-md border-b border-[#E8D5B5] bg-[#FAF8F5]/95 shadow-xs transition-colors">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           

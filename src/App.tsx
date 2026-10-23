@@ -260,58 +260,67 @@ export function App() {
   const showSidebar = !isIsolatedView && currentRole !== 'client' && isAuthenticated;
 
   return (
-    <div className={`min-h-screen relative overflow-x-hidden flex font-sans selection:bg-[#F9A8D4] selection:text-[#831843] ${
+    <div className={`min-h-screen relative overflow-x-hidden flex font-sans selection:bg-[#E8D5B5] selection:text-[#44261B] ${
       currentRole === 'instructor' 
-        ? 'bg-instructor-theme text-[#2A2421]' 
-        : 'bg-[#F5F2EB] text-[#242E38]'
+        ? 'bg-[#F5F2EB] text-[#44261B]' 
+        : 'bg-[#F5F2EB] text-[#44261B]'
     }`}>
-      {/* Decorative Pastel Watercolour Blobs & Organic Lines for Instructor Role */}
-      {currentRole === 'instructor' && (
+      {/* Decorative Silhouette Watermark in Background & Watercolor wash for instructor */}
+      {showSidebar && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-          {/* Subtle warm watercolor wash shapes */}
-          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-gradient-to-br from-amber-200/40 via-yellow-100/30 to-pink-100/20 blur-3xl" />
-          <div className="absolute top-1/3 -right-24 w-80 h-80 rounded-full bg-gradient-to-bl from-pink-200/50 via-rose-100/30 to-transparent blur-3xl" />
-          <div className="absolute -bottom-20 right-10 w-96 h-96 rounded-full bg-gradient-to-tr from-pink-300/40 via-purple-100/30 to-amber-100/20 blur-3xl" />
-          <div className="absolute bottom-10 left-1/4 w-72 h-72 rounded-full bg-gradient-to-r from-amber-100/35 to-rose-100/25 blur-2xl" />
+          {/* Silhouette on the right */}
+          <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-4 sm:pr-8 pointer-events-none">
+            <img
+              src="/pilates-silhouette.png"
+              alt=""
+              className="w-[300px] sm:w-[460px] md:w-[540px] max-w-none opacity-[0.14] select-none mix-blend-multiply translate-x-12 sm:translate-x-16 translate-y-4"
+            />
+          </div>
 
-          {/* Organic aesthetic line curves matching the reference image */}
-          <svg className="absolute inset-0 w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
-            {/* Top-right warm terracotta flowing stroke */}
-            <path
-              d="M 850,-50 C 920,80 820,180 890,320 C 940,420 1020,480 1150,520"
-              fill="none"
-              stroke="#D97706"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M 920,-30 C 960,110 870,220 940,360 C 990,460 1060,510 1200,540"
-              fill="none"
-              stroke="#E11D48"
-              strokeWidth="1.2"
-              strokeOpacity="0.6"
-              strokeLinecap="round"
-            />
-            {/* Bottom-left soft violet wavy contour */}
-            <path
-              d="M -50,650 C 120,620 220,740 180,850 C 140,950 260,990 420,960"
-              fill="none"
-              stroke="#9333EA"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M -30,700 C 160,670 240,790 200,890 C 170,970 300,1030 460,990"
-              fill="none"
-              stroke="#C026D3"
-              strokeWidth="1.2"
-              strokeOpacity="0.5"
-              strokeLinecap="round"
-            />
-          </svg>
+          {/* Watercolor wash and organic contour lines when in instructor mode */}
+          {currentRole === 'instructor' && (
+            <>
+              <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-gradient-to-br from-[#E8D5B5]/50 via-[#F4E8D1]/40 to-transparent blur-3xl" />
+              <div className="absolute top-1/3 -right-24 w-80 h-80 rounded-full bg-gradient-to-bl from-[#C18749]/30 via-[#D98E2A]/20 to-transparent blur-3xl" />
+              <div className="absolute -bottom-20 right-10 w-96 h-96 rounded-full bg-gradient-to-tr from-[#B74E2A]/25 via-[#CB563C]/15 to-[#E8D5B5]/20 blur-3xl" />
+              <div className="absolute bottom-10 left-1/4 w-72 h-72 rounded-full bg-gradient-to-r from-[#5E612B]/20 to-[#E8D5B5]/30 blur-2xl" />
 
-          {/* Golden / blush watercolor splatter texture dots */}
-          <div className="absolute inset-0 instructor-watermark pointer-events-none" />
+              <svg className="absolute inset-0 w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M 850,-50 C 920,80 820,180 890,320 C 940,420 1020,480 1150,520"
+                  fill="none"
+                  stroke="#C18749"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 920,-30 C 960,110 870,220 940,360 C 990,460 1060,510 1200,540"
+                  fill="none"
+                  stroke="#B74E2A"
+                  strokeWidth="1.2"
+                  strokeOpacity="0.6"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M -50,650 C 120,620 220,740 180,850 C 140,950 260,990 420,960"
+                  fill="none"
+                  stroke="#5E612B"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M -30,700 C 160,670 240,790 200,890 C 170,970 300,1030 460,990"
+                  fill="none"
+                  stroke="#4E7E7E"
+                  strokeWidth="1.2"
+                  strokeOpacity="0.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              <div className="absolute inset-0 instructor-watermark pointer-events-none" />
+            </>
+          )}
         </div>
       )}
 

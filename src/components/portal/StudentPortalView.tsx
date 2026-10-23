@@ -12,16 +12,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  LogOut
+  LogOut,
+  Menu
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
 import { getWeekDates, toISODateString } from '../../utils/date';
 import { StudentRegisterView } from './StudentRegisterView';
-import { StudentDigitalPass } from './StudentDigitalPass';
+import { StudentHomeDashboard } from './StudentHomeDashboard';
+import { StudentProfileView } from './StudentProfileView';
 import { StudentBookingsTab } from './StudentBookingsTab';
 import { StudentRoutinesTab } from './StudentRoutinesTab';
 import { StudentCheckinModal } from '../checkin/StudentCheckinModal';
+import { StudentSidebar } from './StudentSidebar';
 import { ClassSchedule } from '../../types';
 import { Dumbbell } from 'lucide-react';
 
@@ -41,7 +44,8 @@ export const StudentPortalView: React.FC = () => {
     expireWaitlistEntry,
   } = useStudioStore();
 
-  const [activeTab, setActiveTab] = useState<'schedule' | 'my_bookings' | 'my_routines' | 'digital_pass' | 'register'>('schedule');
+  const [activeTab, setActiveTab] = useState<'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'register'>('home');
+  const [showSidebarDrawer, setShowSidebarDrawer] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || '');
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay());
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
@@ -102,29 +106,58 @@ export const StudentPortalView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24">
+    <div className="min-h-screen bg-[#F5F2EB]/60 pb-24 relative overflow-x-hidden">
       
+      {/* Decorative Silhouette Watermark in Background (Contraste artístico Sermoa en el lateral) */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-end"
+        aria-hidden="true"
+      >
+        <img
+          src="/pilates-silhouette.png"
+          alt=""
+          className="w-[300px] sm:w-[460px] md:w-[540px] max-w-none opacity-[0.14] select-none mix-blend-multiply translate-x-12 sm:translate-x-16 translate-y-4"
+        />
+      </div>
+
       {/* Student App Topbar */}
-      <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <header className="bg-white/95 backdrop-blur-md border-b border-[#E8D5B5] sticky top-0 z-30 shadow-xs relative">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-full bg-brand-800 text-white flex items-center justify-center font-extrabold text-sm shadow-sm uppercase">
-              <span>{currentStudent ? `${currentStudent.first_name?.[0] || ''}${currentStudent.last_name?.[0] || ''}` : 'U'}</span>
+            {/* Hamburger Button on Left */}
+            <button
+              onClick={() => setShowSidebarDrawer(true)}
+              className="p-2 text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer flex items-center justify-center shadow-2xs"
+              title="Abrir menú lateral"
+            >
+              <Menu className="w-5 h-5 text-[#44261B]" />
+            </button>
+
+            <div className="w-10 h-10 rounded-2xl bg-[#eaede7] border border-[#cadbcd] text-[#34573c] overflow-hidden flex items-center justify-center font-extrabold text-xs shadow-2xs">
+              {currentStudent?.avatar_url ? (
+                <img
+                  src={currentStudent.avatar_url}
+                  alt={currentStudent.first_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{currentStudent ? `${currentStudent.first_name?.[0] || ''}${currentStudent.last_name?.[0] || ''}` : 'S'}</span>
+              )}
             </div>
             <div>
-              <h2 className="font-extrabold text-slate-900 text-sm leading-tight">
+              <h2 className="font-extrabold text-[#242E38] text-sm leading-tight">
                 {currentStudent ? `${currentStudent.first_name} ${currentStudent.last_name}` : studio.name}
               </h2>
-              <span className="text-[11px] text-slate-400 font-medium">Portal de Alumnos</span>
+              <span className="text-[11px] text-[#778c6e] font-medium">Portal de Alumnos • Sermoa</span>
             </div>
           </div>
 
-          {/* Student Actions & Logout */}
+          {/* Student Simulator Selector */}
           <div className="flex items-center space-x-2">
             <select
               value={currentStudent?.id || ''}
               onChange={(e) => setCurrentStudentId(e.target.value)}
-              className="text-xs border-slate-200 rounded-lg bg-slate-50 p-1.5 focus:ring-brand-500 focus:border-brand-500 max-w-[150px]"
+              className="text-xs border-[#E8D5B5] rounded-xl bg-[#FAF8F5] p-1.5 focus:ring-[#5E612B] focus:border-[#5E612B] max-w-[140px] text-[#44261B] font-medium"
               title="Simulador: Cambiar de Alumno"
             >
               <option value="" disabled>Emular Usuario...</option>
@@ -132,68 +165,7 @@ export const StudentPortalView: React.FC = () => {
                 <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
               ))}
             </select>
-            <button
-              onClick={() => {
-                window.location.hash = '#login';
-              }}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-slate-200"
-              title="Salir / Iniciar sesión con otra cuenta"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
           </div>
-        </div>
-
-        {/* Student App Navigation Tabs */}
-        <div className="max-w-2xl mx-auto px-4 flex items-center justify-around text-xs font-bold border-t border-slate-100 pt-1">
-          <button
-            onClick={() => setActiveTab('schedule')}
-            className={`py-2.5 px-3 border-b-2 transition-all flex items-center space-x-1.5 ${
-              activeTab === 'schedule'
-                ? 'border-brand-600 text-brand-800'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            <span>Reservar Clases</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('my_bookings')}
-            className={`py-2.5 px-3 border-b-2 transition-all flex items-center space-x-1.5 ${
-              activeTab === 'my_bookings'
-                ? 'border-brand-600 text-brand-800'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>Mis Turnos</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('my_routines')}
-            className={`py-2.5 px-3 border-b-2 transition-all flex items-center space-x-1.5 ${
-              activeTab === 'my_routines'
-                ? 'border-brand-600 text-brand-800'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Dumbbell className="w-4 h-4" />
-            <span>Mi Rutina</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('digital_pass')}
-            className={`py-2.5 px-3 border-b-2 transition-all flex items-center space-x-1.5 ${
-              activeTab === 'digital_pass'
-                ? 'border-brand-600 text-brand-800'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <QrCode className="w-4 h-4" />
-            <span>Pase QR</span>
-          </button>
-
         </div>
       </header>
 
@@ -206,20 +178,25 @@ export const StudentPortalView: React.FC = () => {
             
             {/* Student Credit Summary Pill or Empty Register Banner */}
             {currentStudent ? (
-              <div className="bg-gradient-to-r from-brand-600 to-brand-800 text-white rounded-3xl p-5 shadow-soft flex items-center justify-between">
+              <div 
+                className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between border border-[#E8D5B5]"
+                style={{
+                  background: 'linear-gradient(135deg, #44261B 0%, #5E612B 45%, #C18749 100%)',
+                }}
+              >
                 <div>
-                  <span className="text-xs text-brand-100 block font-medium">Hola, {currentStudent.first_name}!</span>
-                  <h3 className="text-xl font-extrabold mt-0.5">
+                  <span className="text-xs text-[#F4E8D1] block font-medium">Hola, {currentStudent.first_name}!</span>
+                  <h3 className="text-xl font-extrabold mt-0.5 text-white">
                     {currentStudent.credits_balance === 999 
                       ? 'Pase Libre (Ilimitado)' 
                       : `${currentStudent.credits_balance} Clases Disponibles`}
                   </h3>
                 </div>
                 <button
-                  onClick={() => setActiveTab('digital_pass')}
-                  className="px-3.5 py-2 bg-white text-slate-900 font-extrabold text-xs rounded-xl shadow-xs hover:bg-slate-100 transition-colors flex items-center space-x-1.5"
+                  onClick={() => setActiveTab('my_profile')}
+                  className="px-3.5 py-2 bg-[#F4E8D1] text-[#44261B] font-extrabold text-xs rounded-xl shadow-xs hover:bg-white transition-colors flex items-center space-x-1.5 cursor-pointer"
                 >
-                  <QrCode className="w-3.5 h-3.5 text-brand-700" />
+                  <QrCode className="w-3.5 h-3.5 text-[#5E612B]" />
                   <span>Ver Pase</span>
                 </button>
               </div>
@@ -237,11 +214,11 @@ export const StudentPortalView: React.FC = () => {
 
             {/* Branch Selector */}
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-slate-500">Sede:</span>
+              <span className="text-xs font-bold text-[#A68D74]">Sede:</span>
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none shadow-xs"
+                className="px-3 py-1.5 bg-white border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-xs"
               >
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -252,7 +229,7 @@ export const StudentPortalView: React.FC = () => {
             </div>
 
             {/* Week Days Bar */}
-            <div className="grid grid-cols-7 gap-1.5 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div className="grid grid-cols-7 gap-1.5 bg-white p-2 rounded-2xl border border-[#E8D5B5] shadow-xs">
               {weekDays.map((day) => {
                 const isSelected = selectedDayIndex === day.date.getDay();
 
@@ -260,10 +237,10 @@ export const StudentPortalView: React.FC = () => {
                   <button
                     key={day.dateStr}
                     onClick={() => setSelectedDayIndex(day.date.getDay())}
-                    className={`py-2 text-center rounded-xl transition-all ${
+                    className={`py-2 text-center rounded-xl transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-brand-600 text-white font-extrabold shadow-sm'
-                        : 'text-slate-500 hover:bg-slate-50'
+                        ? 'bg-[#5E612B] text-[#F4E8D1] font-extrabold shadow-sm'
+                        : 'text-[#A68D74] hover:bg-[#F4E8D1]/40'
                     }`}
                   >
                     <span className="text-[10px] uppercase block">{day.dayName}</span>
@@ -405,12 +382,12 @@ export const StudentPortalView: React.FC = () => {
                         <button
                           onClick={() => handleBook(cls, targetDateStr)}
                           disabled={isDisabled}
-                          className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold shadow-sm transition-all self-start sm:self-center ${
+                          className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold shadow-sm transition-all self-start sm:self-center cursor-pointer ${
                             isDisabled
                               ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                               : isFullForUser
-                              ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                              : 'bg-brand-600 hover:bg-brand-700 text-white'
+                              ? 'bg-[#D98E2A] hover:bg-[#C18749] text-white'
+                              : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
                           }`}
                         >
                           {buttonText}
@@ -453,6 +430,17 @@ export const StudentPortalView: React.FC = () => {
           </div>
         )}
 
+        {/* TAB 0: HOME DASHBOARD (¡Hola Alumno! + Entrenamiento + Reservas + Beneficios + Tu Cuenta) */}
+        {activeTab === 'home' && currentStudent && (
+          <StudentHomeDashboard
+            student={currentStudent}
+            studio={studio}
+            onGoToSchedule={() => setActiveTab('schedule')}
+            onGoToRoutines={() => setActiveTab('my_routines')}
+            onGoToProfile={() => setActiveTab('my_profile')}
+          />
+        )}
+
         {/* TAB 2: MY BOOKINGS */}
         {activeTab === 'my_bookings' && currentStudent && (
           <StudentBookingsTab student={currentStudent} />
@@ -463,11 +451,12 @@ export const StudentPortalView: React.FC = () => {
           <StudentRoutinesTab student={currentStudent} />
         )}
 
-        {/* TAB 3: DIGITAL PASS */}
-        {activeTab === 'digital_pass' && currentStudent && (
-          <StudentDigitalPass
+        {/* TAB: MI PERFIL (Credencial Member Pass, Plan actual y Objetivo) */}
+        {activeTab === 'my_profile' && currentStudent && (
+          <StudentProfileView
             student={currentStudent}
             studio={studio}
+            onBackToHome={() => setActiveTab('home')}
             onOpenCheckinGPS={() => setShowCheckinGPSModal(true)}
           />
         )}
@@ -478,6 +467,22 @@ export const StudentPortalView: React.FC = () => {
         )}
 
       </main>
+
+      {/* Student Drawer Sidebar */}
+      <StudentSidebar
+        isOpen={showSidebarDrawer}
+        onClose={() => setShowSidebarDrawer(false)}
+        student={currentStudent}
+        studio={studio}
+        activeTab={activeTab}
+        onSelectTab={(tab) => setActiveTab(tab)}
+        onLogout={() => {
+          window.location.hash = '#login';
+        }}
+        studentsList={students}
+        currentStudentId={currentStudent?.id || ''}
+        onSelectStudent={(id) => setCurrentStudentId(id)}
+      />
 
       {/* GPS Modal */}
       {showCheckinGPSModal && (

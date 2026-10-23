@@ -803,6 +803,7 @@ export function useStudioStore() {
       if (updatedData.medical_notes !== undefined) payload.medical_notes = updatedData.medical_notes;
       if (updatedData.has_medical_certificate !== undefined) payload.has_medical_certificate = updatedData.has_medical_certificate;
       if (updatedData.credits_balance !== undefined) payload.credits_balance = updatedData.credits_balance;
+      if (updatedData.avatar_url !== undefined) payload.avatar_url = updatedData.avatar_url;
       if (updatedData.debt_amount !== undefined) payload.debt_amount = updatedData.debt_amount;
       if (updatedData.status !== undefined) payload.status = updatedData.status;
       if (updatedData.role !== undefined) payload.role = updatedData.role;

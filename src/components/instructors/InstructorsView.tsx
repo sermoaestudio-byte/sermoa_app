@@ -279,10 +279,10 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                   key={instructor.id}
                   className={`bg-white rounded-3xl p-6 border transition-all flex flex-col justify-between group relative ${
                     isInactive
-                      ? 'border-slate-200 opacity-75 bg-slate-50/40'
+                      ? 'border-[#E8D5B5]/60 opacity-75 bg-[#FAF8F5]/40'
                       : isAdmin
-                      ? 'border-blue-200/90 shadow-soft hover:shadow-soft-lg bg-gradient-to-b from-white to-blue-50/20'
-                      : 'border-slate-200/80 shadow-soft hover:shadow-soft-lg'
+                      ? 'border-[#E8D5B5] shadow-soft hover:shadow-soft-lg bg-gradient-to-b from-white to-[#F4E8D1]/25'
+                      : 'border-[#E8D5B5] shadow-soft hover:shadow-soft-lg'
                   }`}
                 >
                   <div>
@@ -290,36 +290,40 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3.5">
                         <div
-                          className={`w-12 h-12 rounded-2xl font-black text-base flex items-center justify-center shadow-xs ${
+                          className={`w-12 h-12 rounded-2xl font-black text-base flex items-center justify-center shadow-xs overflow-hidden ${
                             isInactive
-                              ? 'bg-slate-100 text-slate-500'
+                              ? 'bg-[#FAF8F5] text-[#A68D74] border border-[#E8D5B5]'
                               : isAdmin
-                              ? 'bg-blue-600 text-white shadow-blue-600/20'
-                              : 'bg-purple-50 text-purple-700 border border-purple-100'
+                              ? 'bg-[#44261B] text-[#F4E8D1] shadow-2xs'
+                              : 'bg-[#F4E8D1] text-[#5E612B] border border-[#E8D5B5]'
                           }`}
                         >
-                          {instructor.first_name[0]}{instructor.last_name[0]}
+                          {instructor.avatar_url ? (
+                            <img src={instructor.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{instructor.first_name[0]}{instructor.last_name[0]}</span>
+                          )}
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-slate-900 text-base leading-snug">
+                          <h4 className="font-extrabold text-[#44261B] text-base leading-snug">
                             {instructor.first_name} {instructor.last_name}
                           </h4>
                           <div className="flex items-center space-x-1.5 mt-0.5">
                             <span
                               className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                                 isInactive
-                                  ? 'bg-slate-100 text-slate-600 border-slate-200'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  ? 'bg-[#FAF8F5] text-[#A68D74] border-[#E8D5B5]'
+                                  : 'bg-[#eaede7] text-[#5E612B] border-[#cadbcd]'
                               }`}
                             >
                               {isInactive ? 'Inactivo' : 'Activo'}
                             </span>
                             {isAdmin ? (
-                              <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 flex items-center space-x-0.5">
+                              <span className="text-[10px] font-extrabold text-[#44261B] bg-[#F4E8D1] px-2 py-0.5 rounded-full border border-[#E8D5B5] flex items-center space-x-0.5">
                                 <span>🛡️ Admin (Finanzas)</span>
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                              <span className="text-[10px] font-bold text-[#5E612B] bg-[#eaede7] px-2 py-0.5 rounded-full border border-[#cadbcd]">
                                 🧘 Profesor
                               </span>
                             )}
@@ -335,7 +339,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                             setInstructorToEdit(instructor);
                             setShowAddModal(true);
                           }}
-                          className="p-2 text-slate-400 hover:text-purple-700 hover:bg-purple-50 rounded-xl transition-colors"
+                          className="p-2 text-[#A68D74] hover:text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors cursor-pointer"
                           title="Editar usuario"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -344,10 +348,10 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                         {/* Inactivate / Activate Button */}
                         <button
                           onClick={() => handleToggleStatus(instructor)}
-                          className={`p-2 rounded-xl transition-colors ${
+                          className={`p-2 rounded-xl transition-colors cursor-pointer ${
                             isInactive
-                              ? 'text-emerald-600 hover:bg-emerald-50'
-                              : 'text-amber-600 hover:bg-amber-50'
+                              ? 'text-[#5E612B] hover:bg-[#eaede7]'
+                              : 'text-[#C18749] hover:bg-[#F4E8D1]'
                           }`}
                           title={isInactive ? 'Reactivar usuario' : 'Inactivar usuario'}
                         >
@@ -361,7 +365,7 @@ export const InstructorsView: React.FC<InstructorsViewProps> = ({ onNavigate }) 
                         {/* Delete Button */}
                         <button
                           onClick={() => handleDelete(instructor)}
-                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                          className="p-2 text-[#A68D74] hover:text-[#B74E2A] hover:bg-[#B74E2A]/10 rounded-xl transition-colors cursor-pointer"
                           title="Eliminar usuario"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

@@ -88,240 +88,232 @@ export const TodayClassesSection: React.FC<TodayClassesSectionProps> = ({ onNavi
     <section className="space-y-6 mb-10">
       
       {/* 1. MÓDULO: CLASES DE HOY */}
-      <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-[#E8DFD1] rounded-3xl p-5 sm:p-7 shadow-soft">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[#E8DFD1]/80">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-[#B87A4A] mb-1">
-              <Calendar className="w-4 h-4 text-[#E68A5C]" />
-              <span>Turnos Programados</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-[#1F2933] tracking-tight flex items-center gap-2">
-              CLASES DE HOY
-              <span className="text-xs font-extrabold bg-[#EFE9DF] text-[#6B5A4B] px-2.5 py-1 rounded-full border border-[#DFD5C6]">
-                {allClassesToday.length} {allClassesToday.length === 1 ? 'clase' : 'clases'}
-              </span>
-            </h2>
+      <div className="bg-white/95 backdrop-blur-sm border border-[#E8D5B5] rounded-3xl p-5 sm:p-7 shadow-soft">
+        <div className="mb-5 pb-4 border-b border-[#E8D5B5]">
+          <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-[#C18749] mb-1">
+            <Calendar className="w-4 h-4 text-[#5E612B]" />
+            <span>Turnos Programados</span>
           </div>
-
-          <button
-            onClick={() => onNavigate('classes')}
-            className="text-xs font-bold text-[#8C502E] hover:text-[#5E361F] flex items-center space-x-1 transition-colors self-start sm:self-auto"
-          >
-            <span>Ver calendario completo</span>
-            <span>→</span>
-          </button>
+          <h2 className="text-xl sm:text-2xl font-black text-[#44261B] tracking-tight flex items-center gap-2">
+            CLASES DE HOY
+            <span className="text-xs font-extrabold bg-[#F4E8D1] text-[#5E612B] px-2.5 py-1 rounded-full border border-[#E8D5B5]">
+              {allClassesToday.length} {allClassesToday.length === 1 ? 'clase' : 'clases'}
+            </span>
+          </h2>
         </div>
 
         {allClassesToday.length === 0 ? (
-          <div className="text-center py-10 bg-white/60 rounded-2xl border border-dashed border-[#E8DFD1]">
-            <Calendar className="w-10 h-10 text-stone-400 mx-auto mb-2 opacity-60" />
-            <h3 className="font-extrabold text-[#1F2933] text-base">No hay clases programadas para hoy</h3>
-            <p className="text-xs text-stone-500 mt-1">Descansa o agenda una nueva clase desde el calendario.</p>
+          <div className="text-center py-12 bg-[#FAF8F5] rounded-3xl border border-dashed border-[#E8D5B5]">
+            <Calendar className="w-12 h-12 text-[#A68D74] mx-auto mb-3 opacity-60" />
+            <h3 className="font-extrabold text-[#44261B] text-base">No hay turnos programados para hoy</h3>
+            <p className="text-xs text-[#A68D74] mt-1 max-w-sm mx-auto">
+              No tienes clases asignadas en el día de hoy. Puedes consultar el calendario para ver los próximos días.
+            </p>
           </div>
         ) : (
-          <div>
-            {/* Carrusel / pestañas de clases de hoy */}
-            <div className="flex items-center space-x-3 overflow-x-auto pb-3 mb-5 scrollbar-none">
-              {allClassesToday.map((cls) => {
-                const isSelected = cls.id === activeClass?.id;
-                const clsBookings = bookings.filter(
-                  (b) =>
-                    b.class_id === cls.id &&
-                    (b.booking_date === todayStr || !b.booking_date) &&
-                    b.status !== 'cancelled_by_user' &&
-                    b.status !== 'cancelled_by_admin'
-                );
-                const attendedCount = clsBookings.filter((b) => b.status === 'attended').length;
-                const branch = branches.find((b) => b.id === cls.branch_id);
+          <div className="space-y-4">
+            {allClassesToday.map((cls) => {
+              const isSelected = cls.id === activeClass?.id;
+              const clsBookings = bookings.filter(
+                (b) =>
+                  b.class_id === cls.id &&
+                  (b.booking_date === todayStr || !b.booking_date) &&
+                  b.status !== 'cancelled_by_user' &&
+                  b.status !== 'cancelled_by_admin'
+              );
+              const attendedCount = clsBookings.filter((b) => b.status === 'attended').length;
+              const branch = branches.find((b) => b.id === cls.branch_id);
+              const instructor = profiles.find((p) => p.id === cls.instructor_id);
+              const isExpanded = selectedClassId === cls.id;
 
-                return (
-                  <button
-                    key={cls.id}
-                    onClick={() => setSelectedClassId(cls.id)}
-                    className={`p-4 rounded-2xl border text-left min-w-[210px] shrink-0 transition-all ${
-                      isSelected
-                        ? 'border-[#B87A4A] bg-[#1F2933] text-white shadow-md scale-[1.02]'
-                        : 'border-[#E8DFD1] bg-white/70 hover:bg-white text-stone-700'
-                    }`}
+              return (
+                <div
+                  key={cls.id}
+                  className={`bg-white rounded-3xl border transition-all overflow-hidden ${
+                    isExpanded
+                      ? 'border-[#5E612B] shadow-md ring-1 ring-[#5E612B]/20'
+                      : 'border-[#E8D5B5] shadow-xs hover:border-[#5E612B]/40'
+                  }`}
+                >
+                  {/* Class Header Banner Row (Estilo exacto Foto 2) */}
+                  <div
+                    onClick={() => setSelectedClassId(isExpanded ? '' : cls.id)}
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-[#FAF8F5]/60 transition-colors"
                   >
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className={`font-black flex items-center space-x-1.5 ${isSelected ? 'text-amber-200' : 'text-[#1F2933]'}`}>
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{cls.start_time} - {cls.end_time} hs</span>
-                      </span>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                          isSelected
-                            ? 'bg-white/20 text-white'
-                            : 'bg-[#EFE9DF] text-[#6B5A4B]'
-                        }`}
-                      >
-                        {clsBookings.length}/{cls.max_capacity}
-                      </span>
-                    </div>
-
-                    <h4 className="font-extrabold text-sm truncate leading-snug">
-                      {cls.title}
-                    </h4>
-
-                    <div className="flex items-center justify-between text-[11px] mt-2.5 pt-2 border-t border-white/10 opacity-90">
-                      <span className="truncate flex items-center space-x-1">
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{branch?.name || 'Sede'}</span>
-                      </span>
-                      <span className="font-bold shrink-0">
-                        {attendedCount > 0 ? `✓ ${attendedCount} presentes` : 'Por iniciar'}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Ficha detallada de la clase seleccionada */}
-            {activeClass && (
-              <div className="bg-white/80 rounded-2xl border border-[#E8DFD1] p-5 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E8DFD1]/70">
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="px-2.5 py-0.5 rounded-md bg-[#FCE7F3] text-[#9D174D] text-[11px] font-black uppercase tracking-wider">
-                        Turno Activo
-                      </span>
-                      <span className="text-xs font-bold text-stone-500">
-                        {activeBranch?.name} • Sala: {activeClass.room?.name || 'Principal'}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-black text-[#1F2933] mt-1">
-                      {activeClass.title} ({activeClass.start_time} a {activeClass.end_time} hs)
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setExpandedStudents(!expandedStudents)}
-                      className="px-3 py-1.5 rounded-xl border border-[#E8DFD1] bg-white text-xs font-extrabold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center space-x-1.5 transition-colors"
-                    >
-                      <Users className="w-3.5 h-3.5 text-[#B87A4A]" />
-                      <span>{activeClassBookings.length} Alumnos confirmados</span>
-                      {expandedStudents ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Listado de alumnos que confirmaron el turno */}
-                {expandedStudents && (
-                  <div className="mt-4 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-black text-stone-500 uppercase tracking-wider px-1">
-                      <span>Alumnos Inscriptos</span>
-                      <span>Estado de Asistencia</span>
-                    </div>
-
-                    {activeClassBookings.length === 0 ? (
-                      <div className="text-center py-6 text-stone-500 text-xs">
-                        No hay alumnos inscriptos para este turno todavía.
+                    <div className="flex items-start sm:items-center space-x-4 min-w-0">
+                      {/* Left Olive Pill with Start & End Time (Foto 2) */}
+                      <div className="w-20 sm:w-24 py-2.5 px-2 bg-[#545D31] text-[#F4E8D1] rounded-2xl flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                        <span className="font-black text-sm sm:text-base leading-tight tracking-tight">
+                          {cls.start_time}
+                        </span>
+                        <span className="text-[10px] font-semibold text-[#F4E8D1]/80 leading-none mt-0.5">
+                          a {cls.end_time}
+                        </span>
                       </div>
-                    ) : (
-                      activeClassBookings.map((b) => {
-                        const student = profiles.find((p) => p.id === b.student_id);
-                        if (!student) return null;
 
-                        const isAttended = b.status === 'attended';
+                      {/* Title & Metadata */}
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-black text-base sm:text-lg text-[#44261B] tracking-tight">
+                            {cls.title}
+                          </h3>
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#eaede7] text-[#5E612B] border border-[#cadbcd]">
+                            {cls.title}
+                          </span>
+                        </div>
 
-                        return (
-                          <div
-                            key={b.id}
-                            className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                              isAttended
-                                ? 'bg-emerald-50/70 border-emerald-200'
-                                : 'bg-[#FAF8F5]/80 border-[#E8DFD1] hover:border-stone-400'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-3 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#44261B]/80 font-medium">
+                          {/* Sede y Sala */}
+                          <div className="flex items-center space-x-1.5 text-[#C18749]">
+                            <MapPin className="w-3.5 h-3.5 text-[#C18749]" />
+                            <span className="font-bold">
+                              {branch?.name || 'Sede Principal'}{cls.room?.name ? ` (${cls.room.name})` : ''}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right side stats pill and expand chevron */}
+                    <div className="flex items-center justify-between sm:justify-end space-x-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E8D5B5]/60">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`text-xs font-black px-3 py-1.5 rounded-xl border ${
+                            clsBookings.length >= cls.max_capacity
+                              ? 'bg-[#B74E2A]/10 text-[#B74E2A] border-[#B74E2A]/30'
+                              : 'bg-[#F4E8D1] text-[#44261B] border-[#E8D5B5]'
+                          }`}
+                        >
+                          {clsBookings.length}/{cls.max_capacity} Alumnos
+                        </span>
+                        {attendedCount > 0 && (
+                          <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-[#eaede7] text-[#5E612B] border border-[#cadbcd] hidden md:inline-flex items-center space-x-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>{attendedCount} presentes</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="w-8 h-8 rounded-xl bg-[#FAF8F5] border border-[#E8D5B5] flex items-center justify-center text-[#44261B]">
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-[#5E612B]" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-[#A68D74]" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expandable Section: Alumnos del turno y Pasar Lista */}
+                  {isExpanded && (
+                    <div className="p-4 sm:p-6 bg-[#FAF8F5] border-t border-[#E8D5B5] space-y-3 animate-fade-in">
+                      <div className="flex items-center justify-between text-xs font-black text-[#A68D74] uppercase tracking-wider px-1">
+                        <span>Alumnos Inscriptos a este turno</span>
+                        <span>Asistencia</span>
+                      </div>
+
+                      {clsBookings.length === 0 ? (
+                        <div className="p-6 text-center bg-white rounded-2xl border border-dashed border-[#E8D5B5] text-xs text-[#A68D74]">
+                          No hay alumnos inscriptos para este turno todavía.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {clsBookings.map((b) => {
+                            const student = profiles.find((p) => p.id === b.student_id);
+                            if (!student) return null;
+                            const isAttended = b.status === 'attended';
+
+                            return (
                               <div
-                                className={`w-9 h-9 rounded-full font-black text-xs flex items-center justify-center shrink-0 ${
+                                key={b.id}
+                                className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                                   isAttended
-                                    ? 'bg-emerald-600 text-white shadow-xs'
-                                    : 'bg-[#1F2933] text-white'
+                                    ? 'bg-[#eaede7] border-[#cadbcd]'
+                                    : 'bg-white border-[#E8D5B5] hover:border-[#5E612B]/40'
                                 }`}
                               >
-                                {student.first_name?.[0] || 'A'}
-                                {student.last_name?.[0] || ''}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center space-x-2">
-                                  <h4 className="font-extrabold text-sm text-[#1F2933] truncate">
-                                    {student.first_name} {student.last_name}
-                                  </h4>
-                                  {isAttended && (
-                                    <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full flex items-center space-x-1 shrink-0">
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                      <span>En Sala</span>
-                                    </span>
-                                  )}
+                                <div className="flex items-center space-x-3 min-w-0">
+                                  <div
+                                    className={`w-10 h-10 rounded-2xl font-black text-xs flex items-center justify-center shrink-0 shadow-2xs overflow-hidden ${
+                                      isAttended
+                                        ? 'bg-[#5E612B] text-white'
+                                        : 'bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B]'
+                                    }`}
+                                  >
+                                    {student.avatar_url ? (
+                                      <img src={student.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span>{student.first_name?.[0]}{student.last_name?.[0]}</span>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center space-x-2">
+                                      <h4 className="font-extrabold text-sm text-[#44261B] truncate">
+                                        {student.first_name} {student.last_name}
+                                      </h4>
+                                      {isAttended && (
+                                        <span className="text-[10px] font-black bg-[#F4E8D1] text-[#5E612B] px-2 py-0.5 rounded-full flex items-center space-x-1 shrink-0 border border-[#E8D5B5]">
+                                          <CheckCircle2 className="w-3 h-3 text-[#5E612B]" />
+                                          <span>En Sala</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-[11px] text-[#A68D74] mt-0.5">
+                                      {student.phone && (
+                                        <span className="flex items-center space-x-1">
+                                          <Phone className="w-2.5 h-2.5" />
+                                          <span>{student.phone}</span>
+                                        </span>
+                                      )}
+                                      <span>•</span>
+                                      <span>{student.credits_balance === 999 ? 'Pase Libre' : `${student.credits_balance} créditos`}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex items-center space-x-2 text-[11px] text-stone-500 mt-0.5">
-                                  {student.phone && (
-                                    <span className="flex items-center space-x-1">
-                                      <Phone className="w-2.5 h-2.5" />
-                                      <span>{student.phone}</span>
-                                    </span>
-                                  )}
-                                  <span>•</span>
-                                  <span>{student.credits_balance} créditos</span>
-                                </div>
-                              </div>
-                            </div>
 
-                            {/* Botón rápido de presencia / Check-in manual por si no pudo escanear el QR */}
-                            <button
-                              onClick={() => handleToggleAttendance(b.id, b.status)}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center space-x-1.5 transition-all shrink-0 ${
-                                isAttended
-                                  ? 'bg-emerald-600 text-white shadow-xs hover:bg-emerald-700'
-                                  : 'bg-[#EFE9DF] text-[#1F2933] hover:bg-[#E5DDCF]'
-                              }`}
-                              title={isAttended ? 'Click para desmarcar' : 'Confirmar presencia manualmente'}
-                            >
-                              <CheckCircle2 className={`w-3.5 h-3.5 ${isAttended ? 'text-white' : 'text-stone-500'}`} />
-                              <span>{isAttended ? 'Presente' : 'Marcar Presente'}</span>
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+                                {/* Botón rápido de presencia */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleAttendance(b.id, b.status);
+                                  }}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center space-x-1.5 transition-all shrink-0 cursor-pointer ${
+                                    isAttended
+                                      ? 'bg-[#5E612B] text-[#F4E8D1] shadow-xs hover:bg-[#44261B]'
+                                      : 'bg-[#F4E8D1] text-[#44261B] hover:bg-[#E8D5B5] border border-[#E8D5B5]'
+                                  }`}
+                                  title={isAttended ? 'Click para desmarcar' : 'Confirmar presencia manualmente'}
+                                >
+                                  <CheckCircle2 className={`w-3.5 h-3.5 ${isAttended ? 'text-[#F4E8D1]' : 'text-[#5E612B]'}`} />
+                                  <span>{isAttended ? 'Presente' : 'Marcar Presente'}</span>
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* 2. MÓDULO: ASISTENCIA EN VIVO POR QR (Check-in en el estudio) */}
-      <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-[#E8DFD1] rounded-3xl p-5 sm:p-7 shadow-soft">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[#E8DFD1]/80">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-emerald-700 mb-1">
-              <QrCode className="w-4 h-4 text-emerald-600" />
-              <span>Control de Ingreso en Vivo</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-[#1F2933] tracking-tight flex items-center gap-2">
-              ASISTENCIA & CHECK-IN POR QR
-              <span className="text-xs font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200">
-                {todayAttendances.length} registrados hoy
-              </span>
-            </h2>
+      <div className="bg-white/95 backdrop-blur-sm border border-[#E8D5B5] rounded-3xl p-5 sm:p-7 shadow-soft">
+        <div className="mb-5 pb-4 border-b border-[#E8D5B5]">
+          <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-[#5E612B] mb-1">
+            <QrCode className="w-4 h-4 text-[#5E612B]" />
+            <span>Control de Ingreso en Vivo</span>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => onNavigate('attendance')}
-              className="px-3 py-2 rounded-xl bg-white border border-[#E8DFD1] text-xs font-extrabold text-[#1F2933] hover:bg-[#FAF8F5] transition-colors flex items-center space-x-1.5"
-            >
-              <UserCheck className="w-4 h-4 text-emerald-600" />
-              <span>Ir a Pasar Lista Completa</span>
-            </button>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-[#44261B] tracking-tight flex items-center gap-2">
+            ASISTENCIA & CHECK-IN POR QR
+            <span className="text-xs font-extrabold bg-[#eaede7] text-[#5E612B] px-2.5 py-1 rounded-full border border-[#cadbcd]">
+              {todayAttendances.length} registrados hoy
+            </span>
+          </h2>
         </div>
 
         {/* Explicativo sutil de la dinámica del QR en el estudio */}
