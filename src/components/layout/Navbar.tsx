@@ -120,6 +120,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
                       </button>
 
                       <button
+                        onClick={() => handleNavClick('packs')}
+                        className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
+                      >
+                        <Ticket className="w-4 h-4 text-purple-600" />
+                        <div>
+                          <div className="font-bold text-stone-800">Packs & Membresías</div>
+                          <div className="text-[10px] text-stone-500">Tarifas, cantidad de clases y vigencia</div>
+                        </div>
+                      </button>
+
+                      <button
                         onClick={() => handleNavClick('finance')}
                         className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
                       >

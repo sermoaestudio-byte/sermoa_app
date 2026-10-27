@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Profile, Studio } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
+import { BuyPackModal } from '../payments/BuyPackModal';
 
 interface StudentDigitalPassProps {
   student: Profile;
@@ -38,6 +39,7 @@ export const StudentDigitalPass: React.FC<StudentDigitalPassProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [photoSavedToast, setPhotoSavedToast] = useState(false);
+  const [isBuyPackOpen, setIsBuyPackOpen] = useState(false);
 
   // QR Token
   const qrPassPayload = JSON.stringify({
@@ -335,6 +337,27 @@ export const StudentDigitalPass: React.FC<StudentDigitalPassProps> = ({
           </span>
         </div>
 
+        {/* Zero Credits Alert Banner */}
+        {(student.credits_balance ?? 0) <= 0 && !isUnlimited && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <CreditCard className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-amber-900 block">Sin créditos disponibles</span>
+                <span className="text-[10px] text-amber-700 font-medium">Recarga tu pack con Mercado Pago para reservar</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsBuyPackOpen(true)}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold rounded-xl transition-all shadow-xs shrink-0"
+            >
+              Comprar Pack
+            </button>
+          </div>
+        )}
+
         {/* Points & Benefits Banner (Estilo Foto 2 adaptado a Paleta Otoño) */}
         <div className="bg-white rounded-2xl p-4 border border-[#E8D5B5] shadow-xs flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -350,15 +373,26 @@ export const StudentDigitalPass: React.FC<StudentDigitalPassProps> = ({
               </span>
             </div>
           </div>
-          {onGoToSchedule && (
+          
+          <div className="flex items-center space-x-2">
             <button
-              onClick={onGoToSchedule}
-              className="p-2 text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors cursor-pointer"
-              title="Reservar clases"
+              onClick={() => setIsBuyPackOpen(true)}
+              className="px-3 py-1.5 bg-[#5E612B] hover:bg-[#44261B] text-white text-[11px] font-extrabold rounded-xl transition-all shadow-xs flex items-center space-x-1"
             >
-              <ChevronRight className="w-5 h-5" />
+              <Sparkles className="w-3.5 h-3.5 text-[#E8D5B5]" />
+              <span>Recargar</span>
             </button>
-          )}
+
+            {onGoToSchedule && (
+              <button
+                onClick={onGoToSchedule}
+                className="p-2 text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors cursor-pointer"
+                title="Reservar clases"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 4 Status Badges Grid (Vigencia, Cuenta, Requisitos, Estado) */}
@@ -472,6 +506,13 @@ export const StudentDigitalPass: React.FC<StudentDigitalPassProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal para Adquirir / Recargar Packs con Mercado Pago */}
+      <BuyPackModal
+        isOpen={isBuyPackOpen}
+        onClose={() => setIsBuyPackOpen(false)}
+        student={student}
+      />
     </div>
   );
 };

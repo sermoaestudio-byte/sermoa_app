@@ -46,28 +46,28 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
     <section aria-labelledby="stat-summary-heading" className="mb-8">
 
 
-      <div className={`grid gap-4 ${isInstructor ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4'}`}>
+      <div className={`grid gap-3 sm:gap-4 ${isInstructor ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 sm:grid-cols-2 xl:grid-cols-4'}`}>
 
         {/* Card 1: Total de Alumnos */}
         <button
           onClick={() => onNavigate('students')}
-          className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all flex items-center justify-between text-left group cursor-pointer"
+          className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
         >
-          <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+          <div className="flex items-center space-x-3 min-w-0 w-full">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
               <Users className="w-5 h-5 text-[#5E612B]" />
             </div>
-            <div>
-              <div className="flex items-center space-x-1">
-                <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="flex items-center space-x-1 min-w-0">
+                <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight truncate block">
                   {isInstructor ? 'TOTAL DE ALUMNOS' : 'Alumnos Activos'}
                 </span>
-                <HelpCircle className="w-3 h-3 text-[#A68D74]" />
+                <HelpCircle className="w-3 h-3 text-[#A68D74] shrink-0" />
               </div>
-              <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
+              <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
                 {isInstructor ? totalEnrolledStudents : activeStudents.length}
               </div>
-              <span className="text-[11px] text-[#A68D74] font-medium">
+              <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
                 {isInstructor ? 'Inscriptos a clases' : `Total: ${totalStudents}`}
               </span>
             </div>
@@ -77,20 +77,20 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {/* Card 2: Clases Hoy & Gente en el día */}
         <button
           onClick={() => onNavigate('classes')}
-          className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all flex items-center justify-between text-left group cursor-pointer"
+          className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
         >
-          <div className="flex items-center space-x-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[#eaede7] border border-[#cadbcd] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="flex items-center space-x-3 min-w-0 w-full">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#eaede7] border border-[#cadbcd] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
               <Calendar className="w-5 h-5" />
             </div>
-            <div>
-              <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight block">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight block truncate">
                 {isInstructor ? 'ALUMNOS DE HOY' : 'Clases Hoy'}
               </span>
-              <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
+              <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
                 {isInstructor ? totalStudentsToday : classesToday.length}
               </div>
-              <span className="text-[11px] text-[#A68D74] font-medium">
+              <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
                 {isInstructor ? `${classesToday.length} turnos programados` : 'Programadas'}
               </span>
             </div>
@@ -101,18 +101,22 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {!isInstructor && (
           <button
             onClick={() => onNavigate('instructors')}
-            className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#C18749]/50 transition-all flex items-center justify-between text-left group cursor-pointer"
+            className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#C18749]/50 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
           >
-            <div className="flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#C18749] flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="flex items-center space-x-3 min-w-0 w-full">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#C18749] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
                 <UserCheck className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight block">Profesores</span>
-                <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight block truncate">
+                  Profesores
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
                   {instructorsCount}
                 </div>
-                <span className="text-[11px] text-[#A68D74] font-medium">Staff activo</span>
+                <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
+                  Staff activo
+                </span>
               </div>
             </div>
           </button>
@@ -122,18 +126,22 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
         {!isInstructor && (
           <button
             onClick={() => onNavigate('branches')}
-            className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all flex items-center justify-between text-left group cursor-pointer"
+            className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8DFD1] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
           >
-            <div className="flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-[#FAF8F5] border border-[#E8D5B5] text-[#44261B] flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="flex items-center space-x-3 min-w-0 w-full">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#FAF8F5] border border-[#E8D5B5] text-[#44261B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
                 <Building2 className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-xs font-bold text-[#A68D74] uppercase tracking-tight block">Sucursales</span>
-                <div className="text-2xl font-extrabold text-[#44261B] leading-tight mt-0.5">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight block truncate">
+                  Sucursales
+                </span>
+                <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
                   {branchesCount}
                 </div>
-                <span className="text-[11px] text-[#A68D74] font-medium">Sedes activas</span>
+                <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
+                  Sedes activas
+                </span>
               </div>
             </div>
           </button>

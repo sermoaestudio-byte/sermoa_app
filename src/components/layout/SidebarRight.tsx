@@ -62,28 +62,28 @@ export const SidebarRight: React.FC<SidebarRightProps> = ({ onNavigate }) => {
 
         {/* Studio Quick Highlights */}
         <div className="bg-[#F5F1EB] rounded-2xl p-3.5 border border-[#E8DFD1] mb-4 space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-stone-500 font-medium flex items-center space-x-1.5">
-              <Users className="w-3.5 h-3.5 text-[#1F2933]" />
-              <span>Alumnos Activos</span>
+          <div className="flex items-center justify-between text-xs gap-2 min-w-0">
+            <span className="text-stone-500 font-medium flex items-center space-x-1.5 min-w-0 truncate">
+              <Users className="w-3.5 h-3.5 text-[#1F2933] shrink-0" />
+              <span className="truncate">Alumnos Activos</span>
             </span>
-            <span className="font-extrabold text-[#1F2933]">{activeStudentsCount}</span>
+            <span className="font-extrabold text-[#1F2933] shrink-0">{activeStudentsCount}</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-stone-500 font-medium flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#F7C59F]" />
-              <span>Equipo Docente</span>
+          <div className="flex items-center justify-between text-xs gap-2 min-w-0">
+            <span className="text-stone-500 font-medium flex items-center space-x-1.5 min-w-0 truncate">
+              <Sparkles className="w-3.5 h-3.5 text-[#F7C59F] shrink-0" />
+              <span className="truncate">Equipo Docente</span>
             </span>
-            <span className="font-extrabold text-[#1F2933]">{instructorsCount} profesores</span>
+            <span className="font-extrabold text-[#1F2933] shrink-0">{instructorsCount} profesores</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-stone-500 font-medium flex items-center space-x-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#5EBA8C]" />
-              <span>Turnos Confirmados Hoy</span>
+          <div className="flex items-center justify-between text-xs gap-2 min-w-0">
+            <span className="text-stone-500 font-medium flex items-center space-x-1.5 min-w-0 truncate">
+              <Calendar className="w-3.5 h-3.5 text-[#5EBA8C] shrink-0" />
+              <span className="truncate">Turnos Confirmados Hoy</span>
             </span>
-            <span className="font-extrabold text-[#2B6D4E] font-bold">{todayBookings.length} reservas</span>
+            <span className="font-extrabold text-[#2B6D4E] shrink-0">{todayBookings.length} reservas</span>
           </div>
         </div>
 

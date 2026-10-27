@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserPlus, HeartPulse, CheckCircle2, Phone, Mail, User, ShieldCheck, ArrowRight } from 'lucide-react';
+import { UserPlus, HeartPulse, CheckCircle2, Phone, Mail, User, ShieldCheck, ArrowRight, Lock, FileText } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 
 interface StudentRegisterViewProps {
@@ -24,11 +24,13 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
   const [hasInjuries, setHasInjuries] = useState(false);
   const [injuriesDetail, setInjuriesDetail] = useState('');
   const [isPregnant, setIsPregnant] = useState(false);
+  const [hasMedicalCertificate, setHasMedicalCertificate] = useState(false);
   const [medicalNotes, setMedicalNotes] = useState('');
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -36,27 +38,35 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
       return;
     }
 
-    submitStudentRegistration({
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      phone,
-      id_number: idNumber,
-      preferred_branch_id: branchId,
-      emergency_contact_name: emergencyName,
-      emergency_contact_phone: emergencyPhone,
-      medical_notes: medicalNotes,
-      medical_declaration: {
-        has_injuries: hasInjuries,
-        injuries_detail: injuriesDetail,
-        has_hypertension: false,
-        is_pregnant: isPregnant,
-        taking_medications: false,
-        has_cardiac_conditions: false,
-      },
-    }, password);
+    setIsSubmitting(true);
+    try {
+      await submitStudentRegistration({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+        id_number: idNumber,
+        preferred_branch_id: branchId,
+        emergency_contact_name: emergencyName,
+        emergency_contact_phone: emergencyPhone,
+        medical_notes: medicalNotes,
+        has_medical_certificate: hasMedicalCertificate,
+        medical_declaration: {
+          has_injuries: hasInjuries,
+          injuries_detail: injuriesDetail,
+          has_hypertension: false,
+          is_pregnant: isPregnant,
+          taking_medications: false,
+          has_cardiac_conditions: false,
+        },
+      }, password);
 
-    setIsSubmitted(true);
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Error al registrar alumno:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -69,16 +79,16 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
           ¡Solicitud Enviada con Éxito!
         </h3>
         <p className="text-xs text-slate-600 leading-relaxed mb-6">
-          Hola <strong>{firstName}</strong>, el equipo de <strong>{studio.name}</strong> revisará tu información y ficha de salud.
+          Hola <strong>{firstName}</strong>, recibimos tu solicitud de ingreso y ficha médica. El equipo de <strong>{studio.name}</strong> revisará tus antecedentes y certificado de salud para habilitar tu cuenta.
           <br /><br />
-          Te enviaremos un mensaje de <strong>WhatsApp y correo electrónico</strong> en cuanto tu cuenta esté habilitada para que puedas reservar tu primera clase.
+          Te notificaremos por <strong>WhatsApp y correo electrónico</strong> en cuanto tu solicitud sea aprobada para que puedas iniciar sesión, adquirir tu pack de clases con Mercado Pago y comenzar a reservar tus turnos.
         </p>
 
         <button
           onClick={onGoToLogin}
-          className="w-full py-3 bg-slate-900 hover:bg-black text-white text-xs font-extrabold rounded-2xl transition-all shadow-md"
+          className="w-full py-3 bg-slate-900 hover:bg-black text-white text-xs font-extrabold rounded-2xl transition-all shadow-md cursor-pointer"
         >
-          Volver a la Pantalla Principal
+          Ir a Iniciar Sesión
         </button>
       </div>
     );
@@ -96,7 +106,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
           Únete a {studio.name}
         </h2>
         <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-          Completa tus datos personales y declaración de salud para que el profesor pueda adaptar tus clases
+          Completa tus datos personales y declaración médica para que el equipo pueda adaptar tus clases
         </p>
       </div>
 
@@ -104,7 +114,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
         
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Nombre</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Nombre *</label>
             <input
               type="text"
               required
@@ -115,7 +125,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Apellido</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Apellido *</label>
             <input
               type="text"
               required
@@ -129,7 +139,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp (Celular)</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp (Celular) *</label>
             <input
               type="tel"
               required
@@ -140,11 +150,11 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">DNI / Documento</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">DNI / Cédula *</label>
             <input
               type="text"
               required
-              placeholder="38.900.123"
+              placeholder="38921..."
               value={idNumber}
               onChange={(e) => setIdNumber(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
@@ -153,20 +163,21 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico (será tu usuario)</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico *</label>
           <input
             type="email"
             required
-            placeholder="tu.email@gmail.com"
+            placeholder="florencia@gmail.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
           />
         </div>
 
+        {/* Security Password */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Crear Contraseña</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Contraseña *</label>
             <input
               type="password"
               required
@@ -178,12 +189,12 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Repetir Contraseña</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Repetir Contraseña *</label>
             <input
               type="password"
               required
               minLength={6}
-              placeholder="Confirma tu clave"
+              placeholder="Repite la contraseña"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
@@ -196,26 +207,45 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
           <select
             value={branchId}
             onChange={(e) => setBranchId(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
           >
             {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name} ({b.address})
-              </option>
+              <option key={b.id} value={b.id}>{b.name} - {b.city}</option>
             ))}
           </select>
         </div>
 
-        {/* Health Declaration */}
-        <div className="pt-3 border-t border-slate-100">
-          <div className="flex items-center space-x-2 text-xs font-bold text-rose-900 mb-3">
-            <HeartPulse className="w-4 h-4 text-rose-600" />
-            <span>Declaración de Salud & Apto Físico</span>
+        {/* Emergency contact */}
+        <div className="pt-2 border-t border-slate-100">
+          <label className="block text-xs font-bold text-slate-800 mb-2">Contacto de Emergencia</label>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              type="text"
+              placeholder="Nombre y vínculo (ej: Mamá)"
+              value={emergencyName}
+              onChange={(e) => setEmergencyName(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
+            />
+            <input
+              type="tel"
+              placeholder="Teléfono de emergencia"
+              value={emergencyPhone}
+              onChange={(e) => setEmergencyPhone(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800"
+            />
+          </div>
+        </div>
+
+        {/* Health declaration */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 mb-2">
+            <HeartPulse className="w-4 h-4 text-rose-500" />
+            <span>Ficha de Salud y Aptitud Física</span>
           </div>
 
-          <div className="space-y-3 bg-rose-50/40 border border-rose-100 rounded-2xl p-4">
+          <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
             <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
-              <span>¿Tienes alguna lesión articular, muscular o dolor recurrente?</span>
+              <span>¿Tienes alguna lesión, dolor o antecedente postural?</span>
               <input
                 type="checkbox"
                 checked={hasInjuries}
@@ -244,9 +274,22 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
               />
             </label>
 
+            <label className="flex items-center justify-between text-xs font-medium text-slate-700 cursor-pointer">
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-brand-600" />
+                <span>¿Cuentas con certificado médico / apto físico al día?</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={hasMedicalCertificate}
+                onChange={(e) => setHasMedicalCertificate(e.target.checked)}
+                className="rounded text-brand-600 w-4 h-4"
+              />
+            </label>
+
             <textarea
               rows={2}
-              placeholder="Otras observaciones para el profesor..."
+              placeholder="Otras observaciones médicas para el profesor..."
               value={medicalNotes}
               onChange={(e) => setMedicalNotes(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800"
@@ -258,10 +301,17 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
         <div className="pt-3">
           <button
             type="submit"
-            className="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl text-xs font-extrabold shadow-md transition-all flex items-center justify-center space-x-2"
+            disabled={isSubmitting}
+            className="w-full py-3.5 rounded-2xl text-xs font-extrabold shadow-md transition-all flex items-center justify-center space-x-2 bg-brand-600 hover:bg-brand-700 text-white cursor-pointer disabled:opacity-50"
           >
-            <span>Enviar Solicitud de Registro</span>
-            <ArrowRight className="w-4 h-4" />
+            {isSubmitting ? (
+              <span>Enviando solicitud...</span>
+            ) : (
+              <>
+                <span>Enviar Solicitud de Registro</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
 
           <p className="text-[11px] text-slate-400 text-center mt-3">
@@ -269,7 +319,7 @@ export const StudentRegisterView: React.FC<StudentRegisterViewProps> = ({ onGoTo
             <button
               type="button"
               onClick={onGoToLogin}
-              className="text-brand-700 font-bold underline"
+              className="text-brand-700 font-bold underline cursor-pointer"
             >
               Ingresa a reservar
             </button>

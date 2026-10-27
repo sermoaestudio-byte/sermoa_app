@@ -24,6 +24,7 @@ import { StudentProfileView } from './StudentProfileView';
 import { StudentBookingsTab } from './StudentBookingsTab';
 import { StudentRoutinesTab } from './StudentRoutinesTab';
 import { StudentCheckinModal } from '../checkin/StudentCheckinModal';
+import { BuyPackModal } from '../payments/BuyPackModal';
 import { StudentSidebar } from './StudentSidebar';
 import { ClassSchedule } from '../../types';
 import { Dumbbell } from 'lucide-react';
@@ -50,7 +51,7 @@ export const StudentPortalView: React.FC = () => {
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay());
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [showCheckinGPSModal, setShowCheckinGPSModal] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isBuyPackOpen, setIsBuyPackOpen] = useState(false);
   
   // Waitlist Confirmation state
   const [pendingWaitlistId, setPendingWaitlistId] = useState<string | null>(null);
@@ -70,12 +71,13 @@ export const StudentPortalView: React.FC = () => {
   // Usamos el estudiante emulado (si es estudiante), o el que esté seleccionado, o currentUser si es estudiante
   const currentStudent = profiles.find((p) => p.id === currentStudentId && p.role === 'client') || (currentUser?.role === 'client' ? currentUser : null);
 
-  // Expiration Checker and Timer
+  // Expiration Checker for Waitlist
   useEffect(() => {
+    const hasPendingWaitlist = waitlist.some((w) => w.status === 'pending_confirmation' && w.expires_at);
+    if (!hasPendingWaitlist) return;
+
     const timer = setInterval(() => {
       const now = Date.now();
-      setCurrentTime(now);
-
       waitlist.forEach((w) => {
         if (w.status === 'pending_confirmation' && w.expires_at) {
           if (now >= new Date(w.expires_at).getTime()) {
@@ -83,9 +85,9 @@ export const StudentPortalView: React.FC = () => {
           }
         }
       });
-    }, 1000);
+    }, 5000);
     return () => clearInterval(timer);
-  }, [waitlist, expireWaitlistEntry]);
+  }, [waitlist]);
 
   const weekDays = getWeekDates(currentWeekDate);
 
@@ -95,7 +97,11 @@ export const StudentPortalView: React.FC = () => {
     // We need to pass the date because if we book for tomorrow, it shouldn't book for today.
     // If no date is passed, it falls back to the store default (today).
     const res = bookClass(cls.id, currentStudent.id, dateStr, false);
-    alert(res.message);
+    if (!res.success && res.message.toLowerCase().includes('créditos')) {
+      setIsBuyPackOpen(true);
+    } else {
+      alert(res.message);
+    }
     if (res.success && !res.isWaitlist) {
       confetti({
         particleCount: 50,
@@ -324,7 +330,7 @@ export const StudentPortalView: React.FC = () => {
                         badgeColor = 'bg-emerald-100 text-emerald-800 animate-pulse';
                         buttonText = 'Confirmar mi Lugar';
                         if (studentWaitlistEntry.expires_at) {
-                          const timeLeft = Math.max(0, Math.floor((new Date(studentWaitlistEntry.expires_at).getTime() - currentTime) / 1000));
+                          const timeLeft = Math.max(0, Math.floor((new Date(studentWaitlistEntry.expires_at).getTime() - Date.now()) / 1000));
                           const mins = Math.floor(timeLeft / 60);
                           const secs = timeLeft % 60;
                           countdownMsg = `Tienes ${mins}:${secs.toString().padStart(2, '0')} min para confirmar tu lugar antes de que expire.`;
@@ -438,6 +444,7 @@ export const StudentPortalView: React.FC = () => {
             onGoToSchedule={() => setActiveTab('schedule')}
             onGoToRoutines={() => setActiveTab('my_routines')}
             onGoToProfile={() => setActiveTab('my_profile')}
+            onOpenBuyPack={() => setIsBuyPackOpen(true)}
           />
         )}
 
@@ -538,6 +545,19 @@ export const StudentPortalView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Compra de Packs con Mercado Pago */}
+      {currentStudent && (
+        <BuyPackModal
+          isOpen={isBuyPackOpen}
+          onClose={() => setIsBuyPackOpen(false)}
+          student={currentStudent}
+          onSuccess={() => {
+            setIsBuyPackOpen(false);
+            setActiveTab('schedule');
+          }}
+        />
       )}
 
     </div>

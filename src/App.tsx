@@ -12,6 +12,7 @@ import { RoutinesView } from './components/routines/RoutinesView';
 import { HistoryView } from './components/history/HistoryView';
 import { FinanceView } from './components/finance/FinanceView';
 import { SettingsView } from './components/settings/SettingsView';
+import { PacksView } from './components/pricing/PacksView';
 import { StudentPortalView } from './components/portal/StudentPortalView';
 import { StudentRegisterView } from './components/portal/StudentRegisterView';
 import { LandingView } from './components/landing/LandingView';
@@ -68,7 +69,7 @@ export function App() {
         setCurrentView('actualizar-clave');
       } else if (hash.startsWith('reservar') || hash === 'portal-alumno') {
         setCurrentView('portal-alumno');
-      } else if (['dashboard', 'classes', 'clases', 'students', 'alumnos', 'attendance', 'asistencias', 'instructors', 'profesores', 'branches', 'sucursales', 'routines', 'rutinas', 'history', 'historial', 'finance', 'finanzas', 'settings', 'configuracion'].includes(hash)) {
+      } else if (['dashboard', 'classes', 'clases', 'students', 'alumnos', 'attendance', 'asistencias', 'instructors', 'profesores', 'branches', 'sucursales', 'routines', 'rutinas', 'history', 'historial', 'finance', 'finanzas', 'settings', 'configuracion', 'packs', 'tarifas', 'membresias'].includes(hash)) {
         // Map Spanish aliases to internal view keys
         const viewMap: Record<string, string> = {
           clases: 'classes',
@@ -80,6 +81,8 @@ export function App() {
           historial: 'history',
           finanzas: 'finance',
           configuracion: 'settings',
+          tarifas: 'packs',
+          membresias: 'packs',
         };
         setCurrentView(viewMap[hash] || hash);
       }
@@ -242,6 +245,8 @@ export function App() {
         return <FinanceView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
         return <SettingsView onNavigate={(view) => setCurrentView(view)} />;
+      case 'packs':
+        return <PacksView />;
       default:
         return (
           <DashboardView

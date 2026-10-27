@@ -132,7 +132,7 @@ const initialWaitlist: WaitlistEntry[] = [];
 
 const initialCreditPacks: CreditPack[] = [
   {
-    id: generateUUID(),
+    id: '11111111-5555-4555-8555-000000000001',
     studio_id: DEFAULT_STUDIO_ID,
     name: 'Pack 8 Clases / Mes',
     description: 'Ideal para entrenar 2 veces por semana. Válido por 30 días.',
@@ -144,7 +144,7 @@ const initialCreditPacks: CreditPack[] = [
     popular_badge: true,
   },
   {
-    id: generateUUID(),
+    id: '11111111-5555-4555-8555-000000000002',
     studio_id: DEFAULT_STUDIO_ID,
     name: 'Pack 12 Clases / Mes',
     description: 'Ideal para entrenar 3 veces por semana. Máxima flexibilidad.',
@@ -155,7 +155,7 @@ const initialCreditPacks: CreditPack[] = [
     is_active: true,
   },
   {
-    id: generateUUID(),
+    id: '11111111-5555-4555-8555-000000000003',
     studio_id: DEFAULT_STUDIO_ID,
     name: 'Clase Suelta / Prueba',
     description: '1 crédito para conocer el estudio o tomar una clase puntual.',
@@ -361,30 +361,39 @@ async function syncFromSupabase() {
   }
 }
 
-let realtimeInitialized = false;
+let realtimeChannel: any = null;
 
 function setupRealtimeSubscriptions() {
-  if (!isSupabaseConfigured || realtimeInitialized) return;
-  realtimeInitialized = true;
+  if (!isSupabaseConfigured || realtimeChannel) return;
 
-  const handleTableChange = async (table: string, stateKey: string) => {
-    const { data } = await supabase.from(table).select('*');
-    if (data) {
-      setState((prev: any) => ({ ...prev, [stateKey]: data }));
+  try {
+    // Check if channel already exists in Supabase client to avoid duplicate on() error
+    const channels = supabase.getChannels();
+    const existing = channels.find((c: any) => c.topic === 'realtime:public:sermoa-db-sync');
+    if (existing) {
+      realtimeChannel = existing;
+      return;
     }
-  };
 
-  supabase.channel('public:classes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, () => handleTableChange('classes', 'classes'))
-    .subscribe();
+    const handleTableChange = async (table: string, stateKey: string) => {
+      const { data } = await supabase.from(table).select('*');
+      if (data) {
+        setState((prev: any) => ({ ...prev, [stateKey]: data }));
+      }
+    };
 
-  supabase.channel('public:bookings')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => handleTableChange('bookings', 'bookings'))
-    .subscribe();
-
-  supabase.channel('public:waitlist')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'waitlist' }, () => handleTableChange('waitlist', 'waitlist'))
-    .subscribe();
+    realtimeChannel = supabase.channel('public:sermoa-db-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, () => handleTableChange('classes', 'classes'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => handleTableChange('bookings', 'bookings'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waitlist' }, () => handleTableChange('waitlist', 'waitlist'))
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.warn('Realtime sync channel warning.');
+        }
+      });
+  } catch (err) {
+    console.warn('Realtime subscription error suppressed:', err);
+  }
 }
 
 // React Hook
@@ -557,7 +566,13 @@ export function useStudioStore() {
               console.log('Usuario auto-migrado a Supabase Auth exitosamente.');
             }
           } else {
-            // Other auth errors (e.g. rate limit)
+            // Other auth errors (e.g. rate limit, email not confirmed)
+            if (authErr.message.toLowerCase().includes('email not confirmed')) {
+              return {
+                success: false,
+                message: 'Tu correo electrónico aún no ha sido confirmado. Puedes solicitar al administrador que active tu cuenta en el panel de usuarios.',
+              };
+            }
             return { success: false, message: authErr.message };
           }
         }
@@ -700,19 +715,22 @@ export function useStudioStore() {
       if (newStudent.emergency_contact_name) payload.emergency_contact_name = newStudent.emergency_contact_name;
       if (newStudent.emergency_contact_phone) payload.emergency_contact_phone = newStudent.emergency_contact_phone;
 
-      supabase.from('profiles').upsert(payload).then(({ error }) => {
+      try {
+        const { error } = await supabase.from('profiles').upsert(payload);
         if (error) {
           console.error('❌ Error guardando alumno en Supabase:', error.message || error);
         } else {
           console.log('✅ Alumno guardado en Supabase exitosamente:', newStudent.email);
         }
-      });
+      } catch (err: any) {
+        console.error('❌ Excepción al guardar alumno en Supabase:', err);
+      }
     }
 
     return newStudent;
   };
 
-  const approveStudentRegistration = (studentId: string, initialCredits: number = 1) => {
+  const approveStudentRegistration = (studentId: string, initialCredits: number = 0) => {
     const student = state.profiles.find((p: Profile) => p.id === studentId);
     if (!student) return;
 
@@ -1879,6 +1897,84 @@ export function useStudioStore() {
     }
   };
 
+  // Credit Packs Management
+  const createCreditPack = async (packData: Partial<CreditPack>) => {
+    const id = packData.id || generateUUID();
+    const newPack: CreditPack = {
+      id,
+      studio_id: state.studio.id,
+      name: packData.name || 'Nuevo Pack',
+      description: packData.description || '',
+      credits_count: Number(packData.credits_count ?? 8),
+      price: Number(packData.price ?? 30000),
+      validity_days: Number(packData.validity_days ?? 30),
+      is_recurring_monthly: !!packData.is_recurring_monthly,
+      is_active: packData.is_active !== undefined ? packData.is_active : true,
+      popular_badge: !!packData.popular_badge,
+    };
+
+    setState((prev: any) => ({
+      ...prev,
+      creditPacks: [...prev.creditPacks, newPack],
+    }));
+
+    if (isSupabaseConfigured) {
+      const payload: any = {
+        id: newPack.id,
+        studio_id: newPack.studio_id,
+        name: newPack.name,
+        description: newPack.description,
+        credits_count: newPack.credits_count,
+        price: newPack.price,
+        validity_days: newPack.validity_days,
+        is_unlimited: newPack.credits_count === 999,
+        is_featured: newPack.popular_badge,
+        is_active: newPack.is_active,
+      };
+
+      const { error } = await supabase.from('credit_packs').insert(payload);
+      if (error) console.error('Error creando pack en Supabase:', error);
+    }
+
+    return newPack;
+  };
+
+  const updateCreditPack = async (id: string, updatedData: Partial<CreditPack>) => {
+    setState((prev: any) => ({
+      ...prev,
+      creditPacks: prev.creditPacks.map((p: CreditPack) => (p.id === id ? { ...p, ...updatedData } : p)),
+    }));
+
+    if (isSupabaseConfigured) {
+      const payload: any = {};
+      if (updatedData.name !== undefined) payload.name = updatedData.name;
+      if (updatedData.description !== undefined) payload.description = updatedData.description;
+      if (updatedData.credits_count !== undefined) {
+        payload.credits_count = Number(updatedData.credits_count);
+        payload.is_unlimited = Number(updatedData.credits_count) === 999;
+      }
+      if (updatedData.price !== undefined) payload.price = Number(updatedData.price);
+      if (updatedData.validity_days !== undefined) payload.validity_days = Number(updatedData.validity_days);
+      if (updatedData.popular_badge !== undefined) payload.is_featured = !!updatedData.popular_badge;
+      if (updatedData.is_active !== undefined) payload.is_active = !!updatedData.is_active;
+
+      const { error } = await supabase.from('credit_packs').update(payload).eq('id', id);
+      if (error) console.error('Error actualizando pack en Supabase:', error);
+    }
+  };
+
+  const deleteCreditPack = async (id: string) => {
+    setState((prev: any) => ({
+      ...prev,
+      creditPacks: prev.creditPacks.filter((p: CreditPack) => p.id !== id),
+    }));
+
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.from('credit_packs').delete().eq('id', id);
+      if (error) console.error('Error eliminando pack en Supabase:', error);
+    }
+  };
+
   // Credit pack purchase
   const purchaseCreditPack = (studentId: string, packId: string, paymentMethod: PaymentMethod = 'mercadopago') => {
     const student = state.profiles.find((p: Profile) => p.id === studentId);
@@ -2099,6 +2195,9 @@ export function useStudioStore() {
     deleteFinancialCategory,
     updateFinancialGoals,
     purchaseCreditPack,
+    createCreditPack,
+    updateCreditPack,
+    deleteCreditPack,
     updateStudioSettings,
     updateWhatsAppTemplate,
     createRoutine,

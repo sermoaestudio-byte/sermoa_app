@@ -18,6 +18,7 @@ interface StudentHomeDashboardProps {
   onGoToSchedule: () => void;
   onGoToRoutines: () => void;
   onGoToProfile: () => void;
+  onOpenBuyPack?: () => void;
 }
 
 export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
@@ -26,6 +27,7 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
   onGoToSchedule,
   onGoToRoutines,
   onGoToProfile,
+  onOpenBuyPack,
 }) => {
   const isUnlimited = student.credits_balance === 999;
   const isUpToDate = (student.debt_amount ?? 0) <= 0;
@@ -40,6 +42,38 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
         </h1>
         <div className="h-0.5 w-12 bg-[#5E612B] rounded-full mt-2" />
       </div>
+
+      {/* 1.5 Zero Credits / Buy Pack Banner */}
+      {(student.credits_balance ?? 0) <= 0 && !isUnlimited && (
+        <div className="bg-gradient-to-br from-[#44261B] via-[#5E612B] to-[#C18749] text-white rounded-3xl p-5 shadow-soft-lg border border-[#E8D5B5] animate-fade-in relative overflow-hidden">
+          <div className="relative z-10 flex flex-col space-y-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-[#F4E8D1] shrink-0">
+                <Sparkles className="w-5 h-5 text-amber-300" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#F4E8D1] block">
+                  ¡Cuenta Habilitada!
+                </span>
+                <h3 className="text-base font-extrabold text-white">
+                  Elige tu Pack de Clases
+                </h3>
+              </div>
+            </div>
+            <p className="text-xs text-[#E8D5B5] leading-relaxed">
+              Selecciona tu plan de clases y abona de forma segura con Mercado Pago para comenzar a reservar tus turnos.
+            </p>
+            <button
+              onClick={onOpenBuyPack || onGoToProfile}
+              className="w-full py-3 bg-[#F4E8D1] hover:bg-white text-[#44261B] font-extrabold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center space-x-2 cursor-pointer hover:scale-[1.01]"
+            >
+              <CreditCard className="w-4 h-4 text-[#5E612B]" />
+              <span>Ver Packs Disponibles</span>
+              <ChevronRight className="w-4 h-4 text-[#5E612B]" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Top Primary Action Cards (Mi Entrenamiento, Reservas, Beneficios / Credencial) */}
       <div className="space-y-2.5">

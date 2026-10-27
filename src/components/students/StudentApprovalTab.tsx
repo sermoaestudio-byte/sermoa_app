@@ -28,7 +28,7 @@ export const StudentApprovalTab: React.FC<StudentApprovalTabProps> = ({
   const { confirm } = useConfirm();
 
   const handleApprove = (student: Profile) => {
-    approveStudentRegistration(student.id, 1); // 1 clase de prueba/bienvenida asignada
+    approveStudentRegistration(student.id, 0); // 0 créditos iniciales: el alumno ingresa y adquiere su pack
   };
 
   const handleReject = async (student: Profile) => {
@@ -133,6 +133,13 @@ export const StudentApprovalTab: React.FC<StudentApprovalTabProps> = ({
                       <span className="text-slate-500">¿Embarazo?</span>
                       <span className={`font-bold ${med?.is_pregnant ? 'text-rose-600' : 'text-emerald-600'}`}>
                         {med?.is_pregnant ? 'Sí (Pilates prenatal)' : 'No'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">¿Apto Físico / Certificado?</span>
+                      <span className={`font-bold ${student.has_medical_certificate ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {student.has_medical_certificate ? '✓ Presentado' : 'Pendiente de entrega'}
                       </span>
                     </div>
 
