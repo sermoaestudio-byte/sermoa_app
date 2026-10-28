@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useStudioStore } from '../../store/studioStore';
+import { SportDetailModal } from './SportDetailModal';
+import { SportPictogram } from './SportPictogram';
+import { SPORTS_DETAILS_DATA } from './sportsData';
 import {
   CheckCircle2,
   Sparkles,
@@ -41,6 +44,17 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
   const { studio } = useStudioStore();
   const [activeSection, setActiveSection] = useState('');
   const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineModalData | null>(null);
+  const [activeSportModal, setActiveSportModal] = useState<string | null>(null);
+
+  const openLogin = () => {
+    onNavigate('login');
+    window.location.hash = '#login';
+  };
+
+  const openRegister = () => {
+    onNavigate('registro');
+    window.location.hash = '#registro';
+  };
 
   // Scroll spy effect
   useEffect(() => {
@@ -77,16 +91,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
-
-  const openLogin = () => {
-    onNavigate('login');
-    window.location.hash = '#login';
-  };
-
-  const openRegister = () => {
-    onNavigate('registro');
-    window.location.hash = '#registro';
-  };
 
   const disciplines: DisciplineModalData[] = [
     {
@@ -255,7 +259,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
               </h2>
 
               <p className="text-stone-700 text-base sm:text-lg leading-relaxed">
-                En <strong>Sermoa</strong> nuestro objetivo es acompañarte a mejorar tu postura, fortalecer tu musculatura, liberar tensiones y reconectar contigo a través del Yoga, Pilates y la Meditación. En definitiva: <em>ayudarte a ganar calidad de vida</em>. Para ofrecerte siempre la máxima excelencia, nos mantenemos en constante formación e innovación.
+                En <strong>Sermoa</strong> nuestro objetivo es acompañarte a mejorar tu postura, fortalecer tu musculatura, liberar tensiones y reconectar contigo a través de la práctica. En definitiva: <em>ayudarte a ganar calidad de vida</em>. Para ofrecerte siempre la máxima excelencia, nos mantenemos en constante formación e innovación.
               </p>
 
               <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
@@ -281,38 +285,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 </div>
 
                 <p className="text-xs sm:text-sm text-stone-600 mb-6 leading-relaxed">
-                  Nos importa conocer las capacidades y metas de cada alumno para garantizar un progreso seguro y constante. Por eso, nuestras clases se imparten en grupos reducidos:
+                  Nos importa conocer las capacidades y metas de cada alumno para garantizar un progreso seguro, cercano y constante en cada sesión
                 </p>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#F4EFE6]/60 border border-[#E8DFD1]">
                     <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#475B44]" />
-                      <span className="text-sm font-medium text-stone-800">Pilates y Yoga</span>
-                    </div>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#475B44]/10 text-[#475B44]">
-                      máximo 10 personas
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#F4EFE6]/60 border border-[#E8DFD1]">
-                    <div className="flex items-center gap-3">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#8E654E]" />
                       <span className="text-sm font-medium text-stone-800">Pilates Reformer</span>
                     </div>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#8E654E]/10 text-[#8E654E]">
-                      máximo 5 personas
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#F4EFE6]/60 border border-[#E8DFD1]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[#5D707F]" />
-                      <span className="text-sm font-medium text-stone-800">Yoga Aéreo</span>
-                    </div>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#5D707F]/10 text-[#5D707F]">
-                      máximo 6 personas
-                    </span>
                   </div>
                 </div>
 
@@ -328,82 +309,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
         </section>
 
 
-        {/* 4. NUESTRAS DISCIPLINAS */}
-        <section id="disciplinas" className="py-16 sm:py-24 bg-[#F5F1EB] border-y border-[#EAE2D5]">
-          <div className="max-w-7xl mx-auto px-6">
-
-            <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="text-xs font-bold tracking-widest text-[#475B44] uppercase block mb-2">
-                Nuestras Disciplinas
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-serif text-stone-900 mb-4">
-                Encuentra la práctica adecuada para ti
-              </h2>
-              <p className="text-stone-600 text-sm sm:text-base">
-                Clases guiadas por profesionales certificados, adaptadas tanto a quienes se inician como a practicantes avanzados.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              {disciplines.map((d, i) => (
-                <div
-                  key={i}
-                  className="bg-[#FAF8F5] rounded-3xl overflow-hidden border border-[#E8DFD1] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1"
-                >
-                  {/* Foto de la disciplina */}
-                  <div className="relative h-48 sm:h-52 overflow-hidden">
-                    <img
-                      src={d.image}
-                      alt={d.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-transparent to-transparent" />
-
-                    {/* Badges superiores */}
-                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-
-                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#475B44] text-white">
-                        {d.level}
-                      </span>
-                    </div>
-
-                    <div className="absolute bottom-3 left-3 right-3">
-
-                    </div>
-                  </div>
-
-                  {/* Cuerpo de la tarjeta */}
-                  <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold text-stone-900 mb-2 font-serif">
-                        {d.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-stone-600 line-clamp-3 leading-relaxed mb-4">
-                        {d.description}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-[#EAE2D5] flex items-center justify-between">
-                      <button
-                        onClick={() => setSelectedDiscipline(d)}
-                        className="text-xs font-semibold text-[#475B44] hover:text-[#334231] flex items-center gap-1 group/btn"
-                      >
-                        <span>Saber más</span>
-                        <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" />
-                      </button>
-
-
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </section>
-
-
-        {/* 5. TARJETAS DE BENEFICIOS (Diseño cálido, dinámico y con figuras geométricas orgánicas) */}
+        {/* 5. TARJETAS DE BENEFICIOS - PILATES COMO COMPLEMENTO DEPORTIVO */}
         <section id="beneficios" className="py-16 sm:py-24 max-w-7xl mx-auto px-6 relative overflow-hidden">
 
           {/* Figuras geométricas y manchas orgánicas flotantes de fondo */}
@@ -411,141 +317,146 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="absolute bottom-10 -right-20 w-96 h-96 bg-[#F7C59F]/15 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-10 right-1/3 w-64 h-64 bg-[#1F2933]/5 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="text-center max-w-2xl mx-auto mb-16 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16 relative z-10">
             <span className="text-xs font-bold tracking-widest text-[#475B44] uppercase block mb-2">
-              Bienestar Integral
+              Beneficios
             </span>
-            <h2 className="text-3xl sm:text-4xl font-serif text-stone-900 mb-4">
-              Los beneficios de moverte a conciencia
+            <h2 className="text-3xl sm:text-4xl font-serif text-stone-900 mb-4 tracking-tight">
+              PILATES COMO COMPLEMENTO DEPORTIVO
             </h2>
-            <p className="text-stone-600 text-sm sm:text-base">
-              Cada sesión está planificada para impactar de forma positiva y medible en tu salud corporal y mental.
+            <p className="text-stone-600 text-sm sm:text-base leading-relaxed">
+              Cada deporte exige capacidades diferentes. El Pilates puede ayudarte a trabajar el control corporal, la movilidad y la estabilidad como complemento de tu actividad habitual.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
             {[
               {
-                icon: Feather,
-                title: 'Mejora de Postura',
-                desc: 'Realinea tu columna, elimina sobrecargas lumbares y cervicales, y muévete con soltura y presencia en tu día a día.',
-                accentColor: '#5EBA8C',
-                shapeType: 'leaf',
-                badgeText: 'Alineación Natural',
-                bgGradient: 'from-[#5EBA8C]/15 via-[#5EBA8C]/5 to-transparent'
-              },
-              {
-                icon: Activity,
-                title: 'Fuerza Profunda del Core',
-                desc: 'Construye un centro fuerte y reactivo que protege tus articulaciones y brinda estabilidad a cada uno de tus movimientos.',
-                accentColor: '#1F2933',
-                shapeType: 'arch',
-                badgeText: 'Centro Fuerte',
-                bgGradient: 'from-[#1F2933]/10 via-[#1F2933]/5 to-transparent'
-              },
-              {
-                icon: Heart,
-                title: 'Liberación de Tensiones',
-                desc: 'A través de la respiración profunda y el trabajo fascial, disuelve el estrés acumulado y equilibra tu sistema nervioso.',
-                accentColor: '#F7C59F',
-                shapeType: 'circle',
-                badgeText: 'Calma & Relax',
-                bgGradient: 'from-[#F7C59F]/25 via-[#F7C59F]/5 to-transparent'
-              },
-              {
-                icon: Compass,
-                title: 'Flexibilidad & Movilidad',
-                desc: 'Desbloquea rangos articulares sanos sin forzar, ganando una sensación de ligereza y agilidad perdurable.',
+                id: 'futbol',
+                title: 'Fútbol',
+                capacities: ['Coordinación', 'Equilibrio', 'Control corporal'],
+                desc: 'Complementá tu entrenamiento trabajando la coordinación, la estabilidad y el control del movimiento para acompañar los apoyos, los desplazamientos y los cambios de dirección propios del juego.',
                 accentColor: '#475B44',
-                shapeType: 'wave',
-                badgeText: 'Rango Articular',
+                image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=800&auto=format&fit=crop',
                 bgGradient: 'from-[#475B44]/15 via-[#475B44]/5 to-transparent'
               },
               {
-                icon: Users,
-                title: 'Atención Individualizada',
-                desc: 'Supervisión atenta a tus necesidades, adaptando los ejercicios si tienes lesiones, molestias o metas concretas.',
-                accentColor: '#F7C59F',
-                shapeType: 'pill',
-                badgeText: 'Grupos Reducidos',
-                bgGradient: 'from-[#F7C59F]/20 via-[#F7C59F]/5 to-transparent'
+                id: 'tenis-padel',
+                title: 'Tenis y pádel',
+                capacities: ['Rotación', 'Estabilidad', 'Movilidad'],
+                desc: 'Trabajá el control del tronco durante los movimientos rotacionales, el equilibrio en los desplazamientos y la movilidad de hombros y caderas para complementar los gestos propios de los deportes de raqueta.',
+                accentColor: '#8E654E',
+                image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?q=80&w=800&auto=format&fit=crop',
+                bgGradient: 'from-[#8E654E]/15 via-[#8E654E]/5 to-transparent'
               },
               {
-                icon: ShieldCheck,
-                title: 'Equilibrio Físico & Mental',
-                desc: 'Un espacio seguro donde desconectar de la rutina para reconectar con tus sensaciones y tu propia energía.',
+                id: 'running',
+                title: 'Running',
+                capacities: ['Estabilidad de pelvis', 'Control del tronco', 'Movilidad'],
+                desc: 'Complementá tus kilómetros con ejercicios orientados al control corporal, la estabilidad de la zona media y la movilidad de caderas y tobillos, adaptados a tus necesidades como corredor.',
                 accentColor: '#5EBA8C',
-                shapeType: 'diamond',
-                badgeText: 'Salud Integral',
-                bgGradient: 'from-[#5EBA8C]/20 via-[#5EBA8C]/5 to-transparent'
+                image: 'https://images.unsplash.com/photo-1486218119243-13883505764c?q=80&w=800&auto=format&fit=crop',
+                bgGradient: 'from-[#5EBA8C]/15 via-[#5EBA8C]/5 to-transparent'
+              },
+              {
+                id: 'ciclismo',
+                title: 'Ciclismo',
+                capacities: ['Postura', 'Estabilidad del core', 'Movilidad'],
+                desc: 'Sumá a tus salidas en bicicleta un trabajo de control postural, estabilidad del tronco y movilidad de caderas que complemente las exigencias de pasar tiempo sobre la bicicleta.',
+                accentColor: '#5D707F',
+                image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=800&auto=format&fit=crop',
+                bgGradient: 'from-[#5D707F]/15 via-[#5D707F]/5 to-transparent'
+              },
+              {
+                id: 'gimnasio-fuerza',
+                title: 'Gimnasio y fuerza',
+                capacities: ['Movilidad', 'Estabilidad', 'Control del movimiento'],
+                desc: 'Complementá tus entrenamientos de fuerza con ejercicios de Pilates orientados a la movilidad, la estabilidad y el control corporal, según tus objetivos y necesidades.',
+                accentColor: '#1F2933',
+                image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop',
+                bgGradient: 'from-[#1F2933]/15 via-[#1F2933]/5 to-transparent'
               }
-            ].map((b, i) => {
-              const IconComponent = b.icon;
-              return (
-                <div
-                  key={i}
-                  className="bg-[#FAF8F5] border border-[#EAE2D5] rounded-3xl p-7 sm:p-8 shadow-sm hover:shadow-2xl hover:border-[#D6CAB7] transition-all duration-500 flex flex-col justify-between group hover:-translate-y-2 relative overflow-hidden"
-                >
-                  {/* Degradé suave reactivo con el hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${b.bgGradient} opacity-30 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+            ].map((sport, i) => (
+              <div
+                key={i}
+                onClick={() => setActiveSportModal(sport.id)}
+                className="bg-[#FAF8F5] border border-[#EAE2D5] rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:border-[#D6CAB7] transition-all duration-500 flex flex-col group hover:-translate-y-1.5 relative cursor-pointer"
+              >
+                {/* Degradé reactivo con hover */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${sport.bgGradient} opacity-20 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-10`} />
 
-                  {/* Figura geométrica y orgánica decorativa en la esquina superior derecha */}
-                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-bl-[2.5rem] rounded-tr-3xl transition-all duration-700 pointer-events-none group-hover:scale-125 group-hover:rotate-12 opacity-40 group-hover:opacity-85 flex items-center justify-center"
-                    style={{ backgroundColor: `${b.accentColor}18` }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full transition-transform duration-500 group-hover:scale-110"
-                      style={{ backgroundColor: `${b.accentColor}25` }}
-                    />
-                  </div>
-
-                  <div className="relative z-10">
-
-                    {/* Contenedor del Icono con animación flotante */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xs transition-all duration-500 group-hover:scale-110 group-hover:shadow-md"
-                        style={{
-                          backgroundColor: `${b.accentColor}15`,
-                          color: b.accentColor === '#FAF8F5' ? '#1F2933' : b.accentColor
-                        }}
-                      >
-                        <IconComponent className="w-6 h-6 transition-transform duration-500 group-hover:rotate-6" />
-                      </div>
-
-                      <span
-                        className="text-[11px] font-semibold tracking-wide px-3 py-1 rounded-full border transition-all duration-300"
-                        style={{
-                          backgroundColor: `${b.accentColor}10`,
-                          borderColor: `${b.accentColor}25`,
-                          color: b.accentColor === '#FAF8F5' ? '#1F2933' : b.accentColor
-                        }}
-                      >
-                        {b.badgeText}
-                      </span>
+                {/* Pictograma minimalista en silueta (Sport Pictogram / Line Art) */}
+                <div className="relative pt-7 pb-4 px-6 flex items-center justify-between border-b border-[#EAE2D5]/70 bg-gradient-to-b from-[#FAF8F5] to-[#F5F2EB]/50">
+                  {/* Contenedor circular suave aesthetic con el pictograma vectorial */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#F5F2EB] border border-[#E8DFD1] shadow-xs flex items-center justify-center p-3 transition-transform duration-500 group-hover:scale-105 group-hover:shadow-md relative overflow-hidden">
+                      {/* Resplandor sutil oliva/cálido de fondo */}
+                      <div className="absolute inset-0 bg-[#5EBA8C]/10 rounded-full blur-xs pointer-events-none" />
+                      <SportPictogram
+                        sportId={sport.id}
+                        className="w-10 h-10 sm:w-12 sm:h-12 relative z-10 transition-transform duration-500 group-hover:rotate-2"
+                        color="#475B44"
+                        accentColor="#C18749"
+                      />
                     </div>
 
-                    <h3 className="text-xl font-semibold text-stone-900 mb-3 font-serif group-hover:text-[#1F2933] transition-colors">
-                      {b.title}
-                    </h3>
+                    <div>
+                      <span className="text-[10px] font-bold tracking-widest text-[#475B44] uppercase block mb-0.5">
+                        DISCIPLINA
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-bold font-serif text-stone-900 tracking-tight">
+                        {sport.title}
+                      </h3>
+                    </div>
+                  </div>
 
-                    <p className="text-stone-600 text-sm leading-relaxed">
-                      {b.desc}
+                  <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full bg-white/90 text-[#475B44] border border-[#E8DFD1] shadow-2xs group-hover:bg-[#475B44] group-hover:text-white transition-all shrink-0">
+                    Saber más →
+                  </span>
+                </div>
+
+                {/* Contenido de la tarjeta */}
+                <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between relative z-20">
+                  <div>
+                    {/* Capacidades físicas que se trabajan con Pilates */}
+                    <div className="mb-4">
+                      <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block mb-2">
+                        Capacidades:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sport.capacities.map((cap, cIdx) => (
+                          <span
+                            key={cIdx}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors"
+                            style={{
+                              backgroundColor: `${sport.accentColor}10`,
+                              borderColor: `${sport.accentColor}25`,
+                              color: sport.accentColor === '#FAF8F5' ? '#1F2933' : sport.accentColor
+                            }}
+                          >
+                            {cap}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Descripción breve del complemento */}
+                    <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
+                      {sport.desc}
                     </p>
                   </div>
 
-                  {/* Barra inferior de progreso / toque de color orgánico */}
-                  <div className="mt-6 pt-4 border-t border-[#EAE2D5]/70 flex items-center justify-between relative z-10">
+                  {/* Botón y barra inferior con toque de color */}
+                  <div className="pt-4 border-t border-[#EAE2D5]/70 flex items-center justify-between">
 
                     <div
-                      className="h-1.5 w-6 group-hover:w-16 rounded-full transition-all duration-500"
-                      style={{ backgroundColor: b.accentColor }}
+                      className="h-1.5 w-6 group-hover:w-12 rounded-full transition-all duration-500"
+                      style={{ backgroundColor: sport.accentColor }}
                     />
                   </div>
-
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </section>
 
@@ -719,6 +630,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           </div>
         </div>
       )}
+
+      {/* MODAL DE DETALLE DE DEPORTE (PILATES COMO COMPLEMENTO DEPORTIVO) */}
+      <SportDetailModal
+        sportId={activeSportModal}
+        onClose={() => setActiveSportModal(null)}
+        onNavigateToRegister={openRegister}
+      />
 
     </div>
   );
