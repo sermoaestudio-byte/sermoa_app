@@ -50,9 +50,10 @@ export const StudentPortalView: React.FC = () => {
   const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || '');
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay());
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
+  const [scheduleViewMode, setScheduleViewMode] = useState<'calendar' | 'list'>('calendar');
   const [showCheckinGPSModal, setShowCheckinGPSModal] = useState(false);
   const [isBuyPackOpen, setIsBuyPackOpen] = useState(false);
-  
+
   // Waitlist Confirmation state
   const [pendingWaitlistId, setPendingWaitlistId] = useState<string | null>(null);
 
@@ -90,10 +91,11 @@ export const StudentPortalView: React.FC = () => {
   }, [waitlist]);
 
   const weekDays = getWeekDates(currentWeekDate);
+  const businessWeekDays = weekDays.filter((d) => d.date.getDay() >= 1 && d.date.getDay() <= 5);
 
   const handleBook = (cls: ClassSchedule, dateStr?: string) => {
     if (!currentStudent) return;
-    
+
     // We need to pass the date because if we book for tomorrow, it shouldn't book for today.
     // If no date is passed, it falls back to the store default (today).
     const res = bookClass(cls.id, currentStudent.id, dateStr, false);
@@ -112,371 +114,447 @@ export const StudentPortalView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F2EB]/60 pb-24 relative overflow-x-hidden">
-      
+    <div className="min-h-screen bg-[#F5F2EB]/60 pb-24 relative overflow-x-hidden flex font-sans selection:bg-[#E8D5B5] selection:text-[#44261B]">
+
       {/* Decorative Silhouette Watermark in Background (Contraste artístico Sermoa en el lateral) */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-end"
+      <div
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-end pr-4 sm:pr-8 md:pr-12"
         aria-hidden="true"
       >
         <img
           src="/pilates-silhouette.png"
           alt=""
-          className="w-[300px] sm:w-[460px] md:w-[540px] max-w-none opacity-[0.14] select-none mix-blend-multiply translate-x-12 sm:translate-x-16 translate-y-4"
+          className="w-[280px] sm:w-[420px] md:w-[500px] lg:w-[520px] max-w-none opacity-[0.22] select-none mix-blend-multiply translate-x-4 sm:translate-x-6 translate-y-2"
         />
       </div>
 
-      {/* Student App Topbar */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-[#E8D5B5] sticky top-0 z-30 shadow-xs relative">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            {/* Hamburger Button on Left */}
-            <button
-              onClick={() => setShowSidebarDrawer(true)}
-              className="p-2 text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer flex items-center justify-center shadow-2xs"
-              title="Abrir menú lateral"
-            >
-              <Menu className="w-5 h-5 text-[#44261B]" />
-            </button>
+      {/* 1. Left Navbar Sidebar permanente (visible siempre en desktop con toggle colapsable) */}
+      <div className="hidden lg:block shrink-0 relative z-30">
+        <StudentSidebar
+          student={currentStudent}
+          studio={studio}
+          activeTab={activeTab}
+          onSelectTab={(tab) => setActiveTab(tab)}
+          onLogout={() => {
+            window.location.hash = '#login';
+          }}
+          studentsList={students}
+          currentStudentId={currentStudent?.id || ''}
+          onSelectStudent={(id) => setCurrentStudentId(id)}
+        />
+      </div>
 
-            <div className="w-10 h-10 rounded-2xl bg-[#eaede7] border border-[#cadbcd] text-[#34573c] overflow-hidden flex items-center justify-center font-extrabold text-xs shadow-2xs">
-              {currentStudent?.avatar_url ? (
+      {/* 2. Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+
+        {/* Student App Topbar */}
+        <header className="bg-white/95 backdrop-blur-md border-b border-[#E8D5B5] sticky top-0 z-30 shadow-xs relative">
+          <div className="max-w-3xl lg:max-w-[760px] xl:max-w-[800px] mr-auto ml-0 px-4 sm:px-8 py-3 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              {/* Hamburger Button on Left (visible en pantallas móviles) */}
+              <button
+                onClick={() => setShowSidebarDrawer(true)}
+                className="lg:hidden p-2 text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer flex items-center justify-center shadow-2xs"
+                title="Abrir menú lateral"
+              >
+                <Menu className="w-5 h-5 text-[#44261B]" />
+              </button>
+
+              <div className="w-9 h-9 rounded-xl bg-white border border-[#E8D5B5] p-1 shadow-2xs flex items-center justify-center shrink-0">
                 <img
-                  src={currentStudent.avatar_url}
-                  alt={currentStudent.first_name}
-                  className="w-full h-full object-cover"
+                  src={studio.logo_url || '/logo.png'}
+                  alt={studio.name}
+                  className="w-full h-full object-contain"
                 />
-              ) : (
-                <span>{currentStudent ? `${currentStudent.first_name?.[0] || ''}${currentStudent.last_name?.[0] || ''}` : 'S'}</span>
-              )}
-            </div>
-            <div>
-              <h2 className="font-extrabold text-[#242E38] text-sm leading-tight">
-                {currentStudent ? `${currentStudent.first_name} ${currentStudent.last_name}` : studio.name}
-              </h2>
-              <span className="text-[11px] text-[#778c6e] font-medium">Portal de Alumnos • Sermoa</span>
-            </div>
-          </div>
-
-          {/* Student Simulator Selector */}
-          <div className="flex items-center space-x-2">
-            <select
-              value={currentStudent?.id || ''}
-              onChange={(e) => setCurrentStudentId(e.target.value)}
-              className="text-xs border-[#E8D5B5] rounded-xl bg-[#FAF8F5] p-1.5 focus:ring-[#5E612B] focus:border-[#5E612B] max-w-[140px] text-[#44261B] font-medium"
-              title="Simulador: Cambiar de Alumno"
-            >
-              <option value="" disabled>Emular Usuario...</option>
-              {students.map(s => (
-                <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        
-        {/* TAB 1: SCHEDULE / BOOKING */}
-        {activeTab === 'schedule' && (
-          <div className="space-y-5 animate-fade-in">
-            
-            {/* Student Credit Summary Pill or Empty Register Banner */}
-            {currentStudent ? (
-              <div 
-                className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between border border-[#E8D5B5]"
-                style={{
-                  background: 'linear-gradient(135deg, #44261B 0%, #5E612B 45%, #C18749 100%)',
-                }}
-              >
-                <div>
-                  <span className="text-xs text-[#F4E8D1] block font-medium">Hola, {currentStudent.first_name}!</span>
-                  <h3 className="text-xl font-extrabold mt-0.5 text-white">
-                    {currentStudent.credits_balance === 999 
-                      ? 'Pase Libre (Ilimitado)' 
-                      : `${currentStudent.credits_balance} Clases Disponibles`}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setActiveTab('my_profile')}
-                  className="px-3.5 py-2 bg-[#F4E8D1] text-[#44261B] font-extrabold text-xs rounded-xl shadow-xs hover:bg-white transition-colors flex items-center space-x-1.5 cursor-pointer"
-                >
-                  <QrCode className="w-3.5 h-3.5 text-[#5E612B]" />
-                  <span>Ver Pase</span>
-                </button>
               </div>
-            ) : (
-              <div className="bg-white rounded-3xl p-6 text-center border border-slate-200 shadow-soft space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center mx-auto shadow-xs border border-brand-100">
-                  <User className="w-6 h-6" />
-                </div>
-                <h3 className="text-base font-extrabold text-slate-900">Bienvenido al Portal de Alumnos</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Aún no hay alumnos activos registrados en el sistema. Puedes completar tu ficha médica para solicitar tu ingreso.
-                </p>
+              <div>
+                <h2 className="font-extrabold text-[#44261B] text-sm leading-tight">
+                  {studio.name || 'Sermoa'} • Portal
+                </h2>
+                <span className="text-[11px] text-[#A68D74] font-medium">Pilates & Bienestar</span>
               </div>
-            )}
+            </div>
 
-            {/* Branch Selector */}
+            {/* Student Simulator Selector */}
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold text-[#A68D74]">Sede:</span>
+              <span className="text-[10px] font-bold text-[#A68D74] uppercase hidden sm:inline-block">
+                Alumno:
+              </span>
               <select
-                value={selectedBranchId}
-                onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-xs"
+                value={currentStudent?.id || ''}
+                onChange={(e) => setCurrentStudentId(e.target.value)}
+                className="text-xs border-[#E8D5B5] rounded-xl bg-[#FAF8F5] p-1.5 focus:ring-[#5E612B] focus:border-[#5E612B] max-w-[150px] text-[#44261B] font-medium"
+                title="Simulador: Cambiar de Alumno"
               >
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
+                <option value="" disabled>Emular Usuario...</option>
+                {students.map(s => (
+                  <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
                 ))}
               </select>
             </div>
+          </div>
+        </header>
 
-            {/* Week Days Bar */}
-            <div className="grid grid-cols-7 gap-1.5 bg-white p-2 rounded-2xl border border-[#E8D5B5] shadow-xs">
-              {weekDays.map((day) => {
-                const isSelected = selectedDayIndex === day.date.getDay();
+        {/* Main Content Area alineada hacia la izquierda */}
+        <main className="max-w-3xl lg:max-w-[760px] xl:max-w-[800px] mr-auto ml-0 px-4 sm:px-8 py-6 w-full">
 
-                return (
+          {/* TAB 1: SCHEDULE / BOOKING */}
+          {activeTab === 'schedule' && (
+            <div className="space-y-5 animate-fade-in">
+
+              {/* Student Credit Summary Pill or Empty Register Banner */}
+              {currentStudent ? (
+                <div
+                  className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between border border-[#E8D5B5]"
+                  style={{
+                    background: 'linear-gradient(135deg, #44261B 0%, #5E612B 45%, #C18749 100%)',
+                  }}
+                >
+                  <div>
+
+                    <h3 className="text-xl font-extrabold mt-0.5 text-white tracking-wide">
+                      {currentStudent.credits_balance === 999
+                        ? 'TIENES PASE LIBRE (ILIMITADO)'
+                        : `TIENES ${currentStudent.credits_balance ?? 0} CRÉDITOS DISPONIBLES`}
+                    </h3>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl p-6 text-center border border-slate-200 shadow-soft space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center mx-auto shadow-xs border border-brand-100">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-extrabold text-slate-900">Bienvenido al Portal de Alumnos</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    Aún no hay alumnos activos registrados en el sistema. Puedes completar tu ficha médica para solicitar tu ingreso.
+                  </p>
+                </div>
+              )}
+
+              {/* Sede & Selector de Vista (Calendario / Lista) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8D5B5] shadow-xs">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-[#A68D74]">Sede:</span>
+                  <select
+                    value={selectedBranchId}
+                    onChange={(e) => setSelectedBranchId(e.target.value)}
+                    className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-2xs"
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Switcher: Calendario vs Lista */}
+                <div className="flex items-center space-x-1.5 bg-[#FAF8F5] p-1 rounded-xl border border-[#E8D5B5]/60 self-start sm:self-auto">
                   <button
-                    key={day.dateStr}
-                    onClick={() => setSelectedDayIndex(day.date.getDay())}
-                    className={`py-2 text-center rounded-xl transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#5E612B] text-[#F4E8D1] font-extrabold shadow-sm'
-                        : 'text-[#A68D74] hover:bg-[#F4E8D1]/40'
+                    onClick={() => setScheduleViewMode('calendar')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      scheduleViewMode === 'calendar'
+                        ? 'bg-[#5E612B] text-[#F4E8D1] shadow-2xs'
+                        : 'text-[#A68D74] hover:text-[#44261B]'
                     }`}
                   >
-                    <span className="text-[10px] uppercase block">{day.dayName}</span>
-                    <span className="text-xs font-bold block mt-0.5">{day.dayNumber}</span>
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Calendario</span>
                   </button>
-                );
-              })}
-            </div>
+                  <button
+                    onClick={() => setScheduleViewMode('list')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      scheduleViewMode === 'list'
+                        ? 'bg-[#5E612B] text-[#F4E8D1] shadow-2xs'
+                        : 'text-[#A68D74] hover:text-[#44261B]'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Por Día</span>
+                  </button>
+                </div>
+              </div>
 
-            {/* Available Classes for Day */}
-            <div className="space-y-3">
-              {(() => {
-                const dayClasses = classes.filter(
-                  (c) =>
-                    c.day_of_week === selectedDayIndex &&
-                    (!selectedBranchId || c.branch_id === selectedBranchId)
-                );
+              {/* Navegador de Semana (Lunes a Viernes) */}
+              <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-[#E8D5B5] shadow-xs">
+                <button
+                  onClick={() => {
+                    const prev = new Date(currentWeekDate);
+                    prev.setDate(prev.getDate() - 7);
+                    setCurrentWeekDate(prev);
+                  }}
+                  className="p-1.5 rounded-xl border border-[#E8D5B5] text-[#5E612B] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                  title="Semana anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
 
-                if (dayClasses.length === 0) {
-                  return (
-                    <div className="bg-white rounded-3xl p-8 text-center text-xs text-slate-400 border border-slate-200">
-                      No hay clases disponibles para este día y sede.
-                    </div>
-                  );
-                }
-                
-                const targetDay = weekDays.find(d => d.date.getDay() === selectedDayIndex);
-                const targetDateStr = targetDay ? targetDay.dateStr : toISODateString(new Date());
+                <div className="flex items-center space-x-2 text-center">
+                  <span className="text-xs sm:text-sm font-extrabold text-[#44261B]">
+                    Semana del {businessWeekDays[0]?.dayNumber} al {businessWeekDays[businessWeekDays.length - 1]?.dayNumber} de{' '}
+                    {businessWeekDays[0]?.date.toLocaleString('es-ES', { month: 'long' })}
+                  </span>
+                  <button
+                    onClick={() => setCurrentWeekDate(new Date())}
+                    className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#F4E8D1] text-[#5E612B] hover:bg-[#E8D5B5] transition-colors cursor-pointer"
+                  >
+                    Hoy
+                  </button>
+                </div>
 
-                const renderedClasses = dayClasses.map((cls) => {
-                  const classBookings = bookings.filter(
-                    (b) => b.class_id === cls.id && b.status === 'confirmed' && (!b.booking_date || b.booking_date === targetDateStr)
-                  );
-                  const enrolled = classBookings.length;
-                  const availableSpots = Math.max(0, cls.max_capacity - enrolled);
-                  
-                  // Obtener la lista de espera activa para esta clase
-                  const activeWaitlist = waitlist
-                    .filter((w) => w.class_id === cls.id && w.request_date === targetDateStr && w.status !== 'promoted' && w.status !== 'rejected')
-                    .sort((a, b) => a.position - b.position);
+                <button
+                  onClick={() => {
+                    const next = new Date(currentWeekDate);
+                    next.setDate(next.getDate() + 7);
+                    setCurrentWeekDate(next);
+                  }}
+                  className="p-1.5 rounded-xl border border-[#E8D5B5] text-[#5E612B] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                  title="Semana siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
 
-                  // Ver si el estudiante actual está en la lista de espera
-                  const studentWaitlistIndex = currentStudent ? activeWaitlist.findIndex(w => w.student_id === currentStudent.id) : -1;
-                  const isUserWaitlisted = studentWaitlistIndex !== -1;
-                  
-                  // El usuario puede reservar SI:
-                  // 1. Hay lugares disponibles y no hay nadie en lista de espera (o menos personas que lugares).
-                  // 2. O BIEN el usuario está en la lista de espera, y su posición está dentro de los lugares disponibles.
-                  const isFullForUser = isUserWaitlisted 
-                    ? studentWaitlistIndex >= availableSpots 
-                    : availableSpots <= activeWaitlist.length;
+              {/* VISTA 1: FORMATO CALENDARIO SEMANAL LUNES A VIERNES (Columnas más anchas) */}
+              {scheduleViewMode === 'calendar' ? (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  {businessWeekDays.map((wd) => {
+                    const dIndex = wd.date.getDay();
+                    const dayClasses = classes
+                      .filter((c) => c.day_of_week === dIndex && (!selectedBranchId || c.branch_id === selectedBranchId))
+                      .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-                  const studentWaitlistEntry = isUserWaitlisted ? activeWaitlist[studentWaitlistIndex] : null;
+                    const isToday = toISODateString(new Date()) === wd.dateStr;
 
-                  let buttonText = 'Reservar Turno';
-                  let badgeText = `${availableSpots} lugares`;
-                  let badgeColor = 'bg-emerald-100 text-emerald-800';
-                  let isDisabled = false;
-                  let missedConfirmationMsg = null;
-                  let countdownMsg = null;
-
-                  if (studentWaitlistEntry?.missed_confirmation) {
-                    missedConfirmationMsg = `Perdiste tu turno por falta de confirmación. Tu lugar de espera actual es #${studentWaitlistEntry.position}.`;
-                  }
-
-                  if (isFullForUser) {
-                    if (isUserWaitlisted) {
-                      badgeText = 'En Lista de Espera';
-                      badgeColor = 'bg-amber-100 text-amber-800';
-                      buttonText = 'En Espera (Tu posición: ' + activeWaitlist[studentWaitlistIndex].position + ')';
-                      isDisabled = true; // Ya está anotado y no hay cupo
-                    } else {
-                      badgeText = availableSpots > 0 ? 'Cupos reservados para espera' : 'Completo (Lista de Espera)';
-                      badgeColor = 'bg-rose-100 text-rose-800';
-                      buttonText = 'Anotarme en Espera';
-                    }
-                  } else {
-                    if (isUserWaitlisted) {
-                      if (studentWaitlistEntry?.status === 'pending_confirmation') {
-                        badgeText = '¡Lugar Disponible para ti!';
-                        badgeColor = 'bg-emerald-100 text-emerald-800 animate-pulse';
-                        buttonText = 'Confirmar mi Lugar';
-                        if (studentWaitlistEntry.expires_at) {
-                          const timeLeft = Math.max(0, Math.floor((new Date(studentWaitlistEntry.expires_at).getTime() - Date.now()) / 1000));
-                          const mins = Math.floor(timeLeft / 60);
-                          const secs = timeLeft % 60;
-                          countdownMsg = `Tienes ${mins}:${secs.toString().padStart(2, '0')} min para confirmar tu lugar antes de que expire.`;
-                        }
-                      } else {
-                        // Ocurre si liberan lugar, pero la persona todavía no fue procesada a 'pending_confirmation' por algún error.
-                        // Aunque normalmente si hay lugar y es su turno, bookClass lo acepta.
-                        badgeText = '¡Lugar Disponible!';
-                        badgeColor = 'bg-emerald-100 text-emerald-800';
-                        buttonText = 'Confirmar mi Lugar';
-                      }
-                    }
-                  }
-
-                  return (
-                    <div
-                      key={cls.id}
-                      className={`bg-white rounded-3xl p-5 border shadow-soft hover:shadow-soft-lg transition-all flex flex-col ${studentWaitlistEntry?.status === 'pending_confirmation' ? 'border-emerald-300 ring-4 ring-emerald-50' : 'border-slate-200'}`}
-                    >
-                      {missedConfirmationMsg && (
-                        <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold p-3 rounded-xl flex items-center space-x-2">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{missedConfirmationMsg}</span>
-                        </div>
-                      )}
-                      {countdownMsg && (
-                        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold p-3 rounded-xl flex items-center space-x-2">
-                          <Clock className="w-4 h-4 flex-shrink-0 animate-pulse" />
-                          <span>{countdownMsg}</span>
-                        </div>
-                      )}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                          <div className="flex items-center space-x-2 mb-1.5">
-                            <span
-                              className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-white shadow-xs"
-                              style={{ backgroundColor: cls.activity?.color || cls.color }}
-                            >
-                              {cls.title}
-                            </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColor}`}>
-                              {badgeText}
-                            </span>
-                          </div>
-
-                          <div className="text-xs font-bold text-slate-800 flex items-center space-x-2">
-                            <Clock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{cls.start_time} a {cls.end_time} hs</span>
-                          </div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">
-                            Prof: {cls.instructor?.first_name} {cls.instructor?.last_name} • {cls.room?.name}
-                          </div>
+                    return (
+                      <div
+                        key={wd.dateStr}
+                        className={`rounded-2xl border transition-all flex flex-col ${
+                          isToday
+                            ? 'bg-[#FAF8F5] border-[#5E612B]/70 shadow-sm'
+                            : 'bg-white border-[#E8D5B5]'
+                        }`}
+                      >
+                        {/* Cabecera del día */}
+                        <div
+                          className={`p-3 text-center border-b ${
+                            isToday ? 'bg-[#5E612B] text-[#F4E8D1]' : 'border-[#E8D5B5]/60 bg-[#FAF8F5]'
+                          } rounded-t-2xl`}
+                        >
+                          <span className={`text-[11px] uppercase font-extrabold block ${isToday ? 'text-[#F4E8D1]' : 'text-[#A68D74]'}`}>
+                            {wd.dayName}
+                          </span>
+                          <span className={`text-base font-black block mt-0.5 ${isToday ? 'text-white' : 'text-[#44261B]'}`}>
+                            {wd.dayNumber}
+                          </span>
                         </div>
 
+                        {/* Lista de clases dentro de la columna del día */}
+                        <div className="p-2.5 space-y-2.5 flex-1 min-h-[260px]">
+                          {dayClasses.length === 0 ? (
+                            <div className="h-full flex items-center justify-center p-3 text-center">
+                              <span className="text-[11px] text-[#A68D74] italic">Sin clases</span>
+                            </div>
+                          ) : (
+                            dayClasses.map((cls) => {
+                              const classBookings = bookings.filter(
+                                (b) => b.class_id === cls.id && b.status === 'confirmed' && (!b.booking_date || b.booking_date === wd.dateStr)
+                              );
+                              const enrolled = classBookings.length;
+                              const availableSpots = Math.max(0, cls.max_capacity - enrolled);
+                              const isFull = availableSpots <= 0;
+
+                              return (
+                                <div
+                                  key={cls.id}
+                                  className="bg-[#FAF8F5] hover:bg-white rounded-xl p-3 border border-[#E8D5B5] shadow-2xs transition-all space-y-2 text-left"
+                                >
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span
+                                      className="text-[10px] font-extrabold px-2 py-0.5 rounded text-white truncate max-w-[105px]"
+                                      style={{ backgroundColor: cls.activity?.color || cls.color || '#5E612B' }}
+                                    >
+                                      {cls.title}
+                                    </span>
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                        isFull ? 'bg-rose-100 text-[#CB563C]' : 'bg-[#eaede7] text-[#5E612B]'
+                                      }`}
+                                    >
+                                      {isFull ? 'Lleno' : `${availableSpots} cupos`}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#44261B]">
+                                    <Clock className="w-3.5 h-3.5 text-[#5E612B]" />
+                                    <span>{cls.start_time} a {cls.end_time} hs</span>
+                                  </div>
+
+                                  <button
+                                    onClick={() => handleBook(cls, wd.dateStr)}
+                                    className={`w-full py-2 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer ${
+                                      isFull
+                                        ? 'bg-[#C18749] hover:bg-[#44261B] text-white'
+                                        : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
+                                    }`}
+                                  >
+                                    {isFull ? 'Lista Espera' : 'Reservar Turno'}
+                                  </button>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* VISTA 2: FORMATO LISTA POR DÍA */
+                <div className="space-y-4">
+                  {/* Selector de días lunes a viernes */}
+                  <div className="grid grid-cols-5 gap-1.5 bg-white p-2 rounded-2xl border border-[#E8D5B5] shadow-xs">
+                    {businessWeekDays.map((day) => {
+                      const isSelected = selectedDayIndex === day.date.getDay();
+
+                      return (
                         <button
-                          onClick={() => handleBook(cls, targetDateStr)}
-                          disabled={isDisabled}
-                          className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold shadow-sm transition-all self-start sm:self-center cursor-pointer ${
-                            isDisabled
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                              : isFullForUser
-                              ? 'bg-[#D98E2A] hover:bg-[#C18749] text-white'
-                              : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
+                          key={day.dateStr}
+                          onClick={() => setSelectedDayIndex(day.date.getDay())}
+                          className={`py-2 text-center rounded-xl transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#5E612B] text-[#F4E8D1] font-extrabold shadow-sm'
+                              : 'text-[#A68D74] hover:bg-[#F4E8D1]/40'
                           }`}
                         >
-                          {buttonText}
+                          <span className="text-[10px] uppercase block">{day.dayName}</span>
+                          <span className="text-xs font-bold block mt-0.5">{day.dayNumber}</span>
                         </button>
-                      </div>
-                    </div>
-                  );
-                });
+                      );
+                    })}
+                  </div>
 
-                const allFull = dayClasses.every((cls) => {
-                  const cb = bookings.filter((b) => b.class_id === cls.id && b.status === 'confirmed' && (!b.booking_date || b.booking_date === targetDateStr));
-                  return cb.length >= cls.max_capacity;
-                });
+                  {/* Listado de clases del día seleccionado */}
+                  <div className="space-y-3">
+                    {(() => {
+                      const dayClasses = classes.filter(
+                        (c) =>
+                          c.day_of_week === selectedDayIndex &&
+                          (!selectedBranchId || c.branch_id === selectedBranchId)
+                      );
 
-                return (
-                  <>
-                    {renderedClasses}
-                    {allFull && dayClasses.length > 0 && (
-                      <div className="mt-6 p-6 bg-slate-50 rounded-3xl border border-slate-200 text-center">
-                        <p className="text-sm font-medium text-slate-600 mb-4">
-                          La agenda del día está completa. Puedes unirte a la lista de espera general y te avisaremos si se libera cualquier horario.
-                        </p>
-                        <button
-                          onClick={() => {
-                            if (!currentStudent) return;
-                            const res = bookClass('ANY_TIME', currentStudent.id, targetDateStr, true);
-                            alert(res.message);
-                          }}
-                          className="px-6 py-3 rounded-2xl text-sm font-extrabold bg-slate-800 hover:bg-slate-900 text-white shadow-sm transition-all"
-                        >
-                          Anotarme en Espera (Cualquier horario)
-                        </button>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                      if (dayClasses.length === 0) {
+                        return (
+                          <div className="bg-white rounded-3xl p-8 text-center text-xs text-[#A68D74] border border-[#E8D5B5]">
+                            No hay clases disponibles para este día y sede.
+                          </div>
+                        );
+                      }
+
+                      const targetDay = weekDays.find((d) => d.date.getDay() === selectedDayIndex);
+                      const targetDateStr = targetDay ? targetDay.dateStr : toISODateString(new Date());
+
+                      return dayClasses.map((cls) => {
+                        const classBookings = bookings.filter(
+                          (b) => b.class_id === cls.id && b.status === 'confirmed' && (!b.booking_date || b.booking_date === targetDateStr)
+                        );
+                        const enrolled = classBookings.length;
+                        const availableSpots = Math.max(0, cls.max_capacity - enrolled);
+                        const isFull = availableSpots <= 0;
+
+                        return (
+                          <div
+                            key={cls.id}
+                            className="bg-white rounded-3xl p-4 sm:p-5 border border-[#E8D5B5] shadow-xs hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          >
+                            <div>
+                              <div className="flex items-center space-x-2 mb-1.5">
+                                <span
+                                  className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-white shadow-2xs"
+                                  style={{ backgroundColor: cls.activity?.color || cls.color || '#5E612B' }}
+                                >
+                                  {cls.title}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    isFull ? 'bg-rose-100 text-[#CB563C]' : 'bg-[#eaede7] text-[#5E612B]'
+                                  }`}
+                                >
+                                  {isFull ? 'Completo' : `${availableSpots} lugares`}
+                                </span>
+                              </div>
+
+                              <div className="text-xs font-bold text-[#44261B] flex items-center space-x-2">
+                                <Clock className="w-3.5 h-3.5 text-[#5E612B]" />
+                                <span>{cls.start_time} a {cls.end_time} hs</span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => handleBook(cls, targetDateStr)}
+                              className={`px-5 py-2 rounded-2xl text-xs font-extrabold shadow-sm transition-all self-start sm:self-center cursor-pointer ${
+                                isFull
+                                  ? 'bg-[#C18749] hover:bg-[#44261B] text-white'
+                                  : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
+                              }`}
+                            >
+                              {isFull ? 'Anotarme en Espera' : 'Reservar Turno'}
+                            </button>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              )}
+
             </div>
+          )}
 
-          </div>
-        )}
+          {/* TAB 0: HOME DASHBOARD (Dashboard rediseñado: Próxima clase, Reservar, Plan unificado, Accesos rápidos) */}
+          {activeTab === 'home' && currentStudent && (
+            <StudentHomeDashboard
+              student={currentStudent}
+              studio={studio}
+              onGoToSchedule={() => setActiveTab('schedule')}
+              onGoToRoutines={() => setActiveTab('my_routines')}
+              onGoToProfile={() => setActiveTab('my_profile')}
+              onGoToBookings={() => setActiveTab('my_bookings')}
+              onOpenBuyPack={() => setIsBuyPackOpen(true)}
+            />
+          )}
 
-        {/* TAB 0: HOME DASHBOARD (¡Hola Alumno! + Entrenamiento + Reservas + Beneficios + Tu Cuenta) */}
-        {activeTab === 'home' && currentStudent && (
-          <StudentHomeDashboard
-            student={currentStudent}
-            studio={studio}
-            onGoToSchedule={() => setActiveTab('schedule')}
-            onGoToRoutines={() => setActiveTab('my_routines')}
-            onGoToProfile={() => setActiveTab('my_profile')}
-            onOpenBuyPack={() => setIsBuyPackOpen(true)}
-          />
-        )}
+          {/* TAB 2: MY BOOKINGS */}
+          {activeTab === 'my_bookings' && currentStudent && (
+            <StudentBookingsTab student={currentStudent} />
+          )}
 
-        {/* TAB 2: MY BOOKINGS */}
-        {activeTab === 'my_bookings' && currentStudent && (
-          <StudentBookingsTab student={currentStudent} />
-        )}
+          {/* TAB: MY ROUTINES */}
+          {activeTab === 'my_routines' && currentStudent && (
+            <StudentRoutinesTab student={currentStudent} />
+          )}
 
-        {/* TAB: MY ROUTINES */}
-        {activeTab === 'my_routines' && currentStudent && (
-          <StudentRoutinesTab student={currentStudent} />
-        )}
+          {/* TAB: MI PERFIL (Credencial Member Pass, Plan actual y Objetivo) */}
+          {activeTab === 'my_profile' && currentStudent && (
+            <StudentProfileView
+              student={currentStudent}
+              studio={studio}
+              onBackToHome={() => setActiveTab('home')}
+              onOpenCheckinGPS={() => setShowCheckinGPSModal(true)}
+            />
+          )}
 
-        {/* TAB: MI PERFIL (Credencial Member Pass, Plan actual y Objetivo) */}
-        {activeTab === 'my_profile' && currentStudent && (
-          <StudentProfileView
-            student={currentStudent}
-            studio={studio}
-            onBackToHome={() => setActiveTab('home')}
-            onOpenCheckinGPS={() => setShowCheckinGPSModal(true)}
-          />
-        )}
+          {/* TAB 4: NEW REGISTRATION */}
+          {activeTab === 'register' && (
+            <StudentRegisterView onGoToLogin={() => setActiveTab('schedule')} />
+          )}
 
-        {/* TAB 4: NEW REGISTRATION */}
-        {activeTab === 'register' && (
-          <StudentRegisterView onGoToLogin={() => setActiveTab('schedule')} />
-        )}
+        </main>
+      </div>
 
-      </main>
-
-      {/* Student Drawer Sidebar */}
+      {/* Student Drawer Sidebar (para pantallas pequeñas / móviles) */}
       <StudentSidebar
+        isDrawer={true}
         isOpen={showSidebarDrawer}
         onClose={() => setShowSidebarDrawer(false)}
         student={currentStudent}
