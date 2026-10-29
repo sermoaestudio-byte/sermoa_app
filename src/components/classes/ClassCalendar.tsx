@@ -5,20 +5,20 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Plus,
   AlertCircle,
-  Calendar as CalendarIcon,
   CalendarDays,
+  List,
   ListFilter,
-  Table as TableIcon,
-  Search,
   MessageCircle,
   CheckCircle2,
   Sparkles,
   ArrowRight
 } from 'lucide-react';
 import { ClassSchedule, Activity, Branch } from '../../types';
-import { getWeekDates, toISODateString } from '../../utils/date';
+import { getWeekDates, toISODateString, MONTHS_SPANISH } from '../../utils/date';
 import { useStudioStore } from '../../store/studioStore';
 import { BulkEditClassesModal } from './BulkEditClassesModal';
 import { useConfirm } from '../../contexts/ConfirmContext';
@@ -33,7 +33,7 @@ interface ClassCalendarProps {
   onCreateClass: () => void;
 }
 
-type CalendarViewMode = 'weekly' | 'daily' | 'table';
+type CalendarViewMode = 'weekly' | 'list';
 
 export const ClassCalendar: React.FC<ClassCalendarProps> = ({
   classes,
@@ -44,14 +44,41 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
   onSelectClass,
   onCreateClass,
 }) => {
-  // View mode: Semanal, Diaria, Tabla
-  const [viewMode, setViewMode] = useState<CalendarViewMode>('weekly');
+  // View mode: Semanal o Lista (persisted in localStorage)
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('sermoa_classes_view_mode') as CalendarViewMode;
+      if (saved && (saved === 'weekly' || saved === 'list')) {
+        return saved;
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+    return 'weekly';
+  });
+
+  const handleSetViewMode = (mode: CalendarViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('sermoa_classes_view_mode', mode);
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  };
+
+  // Expanded days state for List View (by dateStr, default all expanded)
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
+
+  const toggleDayCollapse = (dateStr: string) => {
+    setCollapsedDays((prev) => ({
+      ...prev,
+      [dateStr]: !prev[dateStr],
+    }));
+  };
 
   // Date States
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay());
-  const [selectedDateDaily, setSelectedDateDaily] = useState<Date>(new Date());
-  const [tableSearch, setTableSearch] = useState('');
 
   // Studio Store actions for bulk edit and DnD
   const { deleteClassesBatch, updateClassesBatch, updateClass, profiles } = useStudioStore();
@@ -115,6 +142,11 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
   };
 
   const weekDays = getWeekDates(currentWeekDate);
+  // Mon-Fri (1 to 5)
+  const workDays = weekDays.filter((wd) => {
+    const day = wd.date.getDay();
+    return day >= 1 && day <= 5;
+  });
 
   // Navigation handlers
   const handlePrevWeek = () => {
@@ -132,20 +164,10 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
   const handleToday = () => {
     const now = new Date();
     setCurrentWeekDate(now);
-    setSelectedDayIndex(now.getDay());
-    setSelectedDateDaily(now);
-  };
-
-  const handlePrevDay = () => {
-    const d = new Date(selectedDateDaily);
-    d.setDate(d.getDate() - 1);
-    setSelectedDateDaily(d);
-  };
-
-  const handleNextDay = () => {
-    const d = new Date(selectedDateDaily);
-    d.setDate(d.getDate() + 1);
-    setSelectedDateDaily(d);
+    // If today is weekend (0=Sun or 6=Sat), default to Monday (1)
+    const todayDay = now.getDay();
+    const effectiveDay = todayDay >= 1 && todayDay <= 5 ? todayDay : 1;
+    setSelectedDayIndex(effectiveDay);
   };
 
   // Filter classes by branch and activity
@@ -163,13 +185,13 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
       {/* Top Header: View Mode Switcher & Date Navigators */}
       <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         
-        {/* Left: View Mode Pills */}
+        {/* Left: View Mode Pills (Semanal y Lista) */}
         <div className="flex items-center space-x-2">
           <div className="flex p-1 bg-slate-100/90 rounded-2xl border border-slate-200/60 shadow-inner">
             
             <button
-              onClick={() => setViewMode('weekly')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              onClick={() => handleSetViewMode('weekly')}
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 viewMode === 'weekly'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
@@ -180,27 +202,15 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
             </button>
 
             <button
-              onClick={() => setViewMode('daily')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'daily'
+              onClick={() => handleSetViewMode('list')}
+              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                viewMode === 'list'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <CalendarIcon className="w-3.5 h-3.5 text-amber-500" />
-              <span>Diaria</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode('table')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'table'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <TableIcon className="w-3.5 h-3.5 text-blue-500" />
-              <span>Tabla</span>
+              <List className="w-3.5 h-3.5 text-brand-600" />
+              <span>Lista</span>
             </button>
 
           </div>
@@ -221,84 +231,35 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
           </button>
         </div>
 
-        {/* Center: Date Range Navigator (for weekly & daily) */}
-        {viewMode === 'weekly' && (
-          <div className="flex items-center space-x-2.5">
+        {/* Center: Date Range Navigator (for weekly & list) */}
+        <div className="flex items-center space-x-2.5">
+          <button
+            onClick={handleToday}
+            className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Hoy
+          </button>
+          <div className="flex items-center space-x-1">
             <button
-              onClick={handleToday}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              onClick={handlePrevWeek}
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              title="Semana anterior"
             >
-              Hoy
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={handlePrevWeek}
-                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-                title="Semana anterior"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleNextWeek}
-                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-                title="Semana siguiente"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            <span className="text-xs sm:text-sm font-extrabold text-slate-800">
-              Semana del {weekDays[0].dayNumber} al {weekDays[6].dayNumber} de{' '}
-              {weekDays[0].date.toLocaleString('es-ES', { month: 'long' })}
-            </span>
-          </div>
-        )}
-
-        {viewMode === 'daily' && (
-          <div className="flex items-center space-x-2.5">
             <button
-              onClick={handleToday}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              onClick={handleNextWeek}
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              title="Semana siguiente"
             >
-              Hoy
+              <ChevronRight className="w-4 h-4" />
             </button>
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={handlePrevDay}
-                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-                title="Día anterior"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleNextDay}
-                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
-                title="Día siguiente"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            <span className="text-xs sm:text-sm font-extrabold text-slate-800 capitalize">
-              {selectedDateDaily.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-            </span>
           </div>
-        )}
-
-        {viewMode === 'table' && (
-          <div className="relative w-full lg:w-64">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Buscar por clase o profesor..."
-              value={tableSearch}
-              onChange={(e) => setTableSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-        )}
+          <span className="text-xs sm:text-sm font-extrabold text-slate-800">
+            Semana del {workDays[0]?.dayNumber} al {workDays[workDays.length - 1]?.dayNumber} de{' '}
+            {workDays[0]?.date.toLocaleString('es-ES', { month: 'long' })}
+          </span>
+        </div>
 
         {/* Right: New Class Button */}
         <button
@@ -344,41 +305,45 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 1. VISTA SEMANAL (WEEKLY VIEW) */}
+      {/* 1. VISTA SEMANAL (WEEKLY VIEW - LUNES A VIERNES) */}
       {/* ========================================================================= */}
       {viewMode === 'weekly' && (
         <div className="p-4 sm:p-6 animate-fade-in">
           
-          {/* Mobile Day Selector Tabs */}
+          {/* Mobile Day Selector Tabs (Lunes a Viernes) */}
           <div className="flex md:hidden overflow-x-auto space-x-2 pb-4 mb-4 border-b border-slate-100 scrollbar-none">
-            {weekDays.map((wd) => {
+            {workDays.map((wd) => {
               const dIndex = wd.date.getDay();
               const isSelected = selectedDayIndex === dIndex;
-              const hasClasses = filteredClasses.some((c) => c.day_of_week === dIndex);
+              const hasClasses = filteredClasses.some((c) => {
+                if (c.day_of_week !== dIndex) return false;
+                if (!c.is_recurring && c.date !== wd.dateStr) return false;
+                return true;
+              });
 
               return (
                 <button
                   key={wd.dateStr}
                   onClick={() => setSelectedDayIndex(dIndex)}
-                  className={`flex flex-col items-center py-2 px-3 rounded-2xl min-w-[64px] transition-all shrink-0 ${
+                  className={`flex flex-col items-center py-2.5 px-3.5 rounded-2xl min-w-[64px] transition-all shrink-0 ${
                     isSelected
-                      ? 'bg-slate-900 text-white shadow-md'
+                      ? 'bg-brand-700 text-white shadow-md shadow-brand-700/20 ring-2 ring-brand-600/30'
                       : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="text-[10px] font-bold uppercase">{wd.dayName.slice(0, 3)}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{wd.dayName.slice(0, 3)}</span>
                   <span className="text-sm font-extrabold mt-0.5">{wd.dayNumber}</span>
                   {hasClasses && (
-                    <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-emerald-400' : 'bg-brand-500'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-emerald-300' : 'bg-brand-500'}`} />
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Desktop 7-Column Grid / Mobile Single Selected Day */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-            {weekDays.map((wd) => {
+          {/* Desktop 5-Column Grid (Lunes a Viernes) / Mobile Single Selected Day */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5">
+            {workDays.map((wd) => {
               const dIndex = wd.date.getDay();
               const dayClasses = filteredClasses
                 .filter((c) => {
@@ -396,23 +361,23 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                   key={wd.dateStr}
                   className={`flex flex-col rounded-2xl border transition-all ${
                     isToday
-                      ? 'bg-emerald-50/30 border-emerald-200/80 shadow-xs'
-                      : 'bg-slate-50/60 border-slate-200/60'
+                      ? 'bg-brand-50/40 border-brand-300/80 shadow-xs ring-1 ring-brand-400/20'
+                      : 'bg-[#FAF8F5]/80 border-slate-200/70'
                   } ${!isSelectedOnMobile ? 'hidden md:flex' : 'flex'}`}
                 >
                   {/* Day Column Header */}
-                  <div className={`p-3 text-center border-b ${isToday ? 'border-emerald-200 bg-emerald-100/50' : 'border-slate-200/60'}`}>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                  <div className={`p-3 text-center border-b ${isToday ? 'border-brand-200/80 bg-brand-100/60' : 'border-slate-200/60 bg-white/60'}`}>
+                    <span className={`text-[11px] font-extrabold uppercase tracking-wider block ${isToday ? 'text-brand-800' : 'text-slate-500'}`}>
                       {wd.dayName}
                     </span>
-                    <span className={`text-base font-black inline-block mt-0.5 ${isToday ? 'text-emerald-900' : 'text-slate-800'}`}>
+                    <span className={`text-base font-black inline-block mt-0.5 ${isToday ? 'text-brand-950 font-black' : 'text-slate-800'}`}>
                       {wd.dayNumber}
                     </span>
                   </div>
 
                   {/* Classes List */}
                   <div 
-                    className="p-2 space-y-2.5 flex-1 min-h-[380px]"
+                    className="p-2.5 space-y-2.5 flex-1 min-h-[380px]"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, wd.dateStr)}
                   >
@@ -428,11 +393,11 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                             draggable
                             onDragStart={(e) => handleDragStart(e, cls, cellDateStr)}
                             onClick={() => handleClassClick(cls, cellDateStr)}
-                            className={`bg-white rounded-2xl p-3 border shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-grab active:cursor-grabbing group text-left relative overflow-hidden ${
+                            className={`bg-white rounded-2xl p-3.5 border shadow-soft hover:shadow-soft-lg hover:border-brand-400 hover:-translate-y-0.5 transition-all duration-150 cursor-grab active:cursor-grabbing group text-left relative overflow-hidden ${
                               isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/80'
                             }`}
                           >
-                            {/* Color Accent Bar */}
+                            {/* Accent Bar */}
                             <div
                               className="absolute top-0 left-0 bottom-0 w-1 rounded-l-2xl"
                               style={{ backgroundColor: cls.color || '#54875e' }}
@@ -440,7 +405,7 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
 
                             {/* Checkbox (if multi-select) */}
                             {isMultiSelectMode && (
-                              <div className="absolute top-2 right-2">
+                              <div className="absolute top-2.5 right-2.5 z-10">
                                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
                                   {selectedClassIds.includes(cls.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
                                 </div>
@@ -448,36 +413,45 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                             )}
 
                             {/* Time & Capacity Badge */}
-                            <div className={`flex items-center justify-between pl-1.5 mb-1.5 ${isMultiSelectMode ? 'pr-5' : ''}`}>
-                              <span className="text-[11px] font-extrabold text-slate-900 flex items-center space-x-1">
-                                <Clock className="w-3 h-3 text-slate-400" />
-                                <span>{cls.start_time} - {cls.end_time}</span>
+                            <div className={`flex items-center justify-between pl-1 mb-1.5 ${isMultiSelectMode ? 'pr-5' : ''}`}>
+                              <span className="text-xs font-black text-slate-900 flex items-center space-x-1 tracking-tight">
+                                <Clock className="w-3.5 h-3.5 text-brand-600" />
+                                <span>{cls.start_time}–{cls.end_time}</span>
                               </span>
                               <span
-                                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                                className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border transition-colors ${
                                   isFull
-                                    ? 'bg-rose-100 text-rose-800'
-                                    : 'bg-slate-100 text-slate-700'
+                                    ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                    : 'bg-brand-50/80 border-brand-200/60 text-brand-800'
                                 }`}
                               >
-                                {enrolledCount}/{cls.max_capacity}
+                                {enrolledCount}/{cls.max_capacity} cupos
                               </span>
                             </div>
 
-                            {/* Class Title */}
-                            <h4 className="font-extrabold text-xs text-slate-900 pl-1.5 group-hover:text-brand-700 transition-colors line-clamp-1">
+                            {/* Class Title / Discipline */}
+                            <h4 className="font-extrabold text-[13px] text-slate-900 pl-1 group-hover:text-brand-700 transition-colors line-clamp-1 leading-snug">
                               {cls.title}
                             </h4>
 
-                            {/* Instructor & Branch */}
-                            <div className="pl-1.5 mt-2 flex items-center justify-between text-[10px] text-slate-500 font-medium">
-                              <span>{cls.instructor?.first_name} {cls.instructor?.last_name?.[0]}.</span>
-                              <span className="text-slate-400 truncate max-w-[70px]">{cls.branch?.name}</span>
+                            {/* Instructor assigned */}
+                            <div className="pl-1 mt-2 flex items-center justify-between text-xs text-slate-600 font-medium">
+                              <span className="flex items-center space-x-1.5 truncate">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-500/70 shrink-0" />
+                                <span className="truncate">
+                                  {cls.instructor ? `${cls.instructor.first_name} ${cls.instructor.last_name || ''}`.trim() : 'Sin profesor'}
+                                </span>
+                              </span>
+                              {cls.status && cls.status !== 'scheduled' && (
+                                <span className="text-[10px] font-bold text-slate-400 capitalize shrink-0 ml-1">
+                                  {cls.status === 'cancelled' ? 'Cancelada' : cls.status}
+                                </span>
+                              )}
                             </div>
 
                             {/* Waitlist Tag if present */}
                             {cls.waitlist && cls.waitlist.length > 0 && (
-                              <div className="mt-2 pl-1.5 pt-1.5 border-t border-slate-100 flex items-center space-x-1 text-[10px] text-amber-700 font-bold">
+                              <div className="mt-2 pl-1 pt-1.5 border-t border-slate-100 flex items-center space-x-1 text-[10px] text-amber-700 font-bold">
                                 <AlertCircle className="w-3 h-3 text-amber-500" />
                                 <span>{cls.waitlist.length} en espera</span>
                               </div>
@@ -487,8 +461,8 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
                         );
                       })
                     ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-400">
-                        <span className="text-xs font-semibold">Sin clases</span>
+                      <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-400 min-h-[140px]">
+                        <span className="text-xs font-medium text-slate-400">Sin clases programadas</span>
                       </div>
                     )}
                   </div>
@@ -502,289 +476,160 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* 2. VISTA DIARIA (DAILY TIMELINE VIEW) */}
+      {/* 2. VISTA DE LISTA (VERTICAL LIST VIEW - LUNES A VIERNES) */}
       {/* ========================================================================= */}
-      {viewMode === 'daily' && (
+      {viewMode === 'list' && (
         <div className="p-4 sm:p-6 animate-fade-in space-y-4">
-          
-          {/* Day Header Summary */}
-          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
-            <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cronograma del Día</span>
-              <h3 className="text-base sm:text-lg font-black text-slate-900 capitalize">
-                {selectedDateDaily.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </h3>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-extrabold text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-xl">
-                {filteredClasses.filter((c) => {
-                  if (c.day_of_week !== selectedDateDaily.getDay()) return false;
-                  const dateStr = toISODateString(selectedDateDaily);
-                  if (!c.is_recurring && c.date !== dateStr) return false;
-                  return true;
-                }).length} clases programadas
-              </span>
-            </div>
-          </div>
-
-          {/* Timeline List of Classes for Selected Day */}
-          {(() => {
-            const dateStr = toISODateString(selectedDateDaily);
+          {workDays.map((wd) => {
+            const dIndex = wd.date.getDay();
             const dayClasses = filteredClasses
               .filter((c) => {
-                if (c.day_of_week !== selectedDateDaily.getDay()) return false;
-                if (!c.is_recurring && c.date !== dateStr) return false;
+                if (c.day_of_week !== dIndex) return false;
+                if (!c.is_recurring && c.date !== wd.dateStr) return false;
                 return true;
               })
               .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-            if (dayClasses.length === 0) {
-              return (
-                <div className="py-16 text-center text-slate-400 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-                  <CalendarDays className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p className="text-sm font-bold text-slate-600">No hay clases programadas para este día</p>
-                  <button
-                    onClick={onCreateClass}
-                    className="mt-3 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-                  >
-                    + Programar Clase
-                  </button>
-                </div>
-              );
-            }
+            const isToday = toISODateString(new Date()) === wd.dateStr;
+            const isCollapsed = !!collapsedDays[wd.dateStr];
+            const monthName = MONTHS_SPANISH[wd.date.getMonth()] || wd.date.toLocaleString('es-ES', { month: 'long' });
 
             return (
-              <div className="space-y-3">
-                {dayClasses.map((cls) => {
-                  const enrolled = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === dateStr || !b.booking_date)) || [];
-                  const enrolledCount = enrolled.length;
-                  const isFull = enrolledCount >= cls.max_capacity;
-                  const fillPercentage = Math.min(100, Math.round((enrolledCount / cls.max_capacity) * 100));
-
-                  return (
-                    <div
-                      key={cls.id}
-                      onClick={() => handleClassClick(cls, dateStr)}
-                      className={`bg-white rounded-3xl p-5 border shadow-soft hover:shadow-soft-lg hover:border-brand-300 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 group relative ${
-                        isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-200/80'
-                      }`}
-                    >
-                      {/* Checkbox (if multi-select) */}
-                      {isMultiSelectMode && (
-                        <div className="absolute top-4 right-4">
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
-                            {selectedClassIds.includes(cls.id) && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                          </div>
-                        </div>
+              <div
+                key={wd.dateStr}
+                className={`rounded-2xl border transition-all overflow-hidden bg-white ${
+                  isToday
+                    ? 'border-brand-300 shadow-sm ring-1 ring-brand-400/20'
+                    : 'border-slate-200/80 shadow-xs'
+                }`}
+              >
+                {/* Collapsible Header */}
+                <button
+                  type="button"
+                  onClick={() => toggleDayCollapse(wd.dateStr)}
+                  className={`w-full flex items-center justify-between px-4 sm:px-6 py-3.5 text-left transition-colors ${
+                    isToday
+                      ? 'bg-brand-50/70 hover:bg-brand-100/50'
+                      : 'bg-slate-50/80 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-2 h-2 rounded-full ${isToday ? 'bg-brand-600' : 'bg-slate-400'}`} />
+                    <div>
+                      <span className={`text-xs sm:text-sm font-black uppercase tracking-wider ${isToday ? 'text-brand-900' : 'text-slate-800'}`}>
+                        {wd.dayName} {wd.dayNumber} DE {monthName.toUpperCase()}
+                      </span>
+                      {isToday && (
+                        <span className="ml-2 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-brand-600 text-white">
+                          Hoy
+                        </span>
                       )}
-
-                      {/* Left: Time & Class Info */}
-                      <div className={`flex items-start space-x-4 ${isMultiSelectMode ? 'pr-8' : ''}`}>
-                        <div
-                          className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center text-white font-extrabold shrink-0 shadow-sm"
-                          style={{ backgroundColor: cls.color || '#54875e' }}
-                        >
-                          <span className="text-xs leading-none">{cls.start_time}</span>
-                          <span className="text-[10px] font-normal opacity-80 mt-1">a {cls.end_time}</span>
-                        </div>
-
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-base font-black text-slate-900 group-hover:text-brand-700 transition-colors">
-                              {cls.title}
-                            </span>
-                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                              {cls.activity?.name || 'Pilates'}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-semibold mt-1.5">
-                            <span className="flex items-center space-x-1">
-                              <Users className="w-3.5 h-3.5 text-purple-500" />
-                              <span>Prof. {cls.instructor?.first_name} {cls.instructor?.last_name}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                              <span>{cls.branch?.name} ({cls.room?.name || 'Sala 1'})</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right: Enrolled Progress Bar & Quick Action */}
-                      <div className="flex items-center space-x-4 shrink-0">
-                        
-                        {/* Occupancy Indicator */}
-                        <div className="w-40 text-right">
-                          <div className="flex items-center justify-between text-xs font-bold mb-1">
-                            <span className="text-slate-400">Cupos</span>
-                            <span className={isFull ? 'text-rose-600 font-extrabold' : 'text-slate-800'}>
-                              {enrolledCount} / {cls.max_capacity}
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${
-                                isFull ? 'bg-rose-500' : 'bg-brand-600'
-                              }`}
-                              style={{ width: `${fillPercentage}%` }}
-                            />
-                          </div>
-                          {cls.waitlist && cls.waitlist.length > 0 && (
-                            <span className="text-[10px] text-amber-700 font-extrabold block mt-1">
-                              ⚠️ {cls.waitlist.length} en lista de espera
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Arrow Action Button */}
-                        <div className="p-2.5 bg-slate-50 group-hover:bg-brand-50 group-hover:text-brand-700 text-slate-400 rounded-2xl transition-colors">
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                        </div>
-
-                      </div>
-
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+                  </div>
 
-        </div>
-      )}
+                  <div className="flex items-center space-x-3">
+                    <span className="text-xs font-bold text-slate-500">
+                      {dayClasses.length} {dayClasses.length === 1 ? 'clase' : 'clases'}
+                    </span>
+                    <div className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                      {isCollapsed ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronUp className="w-4 h-4" />
+                      )}
+                    </div>
+                  </div>
+                </button>
 
-      {/* ========================================================================= */}
-      {/* 3. VISTA TABLA (TABLE / DATA LIST VIEW) */}
-      {/* ========================================================================= */}
-      {viewMode === 'table' && (
-        <div className="p-4 sm:p-6 animate-fade-in">
-          
-          {(() => {
-            const tableData = filteredClasses.filter((c) => {
-              if (!tableSearch) return true;
-              const q = tableSearch.toLowerCase();
-              return (
-                c.title.toLowerCase().includes(q) ||
-                c.instructor?.first_name.toLowerCase().includes(q) ||
-                c.instructor?.last_name.toLowerCase().includes(q) ||
-                c.branch?.name.toLowerCase().includes(q)
-              );
-            });
+                {/* Day Classes Content */}
+                {!isCollapsed && (
+                  <div className="divide-y divide-slate-100 p-2 sm:p-3">
+                    {dayClasses.length > 0 ? (
+                      dayClasses.map((cls) => {
+                        const cellDateStr = wd.dateStr;
+                        const enrolledCount = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === cellDateStr || !b.booking_date)).length || 0;
+                        const isFull = enrolledCount >= cls.max_capacity;
 
-            if (tableData.length === 0) {
-              return (
-                <div className="py-16 text-center text-slate-400">
-                  <p className="text-sm font-bold text-slate-600">No se encontraron clases con los filtros aplicados.</p>
-                </div>
-              );
-            }
-
-            return (
-              <div className="border border-slate-200/80 rounded-2xl overflow-x-auto scrollbar-none">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/90 text-slate-600 font-extrabold text-[11px] uppercase tracking-wider border-b border-slate-200">
-                    <tr>
-                      <th className="py-3 px-4">Día</th>
-                      <th className="py-3 px-4">Horario</th>
-                      <th className="py-3 px-4">Clase / Disciplina</th>
-                      <th className="py-3 px-4">Profesor</th>
-                      <th className="py-3 px-4">Sucursal / Sala</th>
-                      <th className="py-3 px-4 text-center">Ocupación</th>
-                      <th className="py-3 px-4 text-center">Espera</th>
-                      <th className="py-3 px-4 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                    {tableData.map((cls) => {
-                      const fallbackDate = cls.date || toISODateString(new Date());
-                      const enrolled = cls.bookings?.filter((b: any) => (b.status === 'confirmed' || b.status === 'attended') && (b.booking_date === fallbackDate || !b.booking_date)) || [];
-                      const enrolledCount = enrolled.length;
-                      const isFull = enrolledCount >= cls.max_capacity;
-
-                      return (
-                        <tr
-                          key={cls.id}
-                          onClick={() => handleClassClick(cls, fallbackDate)}
-                          className={`hover:bg-slate-50/80 transition-colors cursor-pointer group ${
-                            isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'bg-brand-50/50' : ''
-                          }`}
-                        >
-                          <td className="px-5 py-4 whitespace-nowrap font-black text-slate-900">
-                            <div className="flex items-center space-x-3">
-                              {isMultiSelectMode && (
-                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
+                        return (
+                          <div
+                            key={cls.id}
+                            onClick={() => handleClassClick(cls, cellDateStr)}
+                            className={`p-3 sm:p-4 rounded-xl hover:bg-[#FAF8F5] transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative border border-transparent hover:border-brand-200/70 ${
+                              isMultiSelectMode && selectedClassIds.includes(cls.id) ? 'bg-brand-50/60 border-brand-300' : ''
+                            }`}
+                          >
+                            {/* Checkbox (if multi-select) */}
+                            {isMultiSelectMode && (
+                              <div className="self-start sm:self-auto shrink-0 mr-1">
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedClassIds.includes(cls.id) ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'}`}>
                                   {selectedClassIds.includes(cls.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
                                 </div>
-                              )}
-                              <span>{daysLabels[cls.day_of_week]}</span>
-                            </div>
-                          </td>
+                              </div>
+                            )}
 
-                          <td className="py-3.5 px-4 font-extrabold text-slate-800">
-                            {cls.start_time} - {cls.end_time}
-                          </td>
-
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center space-x-2">
-                              <span
-                                className="w-2.5 h-2.5 rounded-full shrink-0"
+                            {/* Left: Time, Title, Instructor */}
+                            <div className="flex items-start sm:items-center space-x-3.5 flex-1 min-w-0">
+                              {/* Accent dot / bar */}
+                              <div
+                                className="w-2.5 h-2.5 rounded-full shrink-0 mt-1 sm:mt-0"
                                 style={{ backgroundColor: cls.color || '#54875e' }}
                               />
-                              <span className="font-extrabold text-slate-900">{cls.title}</span>
+
+                              {/* Horario */}
+                              <div className="font-black text-slate-900 text-xs sm:text-sm tracking-tight shrink-0 min-w-[95px]">
+                                {cls.start_time}–{cls.end_time}
+                              </div>
+
+                              <span className="text-slate-300 hidden sm:inline">|</span>
+
+                              {/* Disciplina / Título */}
+                              <div className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-brand-700 transition-colors truncate">
+                                {cls.title}
+                              </div>
+
+                              <span className="text-slate-300 hidden sm:inline">|</span>
+
+                              {/* Profesor */}
+                              <div className="text-xs font-semibold text-slate-600 truncate">
+                                {cls.instructor ? `${cls.instructor.first_name} ${cls.instructor.last_name || ''}`.trim() : 'Sin profesor'}
+                              </div>
+
+                              {cls.waitlist && cls.waitlist.length > 0 && (
+                                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                                  {cls.waitlist.length} en espera
+                                </span>
+                              )}
                             </div>
-                          </td>
 
-                          <td className="py-3.5 px-4">
-                            {cls.instructor?.first_name} {cls.instructor?.last_name}
-                          </td>
-
-                          <td className="py-3.5 px-4 text-slate-500 font-medium">
-                            {cls.branch?.name} • {cls.room?.name || 'Sala 1'}
-                          </td>
-
-                          <td className="py-3.5 px-4 text-center">
-                            <span
-                              className={`px-2.5 py-1 rounded-full font-extrabold text-[10px] ${
-                                isFull
-                                  ? 'bg-rose-100 text-rose-800'
-                                  : 'bg-emerald-100 text-emerald-800'
-                              }`}
-                            >
-                              {enrolledCount} / {cls.max_capacity}
-                            </span>
-                          </td>
-
-                          <td className="py-3.5 px-4 text-center">
-                            {cls.waitlist && cls.waitlist.length > 0 ? (
-                              <span className="px-2 py-0.5 rounded-full font-extrabold text-[10px] bg-amber-100 text-amber-800">
-                                {cls.waitlist.length}
+                            {/* Right: Cupos & Actions */}
+                            <div className="flex items-center justify-between sm:justify-end space-x-3 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                              <span
+                                className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${
+                                  isFull
+                                    ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                    : 'bg-brand-50/80 border-brand-200/60 text-brand-800'
+                                }`}
+                              >
+                                {enrolledCount}/{cls.max_capacity} cupos
                               </span>
-                            ) : (
-                              <span className="text-slate-300">-</span>
-                            )}
-                          </td>
 
-                          <td className="py-3.5 px-4 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectClass(cls, fallbackDate);
-                              }}
-                              className="px-3 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-                            >
-                              Ver detalle
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                              <div className="p-1.5 bg-slate-50 group-hover:bg-brand-100 text-slate-400 group-hover:text-brand-800 rounded-xl transition-colors">
+                                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="py-6 text-center text-slate-400">
+                        <p className="text-xs font-medium text-slate-400">Sin clases programadas</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
-          })()}
-
+          })}
         </div>
       )}
 

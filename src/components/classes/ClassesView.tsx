@@ -72,7 +72,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
               </select>
             </div>
 
-            {/* Activity Filter */}
+            {/* Activity Filter (solo Pilates Reformer para esta sección) */}
             <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs">
               <Tag className="w-3.5 h-3.5 text-slate-400 mr-2" />
               <select
@@ -81,11 +81,13 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
                 className="text-xs font-semibold text-slate-700 bg-transparent focus:outline-none"
               >
                 <option value="">Todas las disciplinas</option>
-                {activities.map((act) => (
-                  <option key={act.id} value={act.id}>
-                    {act.name}
-                  </option>
-                ))}
+                {activities
+                  .filter((act) => act.name.toLowerCase().includes('pilates reformer'))
+                  .map((act) => (
+                    <option key={act.id} value={act.id}>
+                      {act.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
