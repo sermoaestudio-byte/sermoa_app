@@ -68,7 +68,7 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5 animate-fade-in pb-10 w-full">
+    <div className="space-y-4 sm:space-y-5 max-w-4xl mr-auto ml-0 my-6 animate-fade-in pb-10 w-full">
 
       {/* 1. Encabezado de Bienvenida (Espaciado vertical optimizado) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#E8D5B5]/60">

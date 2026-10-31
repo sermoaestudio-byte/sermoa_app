@@ -9,7 +9,8 @@ import {
   Sparkles,
   ArrowRight,
   XCircle,
-  MessageCircle
+  MessageCircle,
+  ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Booking, WaitlistEntry, ClassSchedule, Profile } from '../../types';
@@ -18,9 +19,10 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface StudentBookingsTabProps {
   student: Profile;
+  onBackToHome?: () => void;
 }
 
-export const StudentBookingsTab: React.FC<StudentBookingsTabProps> = ({ student }) => {
+export const StudentBookingsTab: React.FC<StudentBookingsTabProps> = ({ student, onBackToHome }) => {
   const { bookings, waitlist, classes, branches, cancelBooking } = useStudioStore();
 
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
@@ -63,8 +65,26 @@ export const StudentBookingsTab: React.FC<StudentBookingsTabProps> = ({ student 
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto my-6 animate-fade-in">
+    <div className="space-y-6 max-w-4xl mr-auto ml-0 my-6 animate-fade-in">
       
+      {/* Top Navigation Bar with Back Button */}
+      {onBackToHome && (
+        <div className="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            onClick={onBackToHome}
+            className="flex items-center space-x-2 text-xs font-bold text-[#5E612B] hover:text-[#44261B] bg-white px-3.5 py-2 rounded-xl border border-[#E8D5B5] shadow-2xs transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Volver al Inicio</span>
+          </button>
+
+          <span className="text-xs font-black uppercase tracking-wider text-[#A68D74]">
+            Mis Turnos
+          </span>
+        </div>
+      )}
+
       {/* Promoted Waitlist Spot Alert Box (Simulated WhatsApp Invitation Link) */}
       {promotedOffer && (
         <div className="p-5 bg-gradient-to-r from-brand-50 to-emerald-50 border-2 border-brand-500 rounded-3xl shadow-soft animate-fade-in space-y-3">
@@ -110,13 +130,13 @@ export const StudentBookingsTab: React.FC<StudentBookingsTabProps> = ({ student 
 
       {/* Upcoming Confirmed Bookings */}
       <div>
-        <h3 className="text-base font-extrabold text-slate-900 mb-3 flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-brand-600" />
+        <h3 className="text-base font-extrabold text-[#44261B] mb-3.5 flex items-center space-x-2">
+          <Calendar className="w-4 h-4 text-[#5E612B]" />
           <span>Mis Turnos Reservados ({myBookings.length})</span>
         </h3>
 
         {myBookings.length === 0 ? (
-          <div className="p-8 bg-white rounded-3xl border border-slate-200 text-center text-xs text-slate-400">
+          <div className="p-8 bg-white rounded-3xl border border-[#E8D5B5] text-center text-xs text-[#A68D74]">
             No tienes turnos reservados actualmente.
           </div>
         ) : (
@@ -128,28 +148,28 @@ export const StudentBookingsTab: React.FC<StudentBookingsTabProps> = ({ student 
               return (
                 <div
                   key={b.id}
-                  className="bg-white rounded-3xl p-5 border border-slate-200 shadow-soft flex items-center justify-between gap-4"
+                  className="bg-white rounded-3xl p-5 border border-[#E8D5B5] shadow-xs flex items-center justify-between gap-4 transition-all hover:border-[#5E612B]/40"
                 >
                   <div>
                     <span
-                      className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-white inline-block mb-1 shadow-xs"
-                      style={{ backgroundColor: cls?.color || '#54875e' }}
+                      className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-[#F4E8D1] inline-block mb-1 shadow-2xs"
+                      style={{ backgroundColor: cls?.color || '#5E612B' }}
                     >
                       {cls?.title}
                     </span>
-                    <div className="text-xs font-bold text-slate-800 flex items-center space-x-2 mt-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <div className="text-xs font-bold text-[#44261B] flex items-center space-x-2 mt-1">
+                      <Clock className="w-3.5 h-3.5 text-[#5E612B]" />
                       <span>{cls?.start_time} a {cls?.end_time} hs • Fecha: {b.booking_date}</span>
                     </div>
-                    <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-300" />
+                    <div className="text-[11px] text-[#A68D74] flex items-center space-x-1.5 mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#C18749]" />
                       <span>{branch?.name}</span>
                     </div>
                   </div>
 
                   <button
                     onClick={() => setBookingToCancel(b.id)}
-                    className="px-3.5 py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold transition-colors"
+                    className="px-3.5 py-1.5 text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>

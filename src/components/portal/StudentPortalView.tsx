@@ -15,7 +15,8 @@ import {
   ChevronUp,
   Sparkles,
   LogOut,
-  Menu
+  Menu,
+  ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
@@ -251,7 +252,23 @@ export const StudentPortalView: React.FC = () => {
 
           {/* TAB 1: SCHEDULE / BOOKING */}
           {activeTab === 'schedule' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-6 max-w-4xl mr-auto ml-0 my-6 animate-fade-in">
+
+              {/* Top Navigation Bar with Back Button */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('home')}
+                  className="flex items-center space-x-2 text-xs font-bold text-[#5E612B] hover:text-[#44261B] bg-white px-3.5 py-2 rounded-xl border border-[#E8D5B5] shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Volver al Inicio</span>
+                </button>
+
+                <span className="text-xs font-black uppercase tracking-wider text-[#A68D74]">
+                  Reservar Clase
+                </span>
+              </div>
 
               {/* Student Credit Summary Pill or Empty Register Banner */}
               {currentStudent ? (
@@ -779,7 +796,10 @@ export const StudentPortalView: React.FC = () => {
 
           {/* TAB 2: MY BOOKINGS */}
           {activeTab === 'my_bookings' && currentStudent && (
-            <StudentBookingsTab student={currentStudent} />
+            <StudentBookingsTab
+              student={currentStudent}
+              onBackToHome={() => setActiveTab('home')}
+            />
           )}
 
           {/* TAB: MY ROUTINES */}

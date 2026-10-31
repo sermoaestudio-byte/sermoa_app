@@ -80,7 +80,7 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
   const isUpToDate = (student.debt_amount ?? 0) <= 0;
 
   return (
-    <div className="max-w-md mx-auto space-y-6 animate-fade-in pb-12">
+    <div className="max-w-4xl mr-auto ml-0 my-6 space-y-6 animate-fade-in pb-12">
       {/* Toast Notification */}
       {photoSavedToast && (
         <div className="fixed top-5 right-5 z-50 bg-[#5E612B] text-[#F4E8D1] px-4 py-2.5 rounded-2xl shadow-lg flex items-center space-x-2 text-xs font-bold animate-fade-in border border-[#E8D5B5]">
