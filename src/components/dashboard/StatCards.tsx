@@ -8,33 +8,44 @@ interface StatCardsProps {
 }
 
 export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
-  const { profiles, classes, branches, bookings, currentRole } = useStudioStore();
+  const { profiles, classes, branches, bookings, currentRole, currentUser } = useStudioStore();
   const todayStr = toISODateString(new Date());
 
   const isInstructor = currentRole === 'instructor';
 
-  // Clases válidas de hoy
-  const classesToday = classes.filter(
-    (c) => !c.is_cancelled && (c.date === todayStr || c.day_of_week === new Date().getDay())
+  // Obtener el ID del instructor activo
+  const instructorProfile = profiles.find((p) => p.role === 'instructor' || p.is_instructor);
+  const activeInstructorId = (isInstructor && currentUser?.id)
+    ? currentUser.id
+    : (instructorProfile?.id || '');
+
+  // Clases asignadas a dicho profesor (o todas las clases si no hay filtro de ID)
+  const instructorAssignedClasses = isInstructor && activeInstructorId
+    ? classes.filter((c) => !c.is_cancelled && c.instructor_id === activeInstructorId)
+    : classes.filter((c) => !c.is_cancelled);
+
+  const totalAssignedSlots = isInstructor
+    ? instructorAssignedClasses.length
+    : classes.filter((c) => !c.is_cancelled).length;
+
+  const assignedClassesIds = new Set(instructorAssignedClasses.map((c) => c.id));
+
+  // Clases válidas de hoy del profesor
+  const classesToday = instructorAssignedClasses.filter(
+    (c) => c.date === todayStr || c.day_of_week === new Date().getDay()
   );
   const classesTodayIds = new Set(classesToday.map((c) => c.id));
 
-  // Reservas activas de hoy (gente con turno hoy)
-  const todayActiveBookings = bookings.filter(
+  // Alumnos que han seleccionado algún turno de hoy para dicho profesor
+  const instructorTodayBookings = bookings.filter(
     (b) =>
       classesTodayIds.has(b.class_id) &&
       (b.booking_date === todayStr || !b.booking_date) &&
       b.status !== 'cancelled_by_user' &&
       b.status !== 'cancelled_by_admin'
   );
-  const totalStudentsToday = todayActiveBookings.length;
-
-  // Total de alumnos únicos inscriptos en clases
-  const activeBookingsAll = bookings.filter(
-    (b) => b.status !== 'cancelled_by_user' && b.status !== 'cancelled_by_admin'
-  );
-  const enrolledStudentIds = new Set(activeBookingsAll.map((b) => b.student_id));
-  const totalEnrolledStudents = enrolledStudentIds.size;
+  // Alumnos únicos de hoy para dicho profesor
+  const instructorTodayStudents = new Set(instructorTodayBookings.map((b) => b.student_id)).size;
 
   // Estadísticas para Admin
   const activeStudents = profiles.filter((p) => p.role === 'client' && p.status === 'active');
@@ -48,50 +59,58 @@ export const StatCards: React.FC<StatCardsProps> = ({ onNavigate }) => {
 
       <div className={`grid gap-3 sm:gap-4 ${isInstructor ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 sm:grid-cols-2 xl:grid-cols-4'}`}>
 
-        {/* Card 1: Total de Alumnos */}
-        <button
-          onClick={() => onNavigate('students')}
-          className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
-        >
-          <div className="flex items-center space-x-3 min-w-0 w-full">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
-              <Users className="w-5 h-5 text-[#5E612B]" />
-            </div>
-            <div className="min-w-0 flex-1 overflow-hidden">
-              <div className="flex items-center space-x-1 min-w-0">
-                <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight truncate block">
-                  {isInstructor ? 'TOTAL DE ALUMNOS' : 'Alumnos Activos'}
-                </span>
-                <HelpCircle className="w-3 h-3 text-[#A68D74] shrink-0" />
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
-                {isInstructor ? totalEnrolledStudents : activeStudents.length}
-              </div>
-              <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
-                {isInstructor ? 'Inscriptos a clases' : `Total: ${totalStudents}`}
-              </span>
-            </div>
-          </div>
-        </button>
-
-        {/* Card 2: Clases Hoy & Gente en el día */}
+        {/* Card 1: Total de Turnos Asignados (en profesor) / Alumnos Activos (en admin) */}
         <button
           onClick={() => onNavigate('classes')}
           className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
         >
           <div className="flex items-center space-x-3 min-w-0 w-full">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
+              {isInstructor ? (
+                <Calendar className="w-5 h-5 text-[#5E612B]" />
+              ) : (
+                <Users className="w-5 h-5 text-[#5E612B]" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="flex items-center space-x-1 min-w-0">
+                <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight truncate block">
+                  {isInstructor ? 'TOTAL TURNOS ASIGNADOS' : 'Alumnos Activos'}
+                </span>
+                <HelpCircle className="w-3 h-3 text-[#A68D74] shrink-0" />
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
+                {isInstructor ? totalAssignedSlots : activeStudents.length}
+              </div>
+              <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
+                {isInstructor ? `${classesToday.length} turnos hoy` : `Total: ${totalStudents}`}
+              </span>
+            </div>
+          </div>
+        </button>
+
+        {/* Card 2: Alumnos Hoy (en profesor) / Clases Hoy (en admin) */}
+        <button
+          onClick={() => onNavigate(isInstructor ? 'attendance' : 'classes')}
+          className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E8D5B5] shadow-soft hover:shadow-soft-lg hover:border-[#5E612B]/40 transition-all text-left group cursor-pointer w-full min-w-0 overflow-hidden"
+        >
+          <div className="flex items-center space-x-3 min-w-0 w-full">
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#eaede7] border border-[#cadbcd] text-[#5E612B] flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs shrink-0">
-              <Calendar className="w-5 h-5" />
+              {isInstructor ? (
+                <Users className="w-5 h-5 text-[#5E612B]" />
+              ) : (
+                <Calendar className="w-5 h-5 text-[#5E612B]" />
+              )}
             </div>
             <div className="min-w-0 flex-1 overflow-hidden">
               <span className="text-[10px] sm:text-xs font-bold text-[#A68D74] uppercase tracking-tight block truncate">
-                {isInstructor ? 'ALUMNOS DE HOY' : 'Clases Hoy'}
+                {isInstructor ? 'ALUMNOS HOY' : 'Clases Hoy'}
               </span>
               <div className="text-xl sm:text-2xl font-black text-[#44261B] leading-tight mt-0.5 truncate">
-                {isInstructor ? totalStudentsToday : classesToday.length}
+                {isInstructor ? instructorTodayStudents : classesToday.length}
               </div>
               <span className="text-[10px] sm:text-[11px] text-[#A68D74] font-medium truncate block">
-                {isInstructor ? `${classesToday.length} turnos programados` : 'Programadas'}
+                {isInstructor ? `${instructorTodayBookings.length} reservas registradas` : 'Programadas'}
               </span>
             </div>
           </div>

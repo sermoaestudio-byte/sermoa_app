@@ -29,6 +29,7 @@ interface ClassCalendarProps {
   branches: Branch[];
   selectedBranchId: string;
   selectedActivityId: string;
+  selectedInstructorId?: string;
   onSelectClass: (classItem: any, dateStr: string) => void;
   onCreateClass: () => void;
 }
@@ -41,6 +42,7 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
   branches,
   selectedBranchId,
   selectedActivityId,
+  selectedInstructorId = '',
   onSelectClass,
   onCreateClass,
 }) => {
@@ -170,10 +172,11 @@ export const ClassCalendar: React.FC<ClassCalendarProps> = ({
     setSelectedDayIndex(effectiveDay);
   };
 
-  // Filter classes by branch and activity
+  // Filter classes by branch, activity and instructor
   const filteredClasses = classes.filter((c) => {
     if (selectedBranchId && c.branch_id !== selectedBranchId) return false;
     if (selectedActivityId && c.activity_id !== selectedActivityId) return false;
+    if (selectedInstructorId && c.instructor_id !== selectedInstructorId) return false;
     return true;
   });
 

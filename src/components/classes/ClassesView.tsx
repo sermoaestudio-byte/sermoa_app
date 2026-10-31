@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Filter, Plus, Building2, Tag, HelpCircle, ArrowLeft } from 'lucide-react';
+import { Calendar, Filter, Plus, Building2, Tag, HelpCircle, ArrowLeft, User } from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { ClassCalendar } from './ClassCalendar';
 import { ClassDetailModal } from './ClassDetailModal';
@@ -12,11 +12,15 @@ interface ClassesViewProps {
 }
 
 export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
-  const { getEnrichedClasses, activities, branches } = useStudioStore();
+  const { getEnrichedClasses, activities, branches, profiles } = useStudioStore();
   const classes = getEnrichedClasses();
+  const instructors = profiles.filter(
+    (p: any) => p.role === 'instructor' || p.role === 'admin' || p.is_instructor
+  );
 
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedActivityId, setSelectedActivityId] = useState('');
+  const [selectedInstructorId, setSelectedInstructorId] = useState('');
   const [selectedClass, setSelectedClass] = useState<ClassSchedule | null>(null);
   const [selectedClassDate, setSelectedClassDate] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -91,6 +95,23 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
               </select>
             </div>
 
+            {/* Instructor Filter */}
+            <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs">
+              <User className="w-3.5 h-3.5 text-slate-400 mr-2" />
+              <select
+                value={selectedInstructorId}
+                onChange={(e) => setSelectedInstructorId(e.target.value)}
+                className="text-xs font-semibold text-slate-700 bg-transparent focus:outline-none"
+              >
+                <option value="">Todos los profesores</option>
+                {instructors.map((inst) => (
+                  <option key={inst.id} value={inst.id}>
+                    {inst.first_name} {inst.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Help Button */}
             <button
               onClick={() => setShowHelp(true)}
@@ -99,15 +120,6 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
             >
               <HelpCircle className="w-4 h-4 text-brand-600" />
               <span>Ayuda</span>
-            </button>
-
-            {/* Create Class Button */}
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nueva Clase</span>
             </button>
 
           </div>
@@ -120,6 +132,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({ onNavigate }) => {
           branches={branches}
           selectedBranchId={selectedBranchId}
           selectedActivityId={selectedActivityId}
+          selectedInstructorId={selectedInstructorId}
           onSelectClass={(cls, dateStr) => {
             setSelectedClass(cls);
             setSelectedClassDate(dateStr);
