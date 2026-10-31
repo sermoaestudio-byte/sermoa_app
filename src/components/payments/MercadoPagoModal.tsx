@@ -166,90 +166,93 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
   if (!isOpen || !pack) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#44261B]/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-[#FAF8F5] w-full max-w-lg rounded-3xl shadow-2xl border border-[#E8D5B5] overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="p-6 bg-slate-900 text-white flex items-center justify-between shrink-0 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-          
+        <div 
+          className="p-6 text-[#F4E8D1] flex items-center justify-between shrink-0 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #44261B 0%, #5E612B 60%, #C18749 100%)',
+          }}
+        >
           <div className="relative z-10">
-            <div className="flex items-center space-x-2 text-[10px] uppercase font-bold tracking-widest text-emerald-400 mb-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <div className="flex items-center space-x-2 text-[10px] uppercase font-bold tracking-widest text-[#E8D5B5] mb-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#E8D5B5]" />
               <span>Pago Seguro con Mercado Pago</span>
             </div>
-            <h2 className="text-xl font-extrabold text-white">
+            <h2 className="text-xl font-extrabold text-[#F4E8D1]">
               {pack.name}
             </h2>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-xs text-[#E8D5B5]/90 mt-0.5">
               {pack.credits_count} clases disponibles • Vigencia {pack.validity_days} días
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all shrink-0 z-10"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-[#E8D5B5] hover:text-white flex items-center justify-center transition-all shrink-0 z-10 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Total a abonar */}
-        <div className="bg-slate-50 px-6 py-3 border-b border-slate-200/80 flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-600">Total a abonar</span>
-          <span className="text-lg font-black text-slate-900 tracking-tight">
+        <div className="bg-white px-6 py-3 border-b border-[#E8D5B5] flex items-center justify-between">
+          <span className="text-xs font-bold text-[#A68D74]">Total a abonar</span>
+          <span className="text-lg font-black text-[#44261B] tracking-tight">
             ${Number(pack.price).toLocaleString('es-AR')} ARS
           </span>
         </div>
 
         {/* Contenido / Estado */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1 bg-[#FAF8F5]">
           {paymentStatus === 'approved' ? (
             <div className="text-center py-8 animate-fade-in">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-[#eaede7] text-[#5E612B] flex items-center justify-center mx-auto mb-4 shadow-sm border border-[#cadbcd]">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900 mb-2">
+              <h3 className="text-xl font-extrabold text-[#44261B] mb-2">
                 ¡Pago Confirmado con Éxito!
               </h3>
-              <p className="text-sm text-slate-600 leading-relaxed mb-6">
+              <p className="text-sm text-[#5E612B] leading-relaxed mb-6">
                 Se acreditaron <strong>{pack.credits_count} créditos</strong> en tu cuenta. Ya puedes reservar tus clases.
               </p>
               <button
                 onClick={onClose}
-                className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-extrabold rounded-2xl transition-all shadow-md"
+                className="w-full py-3.5 bg-[#44261B] hover:bg-[#5E612B] text-[#F4E8D1] text-xs font-extrabold rounded-2xl transition-all shadow-md cursor-pointer"
               >
                 Volver a la App y Reservar
               </button>
             </div>
           ) : paymentStatus === 'rejected' ? (
             <div className="text-center py-8 animate-fade-in">
-              <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-rose-50 text-[#CB563C] flex items-center justify-center mx-auto mb-4 shadow-sm border border-rose-200">
                 <AlertCircle className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900 mb-2">
+              <h3 className="text-xl font-extrabold text-[#44261B] mb-2">
                 El pago no pudo ser procesado
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed mb-6">
+              <p className="text-xs text-[#A68D74] leading-relaxed mb-6">
                 Mercado Pago no pudo autorizar la transacción. Por favor intenta con otro medio de pago.
               </p>
               <button
                 onClick={() => setPaymentStatus('idle')}
-                className="w-full py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-extrabold rounded-2xl transition-all shadow-md"
+                className="w-full py-3.5 bg-[#44261B] hover:bg-[#5E612B] text-[#F4E8D1] text-xs font-extrabold rounded-2xl transition-all shadow-md cursor-pointer"
               >
                 Reintentar Pago
               </button>
             </div>
           ) : loadingPreference ? (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-              <p className="text-xs font-medium text-slate-500">
+              <Loader2 className="w-8 h-8 text-[#5E612B] animate-spin" />
+              <p className="text-xs font-medium text-[#A68D74]">
                 Conectando de forma segura con Mercado Pago...
               </p>
             </div>
           ) : errorMsg ? (
             <div className="py-6 text-center">
-              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-amber-800 text-xs mb-4 text-left leading-relaxed">
+              <div className="p-4 bg-[#F4E8D1]/60 rounded-2xl border border-[#E8D5B5] text-[#44261B] text-xs mb-4 text-left leading-relaxed">
                 <strong>Aviso:</strong> {errorMsg}
               </div>
 
@@ -259,7 +262,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
                   href={initPoint}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-2xl transition-all shadow-md mb-2"
+                  className="inline-flex items-center justify-center w-full py-3 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] text-xs font-bold rounded-2xl transition-all shadow-md mb-2"
                 >
                   Continuar en la web de Mercado Pago
                 </a>
@@ -267,7 +270,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 mt-2"
+                className="text-xs font-bold text-[#A68D74] hover:text-[#44261B] mt-2 cursor-pointer"
               >
                 Cerrar
               </button>
@@ -301,8 +304,8 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
               </div>
 
               {paymentStatus === 'processing' && (
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-3">
-                  <Loader2 className="w-5 h-5 animate-spin shrink-0 text-emerald-600" />
+                <div className="p-4 bg-[#eaede7] rounded-2xl border border-[#cadbcd] text-[#5E612B] text-xs flex items-center space-x-3">
+                  <Loader2 className="w-5 h-5 animate-spin shrink-0 text-[#5E612B]" />
                   <span>Estamos esperando la confirmación de Mercado Pago. Tus créditos se activarán automáticamente.</span>
                 </div>
               )}
@@ -311,9 +314,9 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <div className="px-6 py-3.5 bg-white border-t border-[#E8D5B5] flex items-center justify-between text-[11px] text-[#A68D74]">
           <span>Transacción encriptada SSL 256-bit</span>
-          <span className="font-bold text-slate-600">SERMOA Studio</span>
+          <span className="font-bold text-[#44261B]">SERMOA Pilates Studio</span>
         </div>
 
       </div>

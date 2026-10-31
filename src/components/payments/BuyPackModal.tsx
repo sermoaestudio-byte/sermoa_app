@@ -40,47 +40,52 @@ export const BuyPackModal: React.FC<BuyPackModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
-        <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-[#44261B]/60 backdrop-blur-sm animate-fade-in">
+        <div className="bg-[#FAF8F5] w-full max-w-3xl rounded-3xl shadow-2xl border border-[#E8D5B5] overflow-hidden flex flex-col max-h-[90vh]">
           
           {/* Header */}
-          <div className="p-6 bg-slate-900 text-white flex items-center justify-between shrink-0 relative overflow-hidden">
+          <div 
+            className="p-6 text-[#F4E8D1] flex items-center justify-between shrink-0 relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, #44261B 0%, #5E612B 60%, #C18749 100%)',
+            }}
+          >
             <div className="relative z-10">
-              <div className="flex items-center space-x-2 text-[10px] uppercase font-bold tracking-widest text-emerald-400 mb-1">
-                <Ticket className="w-3.5 h-3.5" />
+              <div className="flex items-center space-x-2 text-[10px] uppercase font-bold tracking-widest text-[#E8D5B5] mb-1">
+                <Ticket className="w-3.5 h-3.5 text-[#E8D5B5]" />
                 <span>Packs de Clases & Membresías</span>
               </div>
-              <h2 className="text-xl font-extrabold text-white">
+              <h2 className="text-xl font-extrabold text-[#F4E8D1]">
                 Elige tu Pack en {studio.name}
               </h2>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-[#E8D5B5]/90 mt-0.5">
                 Selecciona la opción que mejor se adapte a tu ritmo de entrenamiento
               </p>
             </div>
 
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all shrink-0 z-10"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-[#E8D5B5] hover:text-white flex items-center justify-center transition-all shrink-0 z-10 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Grid de Packs */}
-          <div className="p-6 overflow-y-auto flex-1">
+          <div className="p-6 overflow-y-auto flex-1 bg-[#FAF8F5]">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {activePacks.map((pack) => (
                 <div
                   key={pack.id}
                   className={`bg-white rounded-2xl p-5 border transition-all flex flex-col justify-between relative cursor-pointer hover:scale-[1.02] ${
                     pack.popular_badge
-                      ? 'border-brand-500 shadow-soft-lg ring-2 ring-brand-500/20'
-                      : 'border-slate-200 hover:border-slate-300 shadow-soft'
+                      ? 'border-[#5E612B] shadow-md ring-2 ring-[#5E612B]/20'
+                      : 'border-[#E8D5B5] hover:border-[#5E612B]/60 shadow-xs'
                   }`}
                   onClick={() => handleSelectPack(pack)}
                 >
                   {pack.popular_badge && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-600 text-white font-extrabold text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs flex items-center space-x-1">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#5E612B] text-[#F4E8D1] font-extrabold text-[9px] uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs flex items-center space-x-1">
                       <Sparkles className="w-2.5 h-2.5" />
                       <span>Más Elegido</span>
                     </span>
@@ -88,28 +93,28 @@ export const BuyPackModal: React.FC<BuyPackModalProps> = ({
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-[#5E612B] bg-[#eaede7] border border-[#cadbcd] px-2.5 py-0.5 rounded-full">
                         {pack.is_recurring_monthly ? 'Mensual' : 'Flexible'}
                       </span>
-                      <div className="flex items-center space-x-1 text-[11px] text-slate-400 font-medium">
-                        <Clock className="w-3 h-3" />
+                      <div className="flex items-center space-x-1 text-[11px] text-[#A68D74] font-medium">
+                        <Clock className="w-3 h-3 text-[#A68D74]" />
                         <span>{pack.validity_days}d</span>
                       </div>
                     </div>
 
-                    <h3 className="font-extrabold text-slate-900 text-base mb-1">{pack.name}</h3>
-                    <p className="text-[11px] text-slate-500 mb-4 line-clamp-2 leading-relaxed">
+                    <h3 className="font-extrabold text-[#44261B] text-base mb-1">{pack.name}</h3>
+                    <p className="text-[11px] text-[#A68D74] mb-4 line-clamp-2 leading-relaxed">
                       {pack.description}
                     </p>
 
                     <div className="mb-4">
                       <div className="flex items-baseline space-x-1">
-                        <span className="text-2xl font-black text-slate-900 tracking-tight">
+                        <span className="text-2xl font-black text-[#44261B] tracking-tight">
                           ${Number(pack.price).toLocaleString('es-AR')}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase">ARS</span>
+                        <span className="text-[10px] text-[#A68D74] font-bold uppercase">ARS</span>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-600 block mt-0.5">
+                      <span className="text-[11px] font-bold text-[#5E612B] block mt-0.5">
                         {pack.credits_count === 999 ? 'Pase Ilimitado' : `${pack.credits_count} clases`}
                       </span>
                     </div>
@@ -121,7 +126,7 @@ export const BuyPackModal: React.FC<BuyPackModalProps> = ({
                       e.stopPropagation();
                       handleSelectPack(pack);
                     }}
-                    className="w-full py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5"
+                    className="w-full py-2.5 bg-[#44261B] hover:bg-[#5E612B] text-[#F4E8D1] text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer"
                   >
                     <span>Abonar Pack</span>
                   </button>
@@ -131,14 +136,14 @@ export const BuyPackModal: React.FC<BuyPackModalProps> = ({
           </div>
 
           {/* Footer Seguro */}
-          <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <div className="flex items-center space-x-1.5 text-emerald-700 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <div className="px-6 py-3.5 bg-white border-t border-[#E8D5B5] flex items-center justify-between text-[11px] text-[#A68D74]">
+            <div className="flex items-center space-x-1.5 text-[#5E612B] font-medium">
+              <ShieldCheck className="w-4 h-4 text-[#5E612B]" />
               <span>Transacciones seguras vía Mercado Pago</span>
             </div>
             <button
               onClick={onClose}
-              className="font-bold text-slate-400 hover:text-slate-700 transition-colors"
+              className="font-bold text-[#A68D74] hover:text-[#44261B] transition-colors cursor-pointer"
             >
               Cerrar
             </button>

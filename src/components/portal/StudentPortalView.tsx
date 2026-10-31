@@ -11,6 +11,8 @@ import {
   Smartphone,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Sparkles,
   LogOut,
   Menu
@@ -43,16 +45,28 @@ export const StudentPortalView: React.FC = () => {
     waitlist,
     processWaitlistResponse,
     expireWaitlistEntry,
+    getEnrichedClasses,
   } = useStudioStore();
 
   const [activeTab, setActiveTab] = useState<'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'register'>('home');
   const [showSidebarDrawer, setShowSidebarDrawer] = useState(false);
-  const [selectedBranchId, setSelectedBranchId] = useState(branches[0]?.id || '');
+  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [selectedDiscipline, setSelectedDiscipline] = useState('Pilates Reformer');
+  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(new Date().getDay());
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [scheduleViewMode, setScheduleViewMode] = useState<'calendar' | 'list'>('calendar');
   const [showCheckinGPSModal, setShowCheckinGPSModal] = useState(false);
   const [isBuyPackOpen, setIsBuyPackOpen] = useState(false);
+
+  // Toggle de colapso de día
+  const toggleDayCollapse = (dateStr: string, defaultState: boolean) => {
+    setCollapsedDays((prev) => {
+      const current = prev[dateStr] !== undefined ? prev[dateStr] : defaultState;
+      return { ...prev, [dateStr]: !current };
+    });
+  };
 
   // Waitlist Confirmation state
   const [pendingWaitlistId, setPendingWaitlistId] = useState<string | null>(null);
@@ -93,12 +107,49 @@ export const StudentPortalView: React.FC = () => {
   const weekDays = getWeekDates(currentWeekDate);
   const businessWeekDays = weekDays.filter((d) => d.date.getDay() >= 1 && d.date.getDay() <= 5);
 
+  // Obtener clases enriquecidas con instructores y salas reales del store
+  const enrichedClasses = getEnrichedClasses();
+  const instructors = profiles.filter((p) => p.role === 'instructor' || p.role === 'admin');
+
+  // Filtrado de clases según Sede, Disciplina y Profesor
+  const filteredScheduleClasses = enrichedClasses.filter((c) => {
+    if (selectedBranchId && c.branch_id !== selectedBranchId) return false;
+    if (selectedInstructorId && c.instructor_id !== selectedInstructorId) return false;
+    if (selectedDiscipline && selectedDiscipline !== 'ALL') {
+      const matchActivity = c.activity?.name?.toLowerCase().includes(selectedDiscipline.toLowerCase());
+      const matchTitle = c.title?.toLowerCase().includes(selectedDiscipline.toLowerCase());
+      if (!matchActivity && !matchTitle) return false;
+    }
+    return true;
+  });
+
   const handleBook = (cls: ClassSchedule, dateStr?: string) => {
     if (!currentStudent) return;
 
+    const todayDateStr = toISODateString(new Date());
+    const targetDateStr = dateStr || todayDateStr;
+
+    // Validation: Date in the past
+    if (targetDateStr < todayDateStr) {
+      alert('No es posible reservar un turno de una fecha que ya pasó.');
+      return;
+    }
+
+    // Validation: Time in the past for today
+    if (targetDateStr === todayDateStr && cls.start_time) {
+      const now = new Date();
+      const currentHours = String(now.getHours()).padStart(2, '0');
+      const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+      const currentTimeStr = `${currentHours}:${currentMinutes}`;
+      if (cls.start_time < currentTimeStr) {
+        alert('El horario de esta clase ya ha pasado.');
+        return;
+      }
+    }
+
     // We need to pass the date because if we book for tomorrow, it shouldn't book for today.
     // If no date is passed, it falls back to the store default (today).
-    const res = bookClass(cls.id, currentStudent.id, dateStr, false);
+    const res = bookClass(cls.id, currentStudent.id, targetDateStr, false);
     if (!res.success && res.message.toLowerCase().includes('créditos')) {
       setIsBuyPackOpen(true);
     } else {
@@ -195,12 +246,12 @@ export const StudentPortalView: React.FC = () => {
           </div>
         </header>
 
-        {/* Main Content Area alineada hacia la izquierda */}
-        <main className="max-w-3xl lg:max-w-[760px] xl:max-w-[800px] mr-auto ml-0 px-4 sm:px-8 py-6 w-full">
+        {/* Main Content Area con ancho amplio para el calendario y lista */}
+        <main className="max-w-7xl mr-auto ml-0 px-4 sm:px-8 py-6 w-full">
 
           {/* TAB 1: SCHEDULE / BOOKING */}
           {activeTab === 'schedule' && (
-            <div className="space-y-5 animate-fade-in">
+            <div className="space-y-6 animate-fade-in">
 
               {/* Student Credit Summary Pill or Empty Register Banner */}
               {currentStudent ? (
@@ -211,7 +262,9 @@ export const StudentPortalView: React.FC = () => {
                   }}
                 >
                   <div>
-
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-[#F4E8D1]/80 block">
+                      Estado de tu Membresía
+                    </span>
                     <h3 className="text-xl font-extrabold mt-0.5 text-white tracking-wide">
                       {currentStudent.credits_balance === 999
                         ? 'TIENES PASE LIBRE (ILIMITADO)'
@@ -231,120 +284,194 @@ export const StudentPortalView: React.FC = () => {
                 </div>
               )}
 
-              {/* Sede & Selector de Vista (Calendario / Lista) */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E8D5B5] shadow-xs">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold text-[#A68D74]">Sede:</span>
-                  <select
-                    value={selectedBranchId}
-                    onChange={(e) => setSelectedBranchId(e.target.value)}
-                    className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-2xs"
-                  >
-                    {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
+              {/* BARRA DE FILTROS Y SELECTOR DE VISTA */}
+              <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E8D5B5] shadow-xs space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  {/* Filtros: Sede, Disciplina, Profesor */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Filtro Sede */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-[#A68D74]">Sede:</span>
+                      <select
+                        value={selectedBranchId}
+                        onChange={(e) => setSelectedBranchId(e.target.value)}
+                        className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-2xs cursor-pointer"
+                      >
+                        <option value="">Todas las Sedes</option>
+                        {branches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Filtro Disciplina */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-[#A68D74]">Disciplina:</span>
+                      <select
+                        value={selectedDiscipline}
+                        onChange={(e) => setSelectedDiscipline(e.target.value)}
+                        className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-2xs cursor-pointer"
+                      >
+                        <option value="Pilates Reformer">PILATES REFORMER</option>
+                      </select>
+                    </div>
+
+                    {/* Filtro Profesor */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-bold text-[#A68D74]">Profesor:</span>
+                      <select
+                        value={selectedInstructorId}
+                        onChange={(e) => setSelectedInstructorId(e.target.value)}
+                        className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E8D5B5] rounded-xl text-xs font-bold text-[#44261B] focus:outline-none shadow-2xs cursor-pointer"
+                      >
+                        <option value="">Todos los Profesores</option>
+                        {instructors.map((ins) => (
+                          <option key={ins.id} value={ins.id}>
+                            {ins.first_name} {ins.last_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Botón Reset Filtros */}
+                    {(selectedBranchId || selectedInstructorId) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedBranchId('');
+                          setSelectedInstructorId('');
+                        }}
+                        className="text-xs font-bold text-[#CB563C] hover:text-[#44261B] underline transition-colors cursor-pointer ml-1"
+                      >
+                        Limpiar Filtros
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Switcher: Calendario vs Lista */}
+                  <div className="flex items-center space-x-1.5 bg-[#FAF8F5] p-1 rounded-2xl border border-[#E8D5B5]/60 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setScheduleViewMode('calendar')}
+                      className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${scheduleViewMode === 'calendar'
+                        ? 'bg-[#5E612B] text-[#F4E8D1] shadow-2xs'
+                        : 'text-[#A68D74] hover:text-[#44261B]'
+                        }`}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Calendario</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScheduleViewMode('list')}
+                      className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${scheduleViewMode === 'list'
+                        ? 'bg-[#5E612B] text-[#F4E8D1] shadow-2xs'
+                        : 'text-[#A68D74] hover:text-[#44261B]'
+                        }`}
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Por Día</span>
+                    </button>
+                  </div>
                 </div>
 
-                {/* Switcher: Calendario vs Lista */}
-                <div className="flex items-center space-x-1.5 bg-[#FAF8F5] p-1 rounded-xl border border-[#E8D5B5]/60 self-start sm:self-auto">
+                {/* Navegador de Semana (Lunes a Viernes) */}
+                <div className="flex items-center justify-between pt-2 border-t border-[#E8D5B5]/40">
                   <button
-                    onClick={() => setScheduleViewMode('calendar')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      scheduleViewMode === 'calendar'
-                        ? 'bg-[#5E612B] text-[#F4E8D1] shadow-2xs'
-                        : 'text-[#A68D74] hover:text-[#44261B]'
-                    }`}
+                    type="button"
+                    onClick={() => {
+                      const prev = new Date(currentWeekDate);
+                      prev.setDate(prev.getDate() - 7);
+                      setCurrentWeekDate(prev);
+                    }}
+                    className="p-1.5 rounded-xl border border-[#E8D5B5] text-[#5E612B] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                    title="Semana anterior"
                   >
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Calendario</span>
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
+
+                  <div className="flex items-center space-x-2 text-center">
+                    <span className="text-xs sm:text-sm font-extrabold text-[#44261B]">
+                      Semana del {businessWeekDays[0]?.dayNumber} al {businessWeekDays[businessWeekDays.length - 1]?.dayNumber} de{' '}
+                      {businessWeekDays[0]?.date.toLocaleString('es-ES', { month: 'long' })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentWeekDate(new Date())}
+                      className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#F4E8D1] text-[#5E612B] hover:bg-[#E8D5B5] transition-colors cursor-pointer"
+                    >
+                      Hoy
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setScheduleViewMode('list')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      scheduleViewMode === 'list'
-                        ? 'bg-[#5E612B] text-[#F4E8D1] shadow-2xs'
-                        : 'text-[#A68D74] hover:text-[#44261B]'
-                    }`}
+                    type="button"
+                    onClick={() => {
+                      const next = new Date(currentWeekDate);
+                      next.setDate(next.getDate() + 7);
+                      setCurrentWeekDate(next);
+                    }}
+                    className="p-1.5 rounded-xl border border-[#E8D5B5] text-[#5E612B] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                    title="Semana siguiente"
                   >
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Por Día</span>
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Navegador de Semana (Lunes a Viernes) */}
-              <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-[#E8D5B5] shadow-xs">
-                <button
-                  onClick={() => {
-                    const prev = new Date(currentWeekDate);
-                    prev.setDate(prev.getDate() - 7);
-                    setCurrentWeekDate(prev);
-                  }}
-                  className="p-1.5 rounded-xl border border-[#E8D5B5] text-[#5E612B] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                  title="Semana anterior"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <div className="flex items-center space-x-2 text-center">
-                  <span className="text-xs sm:text-sm font-extrabold text-[#44261B]">
-                    Semana del {businessWeekDays[0]?.dayNumber} al {businessWeekDays[businessWeekDays.length - 1]?.dayNumber} de{' '}
-                    {businessWeekDays[0]?.date.toLocaleString('es-ES', { month: 'long' })}
-                  </span>
-                  <button
-                    onClick={() => setCurrentWeekDate(new Date())}
-                    className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#F4E8D1] text-[#5E612B] hover:bg-[#E8D5B5] transition-colors cursor-pointer"
-                  >
-                    Hoy
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => {
-                    const next = new Date(currentWeekDate);
-                    next.setDate(next.getDate() + 7);
-                    setCurrentWeekDate(next);
-                  }}
-                  className="p-1.5 rounded-xl border border-[#E8D5B5] text-[#5E612B] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                  title="Semana siguiente"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* VISTA 1: FORMATO CALENDARIO SEMANAL LUNES A VIERNES (Columnas más anchas) */}
-              {scheduleViewMode === 'calendar' ? (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {/* ========================================================================= */}
+              {/* VISTA 1: FORMATO CALENDARIO SEMANAL (LUNES A VIERNES) */}
+              {/* ========================================================================= */}
+              {scheduleViewMode === 'calendar' && (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 animate-fade-in">
                   {businessWeekDays.map((wd) => {
                     const dIndex = wd.date.getDay();
-                    const dayClasses = classes
-                      .filter((c) => c.day_of_week === dIndex && (!selectedBranchId || c.branch_id === selectedBranchId))
+                    const dayClasses = filteredScheduleClasses
+                      .filter((c) => {
+                        if (c.day_of_week !== dIndex) return false;
+                        if (!c.is_recurring && c.date !== wd.dateStr) return false;
+                        return true;
+                      })
                       .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-                    const isToday = toISODateString(new Date()) === wd.dateStr;
+                    const todayStr = toISODateString(new Date());
+                    const isToday = todayStr === wd.dateStr;
+                    const isPastDay = wd.dateStr < todayStr;
+                    const now = new Date();
+                    const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
                     return (
                       <div
                         key={wd.dateStr}
-                        className={`rounded-2xl border transition-all flex flex-col ${
-                          isToday
+                        className={`rounded-2xl border transition-all flex flex-col ${isPastDay
+                          ? 'bg-[#FAF8F5]/50 border-slate-200 opacity-70'
+                          : isToday
                             ? 'bg-[#FAF8F5] border-[#5E612B]/70 shadow-sm'
                             : 'bg-white border-[#E8D5B5]'
-                        }`}
+                          }`}
                       >
                         {/* Cabecera del día */}
                         <div
-                          className={`p-3 text-center border-b ${
-                            isToday ? 'bg-[#5E612B] text-[#F4E8D1]' : 'border-[#E8D5B5]/60 bg-[#FAF8F5]'
-                          } rounded-t-2xl`}
+                          className={`p-3 text-center border-b ${isToday
+                            ? 'bg-[#5E612B] text-[#F4E8D1]'
+                            : isPastDay
+                              ? 'bg-slate-100 border-slate-200 text-slate-500'
+                              : 'border-[#E8D5B5]/60 bg-[#FAF8F5]'
+                            } rounded-t-2xl`}
                         >
-                          <span className={`text-[11px] uppercase font-extrabold block ${isToday ? 'text-[#F4E8D1]' : 'text-[#A68D74]'}`}>
-                            {wd.dayName}
-                          </span>
-                          <span className={`text-base font-black block mt-0.5 ${isToday ? 'text-white' : 'text-[#44261B]'}`}>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className={`text-[11px] uppercase font-extrabold block ${isToday ? 'text-[#F4E8D1]' : isPastDay ? 'text-slate-500' : 'text-[#A68D74]'}`}>
+                              {wd.dayName}
+                            </span>
+                            {isPastDay && (
+                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-slate-200 text-slate-600">
+                                Pasado
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-base font-black block mt-0.5 ${isToday ? 'text-white' : isPastDay ? 'text-slate-500' : 'text-[#44261B]'}`}>
                             {wd.dayNumber}
                           </span>
                         </div>
@@ -358,48 +485,77 @@ export const StudentPortalView: React.FC = () => {
                           ) : (
                             dayClasses.map((cls) => {
                               const classBookings = bookings.filter(
-                                (b) => b.class_id === cls.id && b.status === 'confirmed' && (!b.booking_date || b.booking_date === wd.dateStr)
+                                (b) =>
+                                  b.class_id === cls.id &&
+                                  (b.status === 'confirmed' || b.status === 'attended') &&
+                                  (!b.booking_date || b.booking_date === wd.dateStr)
                               );
                               const enrolled = classBookings.length;
                               const availableSpots = Math.max(0, cls.max_capacity - enrolled);
                               const isFull = availableSpots <= 0;
 
+                              const isAlreadyBooked = currentStudent
+                                ? classBookings.some((b) => b.student_id === currentStudent.id)
+                                : false;
+
+                              const instructorName = cls.instructor
+                                ? `${cls.instructor.first_name} ${cls.instructor.last_name || ''}`.trim()
+                                : 'Profesor Sermoa';
+
+                              const isPastTime = isPastDay || (isToday && cls.start_time < currentTimeStr);
+
                               return (
                                 <div
                                   key={cls.id}
-                                  className="bg-[#FAF8F5] hover:bg-white rounded-xl p-3 border border-[#E8D5B5] shadow-2xs transition-all space-y-2 text-left"
+                                  className={`rounded-xl p-3 border shadow-2xs transition-all space-y-2 text-left ${isPastTime
+                                    ? 'bg-slate-50/80 border-slate-200 text-slate-400'
+                                    : 'bg-[#FAF8F5] hover:bg-white border-[#E8D5B5]'
+                                    }`}
                                 >
+                                  {/* Horario y Cupos (sin la píldora repetitiva de disciplina) */}
                                   <div className="flex items-center justify-between gap-1">
+                                    <div className={`flex items-center gap-1.5 text-xs font-black ${isPastTime ? 'text-slate-400' : 'text-[#44261B]'}`}>
+                                      <Clock className={`w-3.5 h-3.5 ${isPastTime ? 'text-slate-400' : 'text-[#5E612B]'}`} />
+                                      <span>{cls.start_time} a {cls.end_time} hs</span>
+                                    </div>
                                     <span
-                                      className="text-[10px] font-extrabold px-2 py-0.5 rounded text-white truncate max-w-[105px]"
-                                      style={{ backgroundColor: cls.activity?.color || cls.color || '#5E612B' }}
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${isPastTime
+                                        ? 'bg-slate-200/70 text-slate-500'
+                                        : isFull
+                                          ? 'bg-rose-100 text-[#CB563C]'
+                                          : 'bg-[#eaede7] text-[#5E612B]'
+                                        }`}
                                     >
-                                      {cls.title}
-                                    </span>
-                                    <span
-                                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                        isFull ? 'bg-rose-100 text-[#CB563C]' : 'bg-[#eaede7] text-[#5E612B]'
-                                      }`}
-                                    >
-                                      {isFull ? 'Lleno' : `${availableSpots} cupos`}
+                                      {isPastTime ? 'Finalizado' : isFull ? 'Sin cupos' : `${availableSpots} cupos`}
                                     </span>
                                   </div>
 
-                                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#44261B]">
-                                    <Clock className="w-3.5 h-3.5 text-[#5E612B]" />
-                                    <span>{cls.start_time} a {cls.end_time} hs</span>
+                                  {/* Profesor */}
+                                  <div className={`text-[11px] font-semibold truncate ${isPastTime ? 'text-slate-400' : 'text-[#A68D74]'}`}>
+                                    {instructorName}
                                   </div>
 
-                                  <button
-                                    onClick={() => handleBook(cls, wd.dateStr)}
-                                    className={`w-full py-2 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer ${
-                                      isFull
+                                  {/* Botón Reservar Turno */}
+                                  {isAlreadyBooked ? (
+                                    <div className="w-full py-1.5 rounded-xl bg-[#F4E8D1] text-[#5E612B] text-[11px] font-extrabold text-center border border-[#E8D5B5]">
+                                      Anotado
+                                    </div>
+                                  ) : isPastTime ? (
+                                    <div className="w-full py-1.5 rounded-xl bg-slate-100 text-slate-400 text-[11px] font-bold text-center border border-slate-200 select-none">
+                                      No disponible
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleBook(cls, wd.dateStr)}
+                                      className={`w-full py-2 rounded-xl text-[11px] font-extrabold transition-all cursor-pointer ${isFull
                                         ? 'bg-[#C18749] hover:bg-[#44261B] text-white'
                                         : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
-                                    }`}
-                                  >
-                                    {isFull ? 'Lista Espera' : 'Reservar Turno'}
-                                  </button>
+                                        }`}
+                                    >
+                                      {isFull ? 'Lista Espera' : 'Reservar Turno'}
+                                    </button>
+                                  )}
                                 </div>
                               );
                             })
@@ -409,102 +565,199 @@ export const StudentPortalView: React.FC = () => {
                     );
                   })}
                 </div>
-              ) : (
-                /* VISTA 2: FORMATO LISTA POR DÍA */
-                <div className="space-y-4">
-                  {/* Selector de días lunes a viernes */}
-                  <div className="grid grid-cols-5 gap-1.5 bg-white p-2 rounded-2xl border border-[#E8D5B5] shadow-xs">
-                    {businessWeekDays.map((day) => {
-                      const isSelected = selectedDayIndex === day.date.getDay();
+              )}
 
-                      return (
-                        <button
-                          key={day.dateStr}
-                          onClick={() => setSelectedDayIndex(day.date.getDay())}
-                          className={`py-2 text-center rounded-xl transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#5E612B] text-[#F4E8D1] font-extrabold shadow-sm'
-                              : 'text-[#A68D74] hover:bg-[#F4E8D1]/40'
+              {/* ========================================================================= */}
+              {/* VISTA 2: FORMATO LISTA POR DÍA / EN FILAS (CONFORME A IMAGEN 1) */}
+              {/* ========================================================================= */}
+              {scheduleViewMode === 'list' && (
+                <div className="space-y-4 animate-fade-in">
+                  {businessWeekDays.map((wd) => {
+                    const dIndex = wd.date.getDay();
+                    const dayClasses = filteredScheduleClasses
+                      .filter((c) => {
+                        if (c.day_of_week !== dIndex) return false;
+                        if (!c.is_recurring && c.date !== wd.dateStr) return false;
+                        return true;
+                      })
+                      .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+                    const todayStr = toISODateString(new Date());
+                    const isToday = todayStr === wd.dateStr;
+                    const isPastDay = wd.dateStr < todayStr;
+                    const now = new Date();
+                    const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    const defaultCollapsed = isPastDay;
+                    const isCollapsed = collapsedDays[wd.dateStr] !== undefined ? collapsedDays[wd.dateStr] : defaultCollapsed;
+                    const monthName = wd.date.toLocaleString('es-ES', { month: 'long' });
+
+                    return (
+                      <div
+                        key={wd.dateStr}
+                        className={`rounded-2xl border transition-all overflow-hidden ${isPastDay
+                          ? 'bg-[#FAF8F5]/40 border-slate-200 opacity-75'
+                          : isToday
+                            ? 'bg-white border-[#5E612B]/70 shadow-sm ring-1 ring-[#5E612B]/20'
+                            : 'bg-white border-[#E8D5B5] shadow-xs'
                           }`}
+                      >
+                        {/* Header del Día Plegable */}
+                        <button
+                          type="button"
+                          onClick={() => toggleDayCollapse(wd.dateStr, defaultCollapsed)}
+                          className={`w-full flex items-center justify-between px-4 sm:px-6 py-3.5 text-left transition-colors cursor-pointer ${isToday
+                            ? 'bg-[#F4E8D1]/70 hover:bg-[#F4E8D1]'
+                            : isPastDay
+                              ? 'bg-slate-100/70 hover:bg-slate-100 text-slate-500'
+                              : 'bg-[#FAF8F5] hover:bg-[#F4E8D1]/40'
+                            }`}
                         >
-                          <span className="text-[10px] uppercase block">{day.dayName}</span>
-                          <span className="text-xs font-bold block mt-0.5">{day.dayNumber}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Listado de clases del día seleccionado */}
-                  <div className="space-y-3">
-                    {(() => {
-                      const dayClasses = classes.filter(
-                        (c) =>
-                          c.day_of_week === selectedDayIndex &&
-                          (!selectedBranchId || c.branch_id === selectedBranchId)
-                      );
-
-                      if (dayClasses.length === 0) {
-                        return (
-                          <div className="bg-white rounded-3xl p-8 text-center text-xs text-[#A68D74] border border-[#E8D5B5]">
-                            No hay clases disponibles para este día y sede.
-                          </div>
-                        );
-                      }
-
-                      const targetDay = weekDays.find((d) => d.date.getDay() === selectedDayIndex);
-                      const targetDateStr = targetDay ? targetDay.dateStr : toISODateString(new Date());
-
-                      return dayClasses.map((cls) => {
-                        const classBookings = bookings.filter(
-                          (b) => b.class_id === cls.id && b.status === 'confirmed' && (!b.booking_date || b.booking_date === targetDateStr)
-                        );
-                        const enrolled = classBookings.length;
-                        const availableSpots = Math.max(0, cls.max_capacity - enrolled);
-                        const isFull = availableSpots <= 0;
-
-                        return (
-                          <div
-                            key={cls.id}
-                            className="bg-white rounded-3xl p-4 sm:p-5 border border-[#E8D5B5] shadow-xs hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                          >
-                            <div>
-                              <div className="flex items-center space-x-2 mb-1.5">
-                                <span
-                                  className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full text-white shadow-2xs"
-                                  style={{ backgroundColor: cls.activity?.color || cls.color || '#5E612B' }}
-                                >
-                                  {cls.title}
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-2 h-2 rounded-full ${isToday ? 'bg-[#5E612B]' : isPastDay ? 'bg-slate-400' : 'bg-[#A68D74]'}`} />
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs sm:text-sm font-black uppercase tracking-wider ${isPastDay ? 'text-slate-600' : 'text-[#44261B]'}`}>
+                                {wd.dayName} {wd.dayNumber} DE {monthName.toUpperCase()}
+                              </span>
+                              {isToday && (
+                                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#5E612B] text-white">
+                                  Hoy
                                 </span>
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                    isFull ? 'bg-rose-100 text-[#CB563C]' : 'bg-[#eaede7] text-[#5E612B]'
-                                  }`}
-                                >
-                                  {isFull ? 'Completo' : `${availableSpots} lugares`}
+                              )}
+                              {isPastDay && (
+                                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                                  Pasado
                                 </span>
-                              </div>
-
-                              <div className="text-xs font-bold text-[#44261B] flex items-center space-x-2">
-                                <Clock className="w-3.5 h-3.5 text-[#5E612B]" />
-                                <span>{cls.start_time} a {cls.end_time} hs</span>
-                              </div>
+                              )}
                             </div>
-
-                            <button
-                              onClick={() => handleBook(cls, targetDateStr)}
-                              className={`px-5 py-2 rounded-2xl text-xs font-extrabold shadow-sm transition-all self-start sm:self-center cursor-pointer ${
-                                isFull
-                                  ? 'bg-[#C18749] hover:bg-[#44261B] text-white'
-                                  : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
-                              }`}
-                            >
-                              {isFull ? 'Anotarme en Espera' : 'Reservar Turno'}
-                            </button>
                           </div>
-                        );
-                      });
-                    })()}
-                  </div>
+
+                          <div className="flex items-center space-x-3">
+                            <span className="text-xs font-bold text-[#A68D74]">
+                              {dayClasses.length} {dayClasses.length === 1 ? 'clase' : 'clases'}
+                            </span>
+                            <div className="p-1 text-[#A68D74] hover:text-[#44261B] rounded-lg">
+                              {isCollapsed ? (
+                                <ChevronDown className="w-4 h-4 text-[#A68D74]" />
+                              ) : (
+                                <ChevronUp className="w-4 h-4 text-[#5E612B]" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Contenido de Turnos en Filas */}
+                        {!isCollapsed && (
+                          <div className="divide-y divide-[#E8D5B5]/60 p-2 sm:p-3 bg-white">
+                            {dayClasses.length > 0 ? (
+                              dayClasses.map((cls) => {
+                                const cellDateStr = wd.dateStr;
+                                const classBookings = bookings.filter(
+                                  (b) =>
+                                    b.class_id === cls.id &&
+                                    (b.status === 'confirmed' || b.status === 'attended') &&
+                                    (b.booking_date === cellDateStr || !b.booking_date)
+                                );
+                                const enrolledCount = classBookings.length;
+                                const availableSpots = Math.max(0, cls.max_capacity - enrolledCount);
+                                const isFull = availableSpots <= 0;
+
+                                // Verificar si este alumno ya está inscripto
+                                const isAlreadyBooked = currentStudent
+                                  ? classBookings.some((b) => b.student_id === currentStudent.id)
+                                  : false;
+
+                                const instructorName = cls.instructor
+                                  ? `${cls.instructor.first_name} ${cls.instructor.last_name || ''}`.trim()
+                                  : 'Profesor Sermoa';
+
+                                const isPastTime = isPastDay || (isToday && cls.start_time < currentTimeStr);
+
+                                return (
+                                  <div
+                                    key={cls.id}
+                                    className={`p-3 sm:p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative border ${isPastTime
+                                      ? 'bg-slate-50/70 border-slate-200 text-slate-400'
+                                      : 'hover:bg-[#FAF8F5] border-transparent hover:border-[#E8D5B5]'
+                                      }`}
+                                  >
+                                    {/* Izquierda: Horario, Disciplina, Profesor */}
+                                    <div className="flex items-start sm:items-center space-x-3.5 flex-1 min-w-0">
+                                      {/* Indicador de color */}
+                                      <div
+                                        className="w-2.5 h-2.5 rounded-full shrink-0 mt-1 sm:mt-0"
+                                        style={{ backgroundColor: isPastTime ? '#cbd5e1' : (cls.activity?.color || cls.color || '#5E612B') }}
+                                      />
+
+                                      {/* Horario */}
+                                      <div className={`font-black text-xs sm:text-sm tracking-tight shrink-0 min-w-[95px] ${isPastTime ? 'text-slate-400' : 'text-[#44261B]'}`}>
+                                        {cls.start_time}–{cls.end_time}
+                                      </div>
+
+                                      <span className="text-[#E8D5B5] hidden sm:inline">|</span>
+
+                                      {/* Disciplina */}
+                                      <div className={`font-extrabold text-xs sm:text-sm truncate ${isPastTime ? 'text-slate-400' : 'text-[#44261B] group-hover:text-[#5E612B]'}`}>
+                                        {cls.title}
+                                      </div>
+
+                                      <span className="text-[#E8D5B5] hidden sm:inline">|</span>
+
+                                      {/* Profesor */}
+                                      <div className={`text-xs font-semibold truncate ${isPastTime ? 'text-slate-400' : 'text-[#A68D74]'}`}>
+                                        {instructorName}
+                                      </div>
+                                    </div>
+
+                                    {/* Derecha: Cupos y Botón Reservar / Estado */}
+                                    <div className="flex items-center justify-between sm:justify-end space-x-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E8D5B5]/50">
+                                      {/* Cupos disponibles */}
+                                      <span
+                                        className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${isPastTime
+                                          ? 'bg-slate-100 border-slate-200 text-slate-400'
+                                          : isFull
+                                            ? 'bg-rose-50 border-rose-200 text-[#CB563C]'
+                                            : 'bg-[#eaede7] border-[#cadbcd] text-[#5E612B]'
+                                          }`}
+                                      >
+                                        {isPastTime ? 'Finalizado' : isFull ? 'Sin cupos disponibles' : `${availableSpots}/${cls.max_capacity} cupos`}
+                                      </span>
+
+                                      {/* Botón de Acción */}
+                                      {isAlreadyBooked ? (
+                                        <span className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-[#F4E8D1] text-[#5E612B] text-xs font-extrabold border border-[#E8D5B5]">
+                                          <CheckCircle2 className="w-3.5 h-3.5 text-[#5E612B]" />
+                                          <span>Anotado</span>
+                                        </span>
+                                      ) : isPastTime ? (
+                                        <span className="inline-block px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 select-none">
+                                          No disponible
+                                        </span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleBook(cls, cellDateStr)}
+                                          className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all shadow-xs cursor-pointer ${isFull
+                                            ? 'bg-[#C18749] hover:bg-[#44261B] text-white'
+                                            : 'bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1]'
+                                            }`}
+                                        >
+                                          {isFull ? 'Lista Espera' : 'Reservar'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="py-6 text-center text-[#A68D74]">
+                                <p className="text-xs font-medium">No hay clases programadas para este día</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -581,7 +834,7 @@ export const StudentPortalView: React.FC = () => {
             <div className="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-extrabold text-slate-800 mb-2">¡Se liberó tu lugar!</h3>
+            <h3 className="text-xl font-extrabold text-slate-800 mb-2">¡Se liberó un lugar!</h3>
             <p className="text-sm text-slate-600 mb-6">
               El turno que estabas esperando ahora está disponible. ¿Deseas confirmar tu reserva? Si rechazas, pasaremos al siguiente en la lista.
             </p>

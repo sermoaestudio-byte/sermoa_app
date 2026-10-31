@@ -1191,6 +1191,12 @@ export function useStudioStore() {
       return { success: false, isWaitlist: false, message: 'Datos de estudiante inválidos.' };
     }
 
+    // Validation: cannot book past dates
+    const currentTodayStr = toISODateString(new Date());
+    if (bookingDate < currentTodayStr) {
+      return { success: false, isWaitlist: false, message: 'No es posible reservar un turno de una fecha que ya pasó.' };
+    }
+
     if (isAnyTime || classId === 'ANY_TIME') {
       // General waitlist logic
       const waitlistId = generateUUID();
@@ -1237,6 +1243,17 @@ export function useStudioStore() {
 
     if (!classSchedule) {
       return { success: false, isWaitlist: false, message: 'Clase no encontrada.' };
+    }
+
+    // Validation: if it's today, check if class start time has already passed
+    if (bookingDate === currentTodayStr && classSchedule.start_time) {
+      const now = new Date();
+      const currentHours = String(now.getHours()).padStart(2, '0');
+      const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+      const currentTimeStr = `${currentHours}:${currentMinutes}`;
+      if (classSchedule.start_time < currentTimeStr) {
+        return { success: false, isWaitlist: false, message: 'El horario de esta clase ya ha pasado.' };
+      }
     }
 
     // Check if already booked
