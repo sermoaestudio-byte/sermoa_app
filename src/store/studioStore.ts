@@ -18,6 +18,7 @@ import {
   UserRole,
   FinancialCategory,
   FinancialMonthlyGoals,
+  StudentMembership,
 } from '../types';
 import { toISODateString } from '../utils/date';
 import { isWithinGeofence } from '../utils/geo';
@@ -246,6 +247,7 @@ let state: any = {
   whatsappTemplates: initialWhatsAppTemplates,
   routines: initialRoutines,
   attendances: initialAttendances,
+  studentMemberships: [] as StudentMembership[],
   isAuthenticated: false,
   isInitialized: false,
   currentUser: null as Profile | null,
@@ -311,8 +313,24 @@ async function syncFromSupabase() {
     const { data: categoriesData } = await supabase.from('financial_categories').select('*');
     // 11. Fetch Goals
     const { data: goalsData } = await supabase.from('financial_monthly_goals').select('*').limit(1);
+    // 12. Fetch Student Memberships (Aislamiento por estudio y manejo seguro de RLS/errores)
+    let membershipsData: any[] | null = null;
+    try {
+      const { data: mData, error: mErr } = await supabase
+        .from('student_memberships')
+        .select('*')
+        .eq('studio_id', currentStudio.id);
+      if (mErr) {
+        // En caso de restricción por RLS o falta de sesión autorizada, no interrumpir la sincronización
+        console.warn('Advertencia al consultar student_memberships (RLS/permisos):', mErr.message);
+      } else {
+        membershipsData = mData;
+      }
+    } catch (mEx) {
+      console.warn('Excepción al consultar student_memberships:', mEx);
+    }
 
-    // 12. Restaurar sesión desde Supabase Auth
+    // 13. Restaurar sesión desde Supabase Auth
     const { data: { session } } = await supabase.auth.getSession();
     let authUser = null;
     let isAuth = false;
@@ -347,6 +365,7 @@ async function syncFromSupabase() {
       payments: paymentsData && paymentsData.length > 0 ? paymentsData : prev.payments,
       financialCategories: categoriesData && categoriesData.length > 0 ? categoriesData : prev.financialCategories,
       financialGoals: goalsData && goalsData.length > 0 ? goalsData[0] : prev.financialGoals,
+      studentMemberships: membershipsData && membershipsData.length > 0 ? membershipsData : (prev.studentMemberships || []),
       isAuthenticated: isAuth || prev.isAuthenticated,
       isInitialized: true,
       currentUser: authUser || prev.currentUser,
@@ -1974,23 +1993,50 @@ export function useStudioStore() {
       if (updatedData.validity_days !== undefined) payload.validity_days = Number(updatedData.validity_days);
       if (updatedData.popular_badge !== undefined) payload.is_featured = !!updatedData.popular_badge;
       if (updatedData.is_active !== undefined) payload.is_active = !!updatedData.is_active;
+      if (updatedData.is_archived !== undefined) payload.is_archived = !!updatedData.is_archived;
 
       const { error } = await supabase.from('credit_packs').update(payload).eq('id', id);
       if (error) console.error('Error actualizando pack en Supabase:', error);
     }
   };
 
-  const deleteCreditPack = async (id: string) => {
+  // Safe Logical Archiving (No physical DELETE)
+  const archiveCreditPack = async (id: string) => {
     setState((prev: any) => ({
       ...prev,
-      creditPacks: prev.creditPacks.filter((p: CreditPack) => p.id !== id),
+      creditPacks: prev.creditPacks.map((p: CreditPack) =>
+        p.id === id ? { ...p, is_archived: true, is_active: false } : p
+      ),
     }));
 
     if (isSupabaseConfigured) {
-      const { error } = await supabase.from('credit_packs').delete().eq('id', id);
-      if (error) console.error('Error eliminando pack en Supabase:', error);
+      const { error } = await supabase
+        .from('credit_packs')
+        .update({ is_archived: true, is_active: false })
+        .eq('id', id);
+      if (error) console.error('Error archivando pack en Supabase:', error);
     }
   };
+
+  const restoreCreditPack = async (id: string) => {
+    setState((prev: any) => ({
+      ...prev,
+      creditPacks: prev.creditPacks.map((p: CreditPack) =>
+        p.id === id ? { ...p, is_archived: false, is_active: true } : p
+      ),
+    }));
+
+    if (isSupabaseConfigured) {
+      const { error } = await supabase
+        .from('credit_packs')
+        .update({ is_archived: false, is_active: true })
+        .eq('id', id);
+      if (error) console.error('Error restaurando pack en Supabase:', error);
+    }
+  };
+
+  // Backwards compatibility alias: deleteCreditPack now safely archives logically
+  const deleteCreditPack = archiveCreditPack;
 
   // Credit pack purchase
   const purchaseCreditPack = (studentId: string, packId: string, paymentMethod: PaymentMethod = 'mercadopago') => {
@@ -2144,6 +2190,7 @@ export function useStudioStore() {
       whatsappTemplates: initialWhatsAppTemplates,
       routines: initialRoutines,
       attendances: initialAttendances,
+      studentMemberships: [],
       currentRole: 'admin',
       currentStudentId: DEFAULT_ADMIN_ID,
       currentInstructorId: DEFAULT_ADMIN_ID,
@@ -2159,6 +2206,7 @@ export function useStudioStore() {
     bookings: state.bookings,
     waitlist: state.waitlist,
     creditPacks: state.creditPacks,
+    studentMemberships: state.studentMemberships || [],
     payments: state.payments,
     financialCategories: state.financialCategories || initialFinancialCategories,
     financialGoals: state.financialGoals || initialFinancialGoals,
@@ -2215,6 +2263,8 @@ export function useStudioStore() {
     createCreditPack,
     updateCreditPack,
     deleteCreditPack,
+    archiveCreditPack,
+    restoreCreditPack,
     updateStudioSettings,
     updateWhatsAppTemplate,
     createRoutine,

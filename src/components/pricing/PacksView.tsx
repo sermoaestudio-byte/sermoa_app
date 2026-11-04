@@ -1,13 +1,41 @@
 import React, { useState } from 'react';
-import { Ticket, Plus, Check, Zap, Sparkles, Clock, Edit2, Trash2, Eye, EyeOff, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import {
+  Ticket,
+  Plus,
+  Check,
+  Zap,
+  Sparkles,
+  Clock,
+  Edit2,
+  Archive,
+  ArchiveRestore,
+  Eye,
+  EyeOff,
+  X,
+  ShieldAlert,
+  CheckCircle2,
+  AlertTriangle
+} from 'lucide-react';
 import { useStudioStore } from '../../store/studioStore';
 import { CreditPack } from '../../types';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 export const PacksView: React.FC = () => {
-  const { creditPacks, createCreditPack, updateCreditPack, deleteCreditPack } = useStudioStore();
+  const {
+    creditPacks,
+    createCreditPack,
+    updateCreditPack,
+    archiveCreditPack,
+    restoreCreditPack,
+  } = useStudioStore();
 
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPack, setEditingPack] = useState<CreditPack | null>(null);
+
+  // Archive confirmation dialog state
+  const [packToArchive, setPackToArchive] = useState<CreditPack | null>(null);
+  const [packToRestore, setPackToRestore] = useState<CreditPack | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -19,6 +47,9 @@ export const PacksView: React.FC = () => {
   const [isActive, setIsActive] = useState(true);
   const [isRecurring, setIsRecurring] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const activePacks = creditPacks.filter((p) => !p.is_archived);
+  const archivedPacks = creditPacks.filter((p) => !!p.is_archived);
 
   const openCreateModal = () => {
     setEditingPack(null);
@@ -71,6 +102,7 @@ export const PacksView: React.FC = () => {
           popular_badge: isPopular,
           is_active: isActive,
           is_recurring_monthly: isRecurring,
+          is_archived: false,
         });
       }
       setIsModalOpen(false);
@@ -81,9 +113,17 @@ export const PacksView: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, packName: string) => {
-    if (confirm(`¿Estás seguro de eliminar el pack "${packName}"? Esta acción no se puede deshacer.`)) {
-      await deleteCreditPack(id);
+  const handleConfirmArchive = async () => {
+    if (packToArchive) {
+      await archiveCreditPack(packToArchive.id);
+      setPackToArchive(null);
+    }
+  };
+
+  const handleConfirmRestore = async () => {
+    if (packToRestore) {
+      await restoreCreditPack(packToRestore.id);
+      setPackToRestore(null);
     }
   };
 
@@ -121,26 +161,74 @@ export const PacksView: React.FC = () => {
           </button>
         </div>
 
+        {/* Tabs: Activos vs Archivados */}
+        <div className="flex items-center space-x-2 mb-6 border-b border-slate-200 pb-3">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center space-x-1.5 ${
+              activeTab === 'active'
+                ? 'bg-purple-700 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Ticket className="w-3.5 h-3.5" />
+            <span>Packs Vigentes ({activePacks.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('archived')}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center space-x-1.5 ${
+              activeTab === 'archived'
+                ? 'bg-slate-800 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Archive className="w-3.5 h-3.5" />
+            <span>Archivados ({archivedPacks.length})</span>
+          </button>
+        </div>
+
+        {/* Empty state for archived packs */}
+        {activeTab === 'archived' && archivedPacks.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-xs">
+            <Archive className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <h3 className="font-extrabold text-slate-800 text-base">No hay packs archivados</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+              Cuando archives un pack, se guardará aquí sin alterar el historial de compras ni los cobros anteriores.
+            </p>
+          </div>
+        )}
+
         {/* Packs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {creditPacks.map((pack) => {
+          {(activeTab === 'active' ? activePacks : archivedPacks).map((pack) => {
             const isPackActive = pack.is_active !== false;
+            const isArchived = !!pack.is_archived;
 
             return (
               <div
                 key={pack.id}
                 className={`bg-white rounded-3xl p-6 sm:p-7 border transition-all flex flex-col justify-between relative ${
-                  !isPackActive
+                  isArchived
+                    ? 'opacity-70 border-dashed border-slate-300 bg-slate-50/70'
+                    : !isPackActive
                     ? 'opacity-60 border-slate-200 bg-slate-50/50'
                     : pack.popular_badge
                     ? 'border-brand-500 shadow-soft-lg ring-2 ring-brand-500/20'
                     : 'border-slate-200/80 shadow-soft hover:shadow-soft-lg'
                 }`}
               >
-                {pack.popular_badge && isPackActive && (
+                {pack.popular_badge && isPackActive && !isArchived && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-600 text-white font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow-sm flex items-center space-x-1">
                     <Sparkles className="w-3 h-3" />
                     <span>Más Recomendado</span>
+                  </span>
+                )}
+
+                {isArchived && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-700 text-white font-extrabold text-[10px] uppercase tracking-wider px-3 py-1 rounded-full shadow-sm flex items-center space-x-1">
+                    <Archive className="w-3 h-3" />
+                    <span>Archivado (Fuera de venta)</span>
                   </span>
                 )}
 
@@ -148,11 +236,15 @@ export const PacksView: React.FC = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-1.5">
                       <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                        isPackActive ? 'text-purple-700 bg-purple-50' : 'text-slate-500 bg-slate-200'
+                        isArchived
+                          ? 'text-slate-600 bg-slate-200'
+                          : isPackActive
+                          ? 'text-purple-700 bg-purple-50'
+                          : 'text-slate-500 bg-slate-200'
                       }`}>
                         {pack.credits_count === 999 ? 'Pase Libre' : `${pack.credits_count} Clases`}
                       </span>
-                      {!isPackActive && (
+                      {!isPackActive && !isArchived && (
                         <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                           Pausado
                         </span>
@@ -201,33 +293,45 @@ export const PacksView: React.FC = () => {
 
                 {/* Actions */}
                 <div className="pt-2 border-t border-slate-100 flex items-center space-x-2">
-                  <button
-                    onClick={() => openEditModal(pack)}
-                    className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>Editar Tarifa</span>
-                  </button>
+                  {!isArchived ? (
+                    <>
+                      <button
+                        onClick={() => openEditModal(pack)}
+                        className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-colors flex items-center justify-center space-x-1.5 cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Editar Tarifa</span>
+                      </button>
 
-                  <button
-                    onClick={() => togglePackStatus(pack)}
-                    title={isPackActive ? 'Pausar venta del pack' : 'Activar pack'}
-                    className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
-                      isPackActive
-                        ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 border-slate-200'
-                        : 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                    }`}
-                  >
-                    {isPackActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                      <button
+                        onClick={() => togglePackStatus(pack)}
+                        title={isPackActive ? 'Pausar venta del pack' : 'Activar pack'}
+                        className={`p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                          isPackActive
+                            ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 border-slate-200'
+                            : 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                        }`}
+                      >
+                        {isPackActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
 
-                  <button
-                    onClick={() => handleDelete(pack.id, pack.name)}
-                    title="Eliminar pack"
-                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                      <button
+                        onClick={() => setPackToArchive(pack)}
+                        title="Archivar pack (conserva historial)"
+                        className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setPackToRestore(pack)}
+                      className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-xs"
+                    >
+                      <ArchiveRestore className="w-4 h-4 text-emerald-400" />
+                      <span>Restaurar Pack</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -393,6 +497,30 @@ export const PacksView: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Diálogo de Confirmación: Archivar Pack */}
+        <ConfirmDialog
+          isOpen={!!packToArchive}
+          title="¿Archivar este Pack o Membresía?"
+          message={`El pack "${packToArchive?.name}" dejará de estar disponible para nuevas compras de alumnos. Las compras pasadas, pagos y créditos otorgados se mantendrán 100% intactos en el historial del centro.`}
+          confirmText="Confirmar y Archivar"
+          cancelText="Volver"
+          variant="danger"
+          onConfirm={handleConfirmArchive}
+          onCancel={() => setPackToArchive(null)}
+        />
+
+        {/* Diálogo de Confirmación: Restaurar Pack */}
+        <ConfirmDialog
+          isOpen={!!packToRestore}
+          title="¿Restaurar Pack Archivado?"
+          message={`El pack "${packToRestore?.name}" volverá a aparecer en la lista de planes vigentes de la administración.`}
+          confirmText="Restaurar Pack"
+          cancelText="Volver"
+          variant="primary"
+          onConfirm={handleConfirmRestore}
+          onCancel={() => setPackToRestore(null)}
+        />
 
       </div>
     </div>

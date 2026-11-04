@@ -23,7 +23,7 @@ export const BuyPackModal: React.FC<BuyPackModalProps> = ({
 
   if (!isOpen) return null;
 
-  const activePacks = creditPacks.filter((p) => p.is_active !== false);
+  const activePacks = creditPacks.filter((p) => p.is_active !== false && !p.is_archived);
 
   const handleSelectPack = (pack: CreditPack) => {
     setSelectedPack(pack);

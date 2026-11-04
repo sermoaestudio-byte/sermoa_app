@@ -32,3 +32,4 @@ dist-ssr
 # Scratch scripts and temporary CLI files
 scratch/
 supabase/.temp/
+backups/

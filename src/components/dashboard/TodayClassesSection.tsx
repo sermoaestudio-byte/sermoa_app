@@ -11,7 +11,8 @@ import {
   UserCheck,
   AlertCircle,
   Sparkles,
-  Phone
+  Phone,
+  Building2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
@@ -36,17 +37,15 @@ export const TodayClassesSection: React.FC<TodayClassesSectionProps> = ({ onNavi
 
   const todayStr = toISODateString(new Date());
 
-  // Clases de hoy ordenadas por horario
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+
+  // Clases de hoy filtradas por sede y ordenadas por horario
   const allClassesToday = getEnrichedClasses()
     .filter((c: ClassSchedule) => {
       if (c.is_cancelled) return false;
       if (!c.is_recurring && c.date !== todayStr) return false;
       if (c.is_recurring && c.day_of_week !== new Date().getDay()) return false;
-      // Si el profesor tiene ID propio, podemos filtrar o mostrar todas las del estudio si no está especificado
-      if (currentRole === 'instructor' && currentUser?.id && c.instructor_id) {
-        // Si hay clases asignadas a este profesor, priorizamos o mostramos todas
-        // Por flexibilidad mostramos todas las que correspondan al instructor o todas si solo hay un profe
-      }
+      if (selectedBranchId && c.branch_id !== selectedBranchId) return false;
       return true;
     })
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -89,17 +88,39 @@ export const TodayClassesSection: React.FC<TodayClassesSectionProps> = ({ onNavi
       
       {/* 1. MÓDULO: CLASES DE HOY */}
       <div className="bg-white/95 backdrop-blur-sm border border-[#E8D5B5] rounded-3xl p-5 sm:p-7 shadow-soft">
-        <div className="mb-5 pb-4 border-b border-[#E8D5B5]">
-          <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-[#C18749] mb-1">
-            <Calendar className="w-4 h-4 text-[#5E612B]" />
-            <span>Turnos Programados</span>
+        <div className="mb-5 pb-4 border-b border-[#E8D5B5] flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-[#C18749] mb-1">
+              <Calendar className="w-4 h-4 text-[#5E612B]" />
+              <span>Turnos Programados</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#44261B] tracking-tight flex items-center gap-2">
+              CLASES DE HOY
+              <span className="text-xs font-extrabold bg-[#F4E8D1] text-[#5E612B] px-2.5 py-1 rounded-full border border-[#E8D5B5]">
+                {allClassesToday.length} {allClassesToday.length === 1 ? 'clase' : 'clases'}
+              </span>
+            </h2>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#44261B] tracking-tight flex items-center gap-2">
-            CLASES DE HOY
-            <span className="text-xs font-extrabold bg-[#F4E8D1] text-[#5E612B] px-2.5 py-1 rounded-full border border-[#E8D5B5]">
-              {allClassesToday.length} {allClassesToday.length === 1 ? 'clase' : 'clases'}
-            </span>
-          </h2>
+
+          {/* Selector de Sucursal en dropdown exacto */}
+          {branches.length > 0 && (
+            <div className="relative inline-flex items-center bg-white border border-[#E8D5B5] hover:border-[#5E612B]/40 rounded-2xl px-3.5 py-2 shadow-2xs transition-all">
+              <Building2 className="w-4 h-4 text-[#A68D74] mr-2 shrink-0" />
+              <select
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="appearance-none bg-transparent pr-7 text-xs sm:text-sm font-bold text-[#1F2933] focus:outline-none cursor-pointer"
+              >
+                <option value="">Todas las sucursales</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-[#44261B] absolute right-3 pointer-events-none" />
+            </div>
+          )}
         </div>
 
         {allClassesToday.length === 0 ? (
@@ -160,16 +181,6 @@ export const TodayClassesSection: React.FC<TodayClassesSectionProps> = ({ onNavi
                           <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#eaede7] text-[#5E612B] border border-[#cadbcd]">
                             {cls.title}
                           </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#44261B]/80 font-medium">
-                          {/* Sede y Sala */}
-                          <div className="flex items-center space-x-1.5 text-[#C18749]">
-                            <MapPin className="w-3.5 h-3.5 text-[#C18749]" />
-                            <span className="font-bold">
-                              {branch?.name || 'Sede Principal'}{cls.room?.name ? ` (${cls.room.name})` : ''}
-                            </span>
-                          </div>
                         </div>
                       </div>
                     </div>

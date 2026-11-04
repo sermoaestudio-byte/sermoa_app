@@ -165,6 +165,7 @@ export interface Booking {
   studio_id?: string;
   class_id: string;
   student_id: string;
+  membership_id?: string | null;
   booking_date: string; // "2026-08-10"
   start_time?: string;
   status: BookingStatus;
@@ -205,20 +206,31 @@ export interface CreditPack {
   validity_days: number;
   is_recurring_monthly: boolean;
   is_active: boolean;
+  is_archived?: boolean;
   activity_ids?: string[]; // Si aplica a disciplinas específicas
   popular_badge?: boolean;
 }
 
 export interface StudentMembership {
   id: string;
+  studio_id: string;
   student_id: string;
-  pack_id: string;
+  pack_id?: string | null;
+  payment_id?: string | null;
   pack_name: string;
   credits_total: number;
   credits_remaining: number;
-  start_date: string;
-  end_date: string;
-  status: 'active' | 'expired' | 'consumed';
+  credits_used?: number;
+  credits_adjusted?: number;
+  is_unlimited: boolean;
+  price_paid: number;
+  snapshot_conditions?: Record<string, any> | null;
+  idempotency_key?: string | null;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;   // YYYY-MM-DD
+  status: 'active' | 'consumed' | 'expired' | 'cancelled';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FinancialCategory {

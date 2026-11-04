@@ -60,6 +60,15 @@ export const StudentPortalView: React.FC = () => {
   const [scheduleViewMode, setScheduleViewMode] = useState<'calendar' | 'list'>('calendar');
   const [showCheckinGPSModal, setShowCheckinGPSModal] = useState(false);
   const [isBuyPackOpen, setIsBuyPackOpen] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'waitlist' | 'info';
+    title: string;
+    message: string;
+    className?: string;
+    time?: string;
+    date?: string;
+  } | null>(null);
 
   // Toggle de colapso de día
   const toggleDayCollapse = (dateStr: string, defaultState: boolean) => {
@@ -143,7 +152,15 @@ export const StudentPortalView: React.FC = () => {
       const currentMinutes = String(now.getMinutes()).padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMinutes}`;
       if (cls.start_time < currentTimeStr) {
-        alert('El horario de esta clase ya ha pasado.');
+        setFeedbackModal({
+          isOpen: true,
+          type: 'info',
+          title: 'Horario no disponible',
+          message: 'El horario de inicio para esta clase ya ha pasado.',
+          className: cls.title,
+          time: cls.start_time,
+          date: targetDateStr,
+        });
         return;
       }
     }
@@ -151,16 +168,46 @@ export const StudentPortalView: React.FC = () => {
     // We need to pass the date because if we book for tomorrow, it shouldn't book for today.
     // If no date is passed, it falls back to the store default (today).
     const res = bookClass(cls.id, currentStudent.id, targetDateStr, false);
+
     if (!res.success && res.message.toLowerCase().includes('créditos')) {
       setIsBuyPackOpen(true);
+    } else if (res.success) {
+      if (res.isWaitlist) {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'waitlist',
+          title: '¡Te anotaste en lista de espera!',
+          message: res.message || 'Te notificaremos por WhatsApp y en la app apenas se libere un lugar.',
+          className: cls.title,
+          time: cls.start_time,
+          date: targetDateStr,
+        });
+      } else {
+        confetti({
+          particleCount: 60,
+          spread: 70,
+          origin: { y: 0.65 },
+          colors: ['#736355', '#a69688', '#44261B', '#E8D5B5'],
+        });
+        setFeedbackModal({
+          isOpen: true,
+          type: 'success',
+          title: '¡Reserva Confirmada!',
+          message: 'Tu lugar en la clase quedó reservado con éxito. ¡Te esperamos!',
+          className: cls.title,
+          time: cls.start_time,
+          date: targetDateStr,
+        });
+      }
     } else {
-      alert(res.message);
-    }
-    if (res.success && !res.isWaitlist) {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 },
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'No se pudo reservar',
+        message: res.message || 'Ocurrió un inconveniente al procesar tu solicitud.',
+        className: cls.title,
+        time: cls.start_time,
+        date: targetDateStr,
       });
     }
   };
@@ -909,6 +956,96 @@ export const StudentPortalView: React.FC = () => {
             setActiveTab('schedule');
           }}
         />
+      )}
+
+      {/* Modal Estético de Confirmación de Reserva / Lista de Espera */}
+      {feedbackModal?.isOpen && (
+        <div 
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in"
+          onClick={() => setFeedbackModal(null)}
+        >
+          <div 
+            className="bg-white rounded-[2rem] max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-[#E8D5B5]/40 text-center relative overflow-hidden animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Fondo decorativo sutil en degradé cálido */}
+            <div className="absolute -top-16 -right-16 w-32 h-32 bg-[#E8D5B5]/30 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-[#736355]/10 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Ícono animado con badge temático */}
+            <div className="relative mx-auto mb-5 w-20 h-20 flex items-center justify-center">
+              <div 
+                className={`absolute inset-0 rounded-full animate-ping opacity-20 ${
+                  feedbackModal.type === 'success' ? 'bg-[#736355]' :
+                  feedbackModal.type === 'waitlist' ? 'bg-amber-500' :
+                  feedbackModal.type === 'info' ? 'bg-sky-500' : 'bg-rose-500'
+                }`} 
+              />
+              <div 
+                className={`w-20 h-20 rounded-full flex items-center justify-center shadow-lg border-2 border-white relative z-10 ${
+                  feedbackModal.type === 'success' ? 'bg-gradient-to-br from-[#736355] to-[#44261B] text-white shadow-[#736355]/30' :
+                  feedbackModal.type === 'waitlist' ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-amber-500/30' :
+                  feedbackModal.type === 'info' ? 'bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-sky-500/30' :
+                  'bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-rose-500/30'
+                }`}
+              >
+                {feedbackModal.type === 'success' ? (
+                  <CheckCircle2 className="w-10 h-10 stroke-[2.2]" />
+                ) : feedbackModal.type === 'waitlist' ? (
+                  <Clock className="w-10 h-10 stroke-[2.2]" />
+                ) : feedbackModal.type === 'info' ? (
+                  <AlertCircle className="w-10 h-10 stroke-[2.2]" />
+                ) : (
+                  <AlertCircle className="w-10 h-10 stroke-[2.2]" />
+                )}
+              </div>
+            </div>
+
+            {/* Título de estado */}
+            <h3 className="text-xl font-extrabold text-[#44261B] tracking-tight mb-2">
+              {feedbackModal.title}
+            </h3>
+
+            {/* Mensaje descriptivo */}
+            <p className="text-xs text-[#736355] leading-relaxed mb-5 font-medium px-2">
+              {feedbackModal.message}
+            </p>
+
+            {/* Tarjeta con detalles de la clase */}
+            {(feedbackModal.className || feedbackModal.time || feedbackModal.date) && (
+              <div className="bg-[#F5F2EB]/80 border border-[#E8D5B5]/60 rounded-2xl p-3.5 mb-6 text-left space-y-1.5">
+                {feedbackModal.className && (
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#44261B]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#736355]" />
+                    <span className="truncate">{feedbackModal.className}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-[11px] text-[#736355] pt-0.5 border-t border-[#E8D5B5]/40 font-medium">
+                  {feedbackModal.date && (
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3 text-[#736355]/80" />
+                      <span>{feedbackModal.date}</span>
+                    </span>
+                  )}
+                  {feedbackModal.time && (
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-[#736355]/80" />
+                      <span className="font-bold text-[#44261B]">{feedbackModal.time} hs</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Botón de confirmación estético Sermoa */}
+            <button
+              onClick={() => setFeedbackModal(null)}
+              className="w-full py-3.5 px-5 bg-gradient-to-r from-[#736355] to-[#44261B] hover:from-[#5e5045] hover:to-[#331c14] text-white font-bold rounded-2xl shadow-lg shadow-[#736355]/20 hover:shadow-xl transition-all transform active:scale-95 text-xs tracking-wide cursor-pointer"
+            >
+              ¡Entendido, gracias!
+            </button>
+          </div>
+        </div>
       )}
 
     </div>

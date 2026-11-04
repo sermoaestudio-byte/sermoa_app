@@ -290,7 +290,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
                       >
                         <option value="">Seleccionar pack para acreditar clases automáticamente...</option>
-                        {creditPacks.map((pack) => (
+                        {creditPacks.filter((p) => !p.is_archived).map((pack) => (
                           <option key={pack.id} value={pack.id}>
                             {pack.name} (+{pack.credits_count} clases - ${pack.price.toLocaleString('es-AR')})
                           </option>
