@@ -111,10 +111,6 @@ serve(async (req) => {
           unit_price: Number(pack.price)
         }
       ],
-      payer: {
-        email: payer_email || 'alumno@sermoa.app',
-        name: payer_name || 'Alumno Sermoa'
-      },
       external_reference: purchase.id,
       notification_url: webhookUrl,
       back_urls: {

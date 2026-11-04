@@ -15,6 +15,7 @@ import {
   DollarSign,
   Receipt,
   AlertCircle,
+  CheckCircle2,
   Edit2,
   Trash2
 } from 'lucide-react';
@@ -39,6 +40,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
 }) => {
   const {
     studio,
+    profiles,
     creditPacks,
     bookings,
     payments,
@@ -51,17 +53,23 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
 
   if (!student) return null;
 
-  const studentBookings = bookings.filter((b: Booking) => b.student_id === student.id);
-  const studentPayments = payments.filter((p: PaymentTransaction) => p.student_id === student.id);
+  // Siempre leemos el perfil actualizado en tiempo real desde el store
+  const currentStudent = profiles.find((p: Profile) => p.id === student.id) || student;
+
+  const studentBookings = bookings.filter((b: Booking) => b.student_id === currentStudent.id);
+  const studentPayments = payments.filter((p: PaymentTransaction) => p.student_id === currentStudent.id);
+  const activeClasses = currentStudent.credits_balance ?? 0;
+  const hasActiveClasses = activeClasses > 0;
+  const confirmedBookingsCount = studentBookings.filter((b: Booking) => b.status === 'confirmed').length;
 
   const handleSendWhatsApp = () => {
-    const msg = `¡Hola ${student.first_name}! Te escribimos de ${studio.name}. ¿Cómo estás?`;
-    openWhatsApp(student.phone, msg);
+    const msg = `¡Hola ${currentStudent.first_name}! Te escribimos de ${studio.name}. ¿Cómo estás?`;
+    openWhatsApp(currentStudent.phone, msg);
   };
 
   const handleAssignPack = () => {
     if (!selectedPackId) return;
-    purchaseCreditPack(student.id, selectedPackId, 'transfer');
+    purchaseCreditPack(currentStudent.id, selectedPackId, 'transfer');
     setSelectedPackId('');
     setShowBuyPack(false);
   };
@@ -69,42 +77,41 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
   return createPortal(
     <div className="fixed inset-0 z-[9999] overflow-hidden bg-slate-950/60 backdrop-blur-xs animate-fade-in flex justify-end">
       <div className="bg-white w-full max-w-xl h-full overflow-y-auto shadow-2xl flex flex-col">
-        
+
         {/* Drawer Header */}
         <div className="p-6 border-b border-[#E8D5B5] flex items-start justify-between sticky top-0 bg-[#FAF8F5]/95 backdrop-blur-sm z-10">
           <div className="flex items-center space-x-3.5">
             <div className="w-14 h-14 rounded-2xl bg-[#F4E8D1] border border-[#E8D5B5] text-[#5E612B] font-extrabold text-lg flex items-center justify-center shadow-xs overflow-hidden">
-              {student.avatar_url ? (
-                <img src={student.avatar_url} alt="" className="w-full h-full object-cover" />
+              {currentStudent.avatar_url ? (
+                <img src={currentStudent.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
-                <span>{student.first_name[0]}{student.last_name[0]}</span>
+                <span>{currentStudent.first_name[0]}{currentStudent.last_name[0]}</span>
               )}
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-xl font-extrabold text-[#44261B]">
-                  {student.first_name} {student.last_name}
+                  {currentStudent.first_name} {currentStudent.last_name}
                 </h3>
                 <span
-                  className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${
-                    student.status === 'active'
+                  className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${currentStudent.status === 'active'
                       ? 'bg-[#eaede7] text-[#5E612B] border-[#cadbcd]'
-                      : student.status === 'pending_approval'
-                      ? 'bg-[#F4E8D1] text-[#C18749] border-[#E8D5B5]'
-                      : 'bg-[#FAF8F5] text-[#A68D74] border-[#E8D5B5]'
-                  }`}
+                      : currentStudent.status === 'pending_approval'
+                        ? 'bg-[#F4E8D1] text-[#C18749] border-[#E8D5B5]'
+                        : 'bg-[#FAF8F5] text-[#A68D74] border-[#E8D5B5]'
+                    }`}
                 >
-                  {student.status === 'active' ? 'Activo' : student.status}
+                  {currentStudent.status === 'active' ? 'Activo' : currentStudent.status}
                 </span>
               </div>
-              <p className="text-xs text-[#A68D74] mt-0.5">DNI: {student.id_number || 'N/A'}</p>
+              <p className="text-xs text-[#A68D74] mt-0.5">DNI: {currentStudent.id_number || 'N/A'}</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-1.5">
             {onEditStudent && (
               <button
-                onClick={() => onEditStudent(student)}
+                onClick={() => onEditStudent(currentStudent)}
                 className="p-2 text-[#A68D74] hover:text-[#5E612B] hover:bg-[#F4E8D1] rounded-full transition-colors"
                 title="Editar Alumno"
               >
@@ -114,7 +121,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
 
             {onDeleteStudent && (
               <button
-                onClick={() => onDeleteStudent(student)}
+                onClick={() => onDeleteStudent(currentStudent)}
                 className="p-2 text-[#A68D74] hover:text-[#B74E2A] hover:bg-[#B74E2A]/10 rounded-full transition-colors"
                 title="Eliminar Alumno"
               >
@@ -133,24 +140,24 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
 
         {/* Drawer Body */}
         <div className="p-6 space-y-6 flex-1 text-xs bg-[#FAF8F5]">
-          
+
           {/* Quick Actions / Contact Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white rounded-2xl border border-[#E8D5B5] shadow-2xs">
             <div className="text-xs text-[#44261B] space-y-1">
               <div className="flex items-center space-x-2">
                 <Phone className="w-3.5 h-3.5 text-[#5E612B]" />
-                <span className="font-semibold">{student.phone}</span>
+                <span className="font-semibold">{currentStudent.phone}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-3.5 h-3.5 text-[#A68D74]" />
-                <span className="text-[#A68D74]">{student.email}</span>
+                <span className="text-[#A68D74]">{currentStudent.email}</span>
               </div>
             </div>
 
             <div className="flex items-center space-x-2">
               {onOpenPayment && (
                 <button
-                  onClick={() => onOpenPayment(student.id)}
+                  onClick={() => onOpenPayment(currentStudent.id)}
                   className="px-3.5 py-2 rounded-xl bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] text-xs font-extrabold shadow-sm transition-all flex items-center space-x-1.5 cursor-pointer"
                 >
                   <DollarSign className="w-4 h-4" />
@@ -168,23 +175,52 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* Credits & Financial Balance */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            {/* Credits Card */}
-            <div className="p-4 bg-white border border-[#E8D5B5] rounded-2xl space-y-2 shadow-2xs">
-              <span className="text-[11px] font-bold text-[#5E612B] uppercase tracking-tight block">
-                Créditos Disponibles
+          {/* Estado de Cuenta: Solo Clases Activas (Pagas), incluyendo packs futuros acumulados */}
+          <div className="p-5 bg-white border border-[#E8D5B5] rounded-2xl shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-[#5E612B] uppercase tracking-tight">
+                Estado de Cuenta • Clases Activas (Pagas)
               </span>
-              <div className="text-2xl font-black text-[#44261B]">
-                {student.credits_balance === 999 ? 'Pase Libre' : `${student.credits_balance} clases`}
+              <span
+                className={`inline-flex items-center space-x-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${hasActiveClasses
+                    ? 'bg-[#eaede7] text-[#5E612B] border-[#cadbcd]'
+                    : 'bg-[#F4E8D1] text-[#C18749] border-[#E8D5B5]'
+                  }`}
+              >
+                {hasActiveClasses ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Al día • Habilitado</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Sin clases activas</span>
+                  </>
+                )}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="text-3xl font-black text-[#44261B]">
+                  {activeClasses === 999
+                    ? 'Pase Libre'
+                    : `${activeClasses} ${activeClasses === 1 ? 'clase activa' : 'clases activas'}`}
+                </div>
+                <p className="text-[11px] text-[#A68D74] mt-1">
+                  {hasActiveClasses
+                    ? `Total de clases pagas disponibles (acumula pack actual y packs futuros abonados)${confirmedBookingsCount > 0 ? ` • ${confirmedBookingsCount} turno(s) reservado(s)` : ''
+                    }`
+                    : 'El alumno no posee clases pagas disponibles en este momento.'}
+                </p>
               </div>
-              
-              <div className="pt-1 flex items-center space-x-2">
+
+              <div className="flex items-center">
                 {onOpenPayment ? (
                   <button
-                    onClick={() => onOpenPayment(student.id)}
-                    className="text-xs font-bold text-[#5E612B] hover:text-[#44261B] flex items-center space-x-1 cursor-pointer"
+                    onClick={() => onOpenPayment(currentStudent.id)}
+                    className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-[#F4E8D1] border border-[#E8D5B5] rounded-xl text-xs font-extrabold text-[#5E612B] hover:text-[#44261B] flex items-center space-x-1.5 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Cargar & Cobrar Pack</span>
@@ -192,7 +228,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
                 ) : (
                   <button
                     onClick={() => setShowBuyPack(!showBuyPack)}
-                    className="text-xs font-bold text-[#5E612B] hover:text-[#44261B] flex items-center space-x-1 cursor-pointer"
+                    className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-[#F4E8D1] border border-[#E8D5B5] rounded-xl text-xs font-extrabold text-[#5E612B] hover:text-[#44261B] flex items-center space-x-1.5 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Asignar Pack</span>
@@ -200,39 +236,6 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
                 )}
               </div>
             </div>
-
-            {/* Account State Card */}
-            <div
-              className={`p-4 rounded-2xl border space-y-2 shadow-2xs ${
-                student.debt_amount > 0
-                  ? 'bg-[#B74E2A]/10 border-[#B74E2A]/30 text-[#B74E2A]'
-                  : 'bg-white border-[#E8D5B5] text-[#44261B]'
-              }`}
-            >
-              <span className="text-[11px] font-bold uppercase tracking-tight block text-[#A68D74]">
-                Estado de Cuenta
-              </span>
-              <div className="text-2xl font-black text-[#44261B]">
-                {student.debt_amount > 0
-                  ? `-$${student.debt_amount.toLocaleString('es-AR')}`
-                  : '$0.00'}
-              </div>
-              
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] font-medium text-[#A68D74]">
-                  {student.debt_amount > 0 ? 'Saldo pendiente de pago' : '✓ Al día'}
-                </span>
-                {student.debt_amount > 0 && onOpenPayment && (
-                  <button
-                    onClick={() => onOpenPayment(student.id)}
-                    className="px-2.5 py-1 bg-[#B74E2A] hover:bg-[#8C361A] text-white font-extrabold text-[10px] rounded-lg shadow-2xs transition-all cursor-pointer"
-                  >
-                    Regularizar
-                  </button>
-                )}
-              </div>
-            </div>
-
           </div>
 
           {/* Assign Pack Form (Quick modal inside drawer) */}
@@ -281,15 +284,15 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
                 <span>Ficha de Salud & Observaciones</span>
               </div>
               <span className="text-[11px] font-semibold text-[#A68D74]">
-                {student.has_medical_certificate ? '✅ Apto médico entregado' : '⚠️ Sin apto físico'}
+                {currentStudent.has_medical_certificate ? '✅ Apto médico entregado' : '⚠️ Sin apto físico'}
               </span>
             </div>
             <p className="text-xs text-[#44261B] leading-relaxed bg-[#FAF8F5] border border-[#E8D5B5]/60 p-3 rounded-xl">
-              {student.medical_notes || 'No se registraron observaciones médicas particulares.'}
+              {currentStudent.medical_notes || 'No se registraron observaciones médicas particulares.'}
             </p>
-            {student.emergency_contact_name && (
+            {currentStudent.emergency_contact_name && (
               <div className="text-[11px] text-[#A68D74]">
-                Contacto de Emergencia: <strong className="text-[#44261B]">{student.emergency_contact_name}</strong> ({student.emergency_contact_phone || 'S/N'})
+                Contacto de Emergencia: <strong className="text-[#44261B]">{currentStudent.emergency_contact_name}</strong> ({currentStudent.emergency_contact_phone || 'S/N'})
               </div>
             )}
           </div>
@@ -315,13 +318,12 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
                       </span>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                        b.status === 'confirmed'
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${b.status === 'confirmed'
                           ? 'bg-[#eaede7] text-[#5E612B]'
                           : b.status === 'attended'
-                          ? 'bg-[#F4E8D1] text-[#44261B]'
-                          : 'bg-[#B74E2A]/15 text-[#B74E2A]'
-                      }`}
+                            ? 'bg-[#F4E8D1] text-[#44261B]'
+                            : 'bg-[#B74E2A]/15 text-[#B74E2A]'
+                        }`}
                     >
                       {b.status}
                     </span>
@@ -337,7 +339,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
               <h4 className="font-extrabold text-[#44261B] text-sm">Compras y Pagos Realizados</h4>
               {onOpenPayment && (
                 <button
-                  onClick={() => onOpenPayment(student.id)}
+                  onClick={() => onOpenPayment(currentStudent.id)}
                   className="text-xs font-bold text-[#5E612B] hover:text-[#44261B] flex items-center space-x-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />

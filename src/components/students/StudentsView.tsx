@@ -35,7 +35,7 @@ interface StudentsViewProps {
 
 export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
   const { profiles, studio, deleteStudent } = useStudioStore();
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'debt' | 'no_credits'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending' | 'no_credits'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [studentToEdit, setStudentToEdit] = useState<Profile | null>(null);
@@ -46,7 +46,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
 
   const clients = profiles.filter((p) => p.role === 'client');
   const pendingCount = clients.filter((p) => p.status === 'pending_approval').length;
-  const debtCount = clients.filter((p) => p.debt_amount > 0).length;
+  const noCreditsCount = clients.filter((p) => p.status === 'active' && (p.credits_balance ?? 0) <= 0).length;
 
   const filteredClients = clients.filter((student) => {
     // Search query filter
@@ -61,15 +61,14 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
     // Tab filter
     if (activeTab === 'active') return student.status === 'active';
     if (activeTab === 'pending') return student.status === 'pending_approval';
-    if (activeTab === 'debt') return student.debt_amount > 0;
-    if (activeTab === 'no_credits') return student.status === 'active' && student.credits_balance <= 0;
+    if (activeTab === 'no_credits') return student.status === 'active' && (student.credits_balance ?? 0) <= 0;
     return true;
   });
 
   return (
     <div className="py-6 sm:py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header with Title & Add Student Button */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-start space-x-3">
@@ -91,7 +90,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                 Gestión de Alumnos (CRM)
               </h1>
               <p className="text-xs text-[#A68D74] mt-0.5">
-                Administra perfiles, cobros de cuotas, saldos de créditos, deudas y solicitudes
+                Administra perfiles, cobros de packs, clases activas y solicitudes
               </p>
             </div>
           </div>
@@ -120,22 +119,20 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
         <div className="flex items-center space-x-2 overflow-x-auto pb-2 mb-6 text-xs font-bold scrollbar-none">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'all'
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'all'
                 ? 'bg-[#44261B] text-white shadow-sm'
                 : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
-            }`}
+              }`}
           >
             Todos ({clients.length})
           </button>
 
           <button
             onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer ${
-              activeTab === 'pending'
+            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer ${activeTab === 'pending'
                 ? 'bg-[#C18749] text-white shadow-sm'
                 : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
-            }`}
+              }`}
           >
             <span>Solicitudes Pendientes</span>
             {pendingCount > 0 && (
@@ -147,40 +144,27 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'active'
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${activeTab === 'active'
                 ? 'bg-[#5E612B] text-[#F4E8D1] shadow-sm'
                 : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
-            }`}
+              }`}
           >
             Activos ({clients.filter((c) => c.status === 'active').length})
           </button>
 
           <button
-            onClick={() => setActiveTab('debt')}
-            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer ${
-              activeTab === 'debt'
-                ? 'bg-[#B74E2A] text-white shadow-sm'
-                : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
-            }`}
-          >
-            <span>Con Deuda / Pendientes</span>
-            {debtCount > 0 && (
-              <span className="bg-[#FAF8F5] text-[#B74E2A] text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
-                {debtCount}
-              </span>
-            )}
-          </button>
-
-          <button
             onClick={() => setActiveTab('no_credits')}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'no_credits'
+            className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer ${activeTab === 'no_credits'
                 ? 'bg-[#A68D74] text-white shadow-sm'
                 : 'bg-white text-[#44261B] hover:bg-[#F4E8D1] border border-[#E8D5B5]'
-            }`}
+              }`}
           >
-            Sin Créditos
+            <span>Sin Clases Activas</span>
+            {noCreditsCount > 0 && (
+              <span className="bg-[#FAF8F5] text-[#44261B] text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                {noCreditsCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -193,7 +177,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
         ) : (
           /* Normal Students Table & Search */
           <div className="bg-white rounded-3xl border border-[#E8D5B5] shadow-soft overflow-hidden">
-            
+
             {/* Search Bar */}
             <div className="p-4 sm:p-5 border-b border-[#E8D5B5] flex items-center justify-between gap-4">
               <div className="relative flex-1 max-w-md">
@@ -220,7 +204,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                     <th className="px-6 py-3.5">Alumno</th>
                     <th className="px-6 py-3.5">Contacto / WhatsApp</th>
                     <th className="px-6 py-3.5">Estado</th>
-                    <th className="px-6 py-3.5">Créditos & Cuenta</th>
+                    <th className="px-6 py-3.5">Clases Activas (Pagas)</th>
                     <th className="px-6 py-3.5">Ficha Médica</th>
                     <th className="px-6 py-3.5 text-right">Acciones</th>
                   </tr>
@@ -266,36 +250,35 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                         {/* Status */}
                         <td className="px-6 py-4">
                           <span
-                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${
-                              student.status === 'active'
+                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border ${student.status === 'active'
                                 ? 'bg-[#eaede7] text-[#5E612B] border-[#cadbcd]'
                                 : student.status === 'pending_approval'
-                                ? 'bg-[#F4E8D1] text-[#C18749] border-[#E8D5B5]'
-                                : 'bg-[#FAF8F5] text-[#A68D74] border-[#E8D5B5]'
-                            }`}
+                                  ? 'bg-[#F4E8D1] text-[#C18749] border-[#E8D5B5]'
+                                  : 'bg-[#FAF8F5] text-[#A68D74] border-[#E8D5B5]'
+                              }`}
                           >
                             {student.status === 'active' ? 'Activo' : student.status === 'pending_approval' ? 'Pendiente' : student.status}
                           </span>
                         </td>
 
-                        {/* Credits & Account State */}
+                        {/* Active Classes & Account State */}
                         <td className="px-6 py-4">
                           <div>
                             <span
-                              className={`font-extrabold text-sm block leading-tight ${
-                                student.credits_balance > 0 ? 'text-[#5E612B]' : 'text-[#A68D74]'
-                              }`}
+                              className={`font-extrabold text-sm block leading-tight ${(student.credits_balance ?? 0) > 0 ? 'text-[#5E612B]' : 'text-[#A68D74]'
+                                }`}
                             >
-                              {student.credits_balance === 999 ? 'Pase Libre' : `${student.credits_balance} clases`}
+                              {student.credits_balance === 999
+                                ? 'Pase Libre'
+                                : `${student.credits_balance ?? 0} ${(student.credits_balance ?? 0) === 1 ? 'clase activa' : 'clases activas'}`}
                             </span>
-                            {student.debt_amount > 0 ? (
-                              <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-[#B74E2A] bg-[#B74E2A]/10 border border-[#B74E2A]/30 px-1.5 py-0.2 rounded-md mt-0.5">
-                                <AlertCircle className="w-3 h-3" />
-                                <span>Deuda: -${student.debt_amount.toLocaleString('es-AR')}</span>
-                              </span>
-                            ) : (
+                            {(student.credits_balance ?? 0) > 0 ? (
                               <span className="text-[10px] font-bold text-[#5E612B] mt-0.5 block">
                                 ✓ Al día
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-[#C18749] mt-0.5 block">
+                                Sin clases activas
                               </span>
                             )}
                           </div>
@@ -304,13 +287,12 @@ export const StudentsView: React.FC<StudentsViewProps> = ({ onNavigate }) => {
                         {/* Medical */}
                         <td className="px-6 py-4">
                           <span
-                            className={`text-[11px] font-bold ${
-                              student.has_medical_certificate
+                            className={`text-[11px] font-bold ${student.has_medical_certificate
                                 ? 'text-[#5E612B]'
                                 : student.medical_notes
-                                ? 'text-[#B74E2A]'
-                                : 'text-[#A68D74]'
-                            }`}
+                                  ? 'text-[#B74E2A]'
+                                  : 'text-[#A68D74]'
+                              }`}
                           >
                             {student.has_medical_certificate ? '✅ Apto al día' : student.medical_notes ? '⚠️ Con nota médica' : 'Sin apto'}
                           </span>
