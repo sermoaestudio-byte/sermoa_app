@@ -36,7 +36,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
 
   const lastFetchedPackIdRef = useRef<string | null>(null);
 
-  // Inicializar Mercado Pago con la clave pública
+  // Inicializar Mercado Pago con la clave pÃºblica
   useEffect(() => {
     const publicKey = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY;
     if (publicKey && publicKey !== 'tu-public-key-aqui') {
@@ -76,9 +76,10 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
     const createPreference = async () => {
       try {
         const origin = window.location.origin;
+        const portalUrl = `${origin}/#portal-alumno`;
         const safeBackUrl = origin.includes('localhost') || origin.includes('127.0.0.1')
-          ? 'https://sermoa.app'
-          : origin;
+          ? 'https://sermoa.app/#portal-alumno'
+          : portalUrl;
 
         // Llamada a la Edge Function
         const { data, error } = await supabase.functions.invoke('create-pack-purchase', {
@@ -124,7 +125,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
     };
   }, [isOpen, packId, userId, preferenceId]);
 
-  // Escuchar en tiempo real la confirmación del Webhook
+  // Escuchar en tiempo real la confirmaciÃ³n del Webhook
   useEffect(() => {
     if (!purchaseId) return;
 
@@ -185,7 +186,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
               {pack.name}
             </h2>
             <p className="text-xs text-[#E8D5B5]/90 mt-0.5">
-              {pack.credits_count} clases disponibles • Vigencia {pack.validity_days} días
+              {pack.credits_count} clases disponibles â€¢ Vigencia {pack.validity_days} dÃ­as
             </p>
           </div>
 
@@ -213,10 +214,10 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
                 <CheckCircle2 className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-extrabold text-[#44261B] mb-2">
-                ¡Pago Confirmado con Éxito!
+                Â¡Pago Confirmado con Ã‰xito!
               </h3>
               <p className="text-sm text-[#5E612B] leading-relaxed mb-6">
-                Se acreditaron <strong>{pack.credits_count} créditos</strong> en tu cuenta. Ya puedes reservar tus clases.
+                Se acreditaron <strong>{pack.credits_count} crÃ©ditos</strong> en tu cuenta. Ya puedes reservar tus clases.
               </p>
               <button
                 onClick={onClose}
@@ -234,7 +235,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
                 El pago no pudo ser procesado
               </h3>
               <p className="text-xs text-[#A68D74] leading-relaxed mb-6">
-                Mercado Pago no pudo autorizar la transacción. Por favor intenta con otro medio de pago.
+                Mercado Pago no pudo autorizar la transacciÃ³n. Por favor intenta con otro medio de pago.
               </p>
               <button
                 onClick={() => setPaymentStatus('idle')}
@@ -256,7 +257,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
                 <strong>Aviso:</strong> {errorMsg}
               </div>
 
-              {/* Botón de contingencia con redirección si el brick falla */}
+              {/* BotÃ³n de contingencia con redirecciÃ³n si el brick falla */}
               {initPoint && (
                 <a
                   href={initPoint}
@@ -306,7 +307,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
               {paymentStatus === 'processing' && (
                 <div className="p-4 bg-[#eaede7] rounded-2xl border border-[#cadbcd] text-[#5E612B] text-xs flex items-center space-x-3">
                   <Loader2 className="w-5 h-5 animate-spin shrink-0 text-[#5E612B]" />
-                  <span>Estamos esperando la confirmación de Mercado Pago. Tus créditos se activarán automáticamente.</span>
+                  <span>Estamos esperando la confirmaciÃ³n de Mercado Pago. Tus crÃ©ditos se activarÃ¡n automÃ¡ticamente.</span>
                 </div>
               )}
             </div>
@@ -315,7 +316,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3.5 bg-white border-t border-[#E8D5B5] flex items-center justify-between text-[11px] text-[#A68D74]">
-          <span>Transacción encriptada SSL 256-bit</span>
+          <span>TransacciÃ³n encriptada SSL 256-bit</span>
           <span className="font-bold text-[#44261B]">SERMOA Pilates Studio</span>
         </div>
 

@@ -21,8 +21,8 @@ import { Profile, Studio } from '../../types';
 interface StudentSidebarProps {
   student: Profile | null;
   studio: Studio;
-  activeTab: 'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'register';
-  onSelectTab: (tab: 'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'register') => void;
+  activeTab: 'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'my_payments' | 'register';
+  onSelectTab: (tab: 'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'my_payments' | 'register') => void;
   onLogout: () => void;
   studentsList: Profile[];
   currentStudentId: string;
@@ -112,6 +112,17 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
         if (isDrawer && onClose) onClose();
       },
       active: activeTab === 'my_bookings',
+    },
+    {
+      id: 'my_payments' as const,
+      label: 'Mis Pagos',
+      description: 'Comprobantes y recibos',
+      icon: CreditCard,
+      action: () => {
+        onSelectTab('my_payments');
+        if (isDrawer && onClose) onClose();
+      },
+      active: activeTab === 'my_payments',
     },
     {
       id: 'my_profile' as const,

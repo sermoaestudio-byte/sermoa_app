@@ -35,13 +35,19 @@ export function App() {
     }
   }, [studio]);
 
-  // Listen for Supabase Password Recovery events
+  // Listen for Supabase Password Recovery events and Payment Redirections
   useEffect(() => {
     // Check if URL has recovery tokens/params instantly
     const hashStr = window.location.hash;
     const searchStr = window.location.search;
     if (hashStr.includes('type=recovery') || searchStr.includes('type=recovery')) {
       setCurrentView('actualizar-clave');
+    }
+
+    // Si viene de una redirección de pago de Mercado Pago (?status=success o ?purchase_id=...)
+    if (searchStr.includes('purchase_id=') || searchStr.includes('payment_id=') || searchStr.includes('collection_id=')) {
+      setCurrentView('portal-alumno');
+      window.location.hash = '#portal-alumno';
     }
 
     if (isSupabaseConfigured) {

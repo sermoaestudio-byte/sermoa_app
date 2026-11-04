@@ -26,6 +26,7 @@ import { StudentHomeDashboard } from './StudentHomeDashboard';
 import { StudentProfileView } from './StudentProfileView';
 import { StudentBookingsTab } from './StudentBookingsTab';
 import { StudentRoutinesTab } from './StudentRoutinesTab';
+import { StudentPaymentsTab } from './StudentPaymentsTab';
 import { StudentCheckinModal } from '../checkin/StudentCheckinModal';
 import { BuyPackModal } from '../payments/BuyPackModal';
 import { StudentSidebar } from './StudentSidebar';
@@ -49,7 +50,7 @@ export const StudentPortalView: React.FC = () => {
     getEnrichedClasses,
   } = useStudioStore();
 
-  const [activeTab, setActiveTab] = useState<'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'register'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'my_payments' | 'register'>('home');
   const [showSidebarDrawer, setShowSidebarDrawer] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedDiscipline, setSelectedDiscipline] = useState('Pilates Reformer');
@@ -77,6 +78,16 @@ export const StudentPortalView: React.FC = () => {
       return { ...prev, [dateStr]: !current };
     });
   };
+
+  // Si Mercado Pago redirige al Portal con ?status=success
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('status') === 'success') {
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      setActiveTab('my_payments');
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    }
+  }, []);
 
   // Waitlist Confirmation state
   const [pendingWaitlistId, setPendingWaitlistId] = useState<string | null>(null);
@@ -854,7 +865,16 @@ export const StudentPortalView: React.FC = () => {
             <StudentRoutinesTab student={currentStudent} />
           )}
 
-          {/* TAB: MI PERFIL (Credencial Member Pass, Plan actual y Objetivo) */}
+          {/* TAB: MIS PAGOS & COMPROBANTES */}
+        {activeTab === 'my_payments' && currentStudent && (
+          <StudentPaymentsTab
+            student={currentStudent}
+            studio={studio}
+            onOpenBuyPack={() => setIsBuyPackOpen(true)}
+          />
+        )}
+
+        {/* TAB: MI PERFIL (Credencial Member Pass, Plan actual y Objetivo) */}
           {activeTab === 'my_profile' && currentStudent && (
             <StudentProfileView
               student={currentStudent}
