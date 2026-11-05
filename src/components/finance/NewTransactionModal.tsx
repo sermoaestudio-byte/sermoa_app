@@ -21,6 +21,7 @@ interface NewTransactionModalProps {
   onClose: () => void;
   defaultType?: PaymentType;
   preselectedStudentId?: string;
+  isFixedExpense?: boolean;
 }
 
 const PAYMENT_METHODS_LIST: { id: PaymentMethod; label: string }[] = [
@@ -43,6 +44,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
   onClose,
   defaultType = 'income',
   preselectedStudentId,
+  isFixedExpense = false,
 }) => {
   const { profiles, creditPacks, addTransaction, financialCategories } = useStudioStore();
   const students = profiles.filter((p: Profile) => p.role === 'client');
@@ -68,7 +70,7 @@ export const NewTransactionModal: React.FC<NewTransactionModalProps> = ({
       setPaymentType(defaultType);
       setSelectedStudentId(preselectedStudentId || '');
       setDate(new Date().toISOString().split('T')[0]);
-      setIsRecurringExpense(false);
+      setIsRecurringExpense(isFixedExpense ? true : false);
       setRepeatUntilDate('');
       setNotes('');
       setAmount('');

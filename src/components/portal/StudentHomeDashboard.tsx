@@ -233,11 +233,30 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
           {/* (Distribución sin truncamiento: etiquetas claras y valores)  */}
           {/* ------------------------------------------------------------ */}
           <section className="bg-white rounded-3xl p-4 sm:p-5 border border-[#E8D5B5] shadow-xs">
-            <div className="mb-3">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="text-xs sm:text-sm font-extrabold text-[#44261B] uppercase tracking-wider">
                 Tu plan actual
               </h2>
+              {student.status === 'pending_approval' && (
+                <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                  Ficha Médica en Revisión
+                </span>
+              )}
             </div>
+
+            {student.status === 'pending_approval' && (
+              <div className="mb-3 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300/80 flex items-start gap-3 text-amber-950 animate-fade-in">
+                <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                    Créditos en Espera de Validación Médica
+                  </h4>
+                  <p className="text-xs text-amber-900 font-semibold mt-0.5 leading-relaxed">
+                    Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Bloque 1: Clases disponibles */}
@@ -250,8 +269,13 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
                     Clases disponibles
                   </span>
                   <span className="text-sm sm:text-base font-black text-[#44261B] block leading-tight mt-0.5">
-                    {isUnlimited ? 'Pase Libre' : `${student.credits_balance ?? 0}`}
+                    {isUnlimited ? 'Pase Libre' : `${student.credits_balance ?? 0} clases`}
                   </span>
+                  {student.status === 'pending_approval' && (
+                    <span className="text-[9px] font-extrabold text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-md inline-block mt-1">
+                      Pendiente de aprobación para su uso
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -264,8 +288,10 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
                   <span className="text-[10px] font-bold text-[#A68D74] uppercase tracking-wider block">
                     Estado
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-[#5E612B] block leading-tight mt-0.5">
-                    {isUpToDate ? 'Activo / Al día' : `Deuda: $${student.debt_amount}`}
+                  <span className="text-xs sm:text-sm font-bold block leading-tight mt-0.5 text-[#5E612B]">
+                    {student.status === 'pending_approval'
+                      ? 'Validación Médica en Curso'
+                      : (isUpToDate ? 'Activo / Al día' : `Deuda: ${student.debt_amount}`)}
                   </span>
                 </div>
               </div>

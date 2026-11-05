@@ -16,7 +16,8 @@ import {
   Award,
   ArrowLeft,
   Flame,
-  Info
+  Info,
+  Clock
 } from 'lucide-react';
 import { Profile, Studio } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
@@ -244,6 +245,11 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
                 <span className="text-[10px] font-semibold text-[#A68D74]">
                   • Sin vencimiento
                 </span>
+                {student.status === 'pending_approval' && (
+                  <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                    ⏳ Ficha en Revisión
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -287,9 +293,15 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
               </span>
             </div>
           </div>
-          <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-[#F4E8D1] text-[#5E612B] border border-[#E8D5B5]">
-            Activo
-          </span>
+          {student.status === 'pending_approval' ? (
+            <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+              Validación Médica Pendiente
+            </span>
+          ) : (
+            <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-[#F4E8D1] text-[#5E612B] border border-[#E8D5B5]">
+              Activo
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 pt-1">
@@ -305,6 +317,11 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
             <span className="text-sm font-black text-[#5E612B] block mt-0.5">
               {isUnlimited ? 'Ilimitado' : `${student.credits_balance ?? 0} clases`}
             </span>
+            {student.status === 'pending_approval' && (
+              <span className="text-[9px] font-extrabold text-amber-800 bg-amber-100/90 border border-amber-200 px-1.5 py-0.5 rounded-md inline-block mt-1">
+                Pendiente de aprobación para su uso
+              </span>
+            )}
           </div>
 
           <div className="p-3 bg-[#F7F3EC] rounded-2xl border border-[#E8D5B5]/60">
@@ -321,6 +338,20 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
             </span>
           </div>
         </div>
+
+        {student.status === 'pending_approval' && (
+          <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-300/80 flex items-start gap-3 text-amber-950 mt-3 animate-fade-in">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+            <div>
+              <h5 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                Créditos en Espera de Validación Médica
+              </h5>
+              <p className="text-xs text-amber-900 font-semibold mt-0.5 leading-relaxed">
+                Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ============================================================== */}

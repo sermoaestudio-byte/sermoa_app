@@ -18,9 +18,22 @@ import {
 import { useStudioStore } from '../../store/studioStore';
 import { WhatsAppTemplatesTab } from './WhatsAppTemplatesTab';
 import { applyStudioTheme } from '../../utils/theme';
+import { getRegisterLink } from '../../utils/links';
+import { toISODateString } from '../../utils/date';
+import {
+  Users,
+  Calendar,
+  Copy,
+  QrCode,
+  Share2,
+  ExternalLink,
+  Ticket,
+  BarChart3
+} from 'lucide-react';
 
 interface SettingsViewProps {
   onNavigate?: (view: string) => void;
+  onOpenQRPoster?: () => void;
 }
 
 const COLOR_PRESETS = [
@@ -57,8 +70,21 @@ const LOGO_PRESETS = [
   },
 ];
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
-  const { studio, updateStudioSettings } = useStudioStore();
+export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate, onOpenQRPoster }) => {
+  const { studio, profiles, branches, classes, bookings, currentRole, updateStudioSettings } = useStudioStore();
+  const [copiedLink, setCopiedLink] = useState(false);
+  const todayStr = toISODateString(new Date());
+  const activeStudentsCount = profiles.filter((p) => p.role === 'client' && p.status === 'active').length;
+  const instructorsCount = profiles.filter((p) => p.role === 'instructor' || p.is_instructor).length;
+  const todayClasses = classes.filter((c) => !c.is_cancelled && (c.date === todayStr || c.day_of_week === new Date().getDay()));
+  const todayBookings = bookings.filter((b) => b.booking_date === todayStr && b.status === 'confirmed');
+  const registrationLink = getRegisterLink();
+
+  const handleCopyRegistrationLink = () => {
+    navigator.clipboard.writeText(registrationLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
   const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'whatsapp'>('general');
 
   // General & GPS State
@@ -142,6 +168,167 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
               <span>¡Configuración guardada con éxito!</span>
             </div>
           )}
+        </div>
+
+        
+        {/* OPERATIVA & ESTRATEGIA: ESTADO DEL ESTUDIO, REDES Y CARTEL QR */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+          {/* 1. Estado del Estudio */}
+          <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-extrabold text-[#1F2933]">Estado del Estudio</span>
+                  <span className="bg-[#5EBA8C]/20 text-[#2B6D4E] font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-[#5EBA8C]/40">
+                    Activo
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-stone-400">
+                  {todayClasses.length} clases hoy
+                </span>
+              </div>
+
+              <div className="bg-[#F5F1EB] rounded-2xl p-3 border border-[#E8DFD1] space-y-2 mb-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 font-medium flex items-center space-x-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#1F2933]" />
+                    <span>Alumnos Activos</span>
+                  </span>
+                  <span className="font-extrabold text-[#1F2933]">{activeStudentsCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 font-medium flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C18749]" />
+                    <span>Equipo Docente</span>
+                  </span>
+                  <span className="font-extrabold text-[#1F2933]">{instructorsCount} profesores</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-stone-500 font-medium flex items-center space-x-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#5EBA8C]" />
+                    <span>Turnos Confirmados</span>
+                  </span>
+                  <span className="font-extrabold text-[#2B6D4E]">{todayBookings.length} reservas</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('classes')}
+                className="py-2 px-3 bg-[#EFE9DF] hover:bg-[#E5DDCF] text-[#1F2933] rounded-xl text-xs font-bold transition-colors text-center"
+              >
+                Ver Horarios
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('attendance')}
+                className="py-2 px-3 bg-[#EFE9DF] hover:bg-[#E5DDCF] text-[#1F2933] rounded-xl text-xs font-bold transition-colors text-center"
+              >
+                Pasar Lista
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Link de Alta & Redes Sociales */}
+          <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft flex flex-col justify-between">
+            <div>
+              <div className="flex items-start space-x-3 mb-2">
+                <div className="p-2 rounded-xl bg-[#F7C59F]/40 text-[#8C502E] border border-[#F7C59F]">
+                  <Share2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8C502E] bg-[#F7C59F]/40 px-2 py-0.5 rounded-full">
+                    Inscripciones & Redes
+                  </span>
+                  <h4 className="font-extrabold text-[#1F2933] text-sm mt-1">
+                    Link de Alta para Alumnos
+                  </h4>
+                </div>
+              </div>
+
+              <div className="p-2 bg-[#F5F1EB] rounded-xl border border-[#E8DFD1] text-[11px] font-mono text-[#1F2933] truncate mb-2">
+                {registrationLink}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={handleCopyRegistrationLink}
+                className="w-full py-2 px-3 rounded-xl bg-[#1F2933] hover:bg-[#32404E] text-white text-xs font-extrabold flex items-center justify-center space-x-1.5 transition-all shadow-xs"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>¡Link Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copiar Enlace de Inscripción</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('portal-alumno')}
+                className="w-full py-1.5 px-3 rounded-xl border border-[#D6CAB7] hover:bg-[#EFE9DF] text-stone-700 text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-stone-500" />
+                <span>Previsualizar Portal Alumno</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. Cartel QR & Accesos de Gestión */}
+          <div className="bg-[#FAF8F5] rounded-3xl p-5 border border-[#E8DFD1] shadow-soft flex flex-col justify-between">
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="p-2 rounded-xl bg-[#5EBA8C]/20 text-[#2B6D4E] border border-[#5EBA8C]/40">
+                  <QrCode className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-[#1F2933] text-sm">
+                    Difusión & Cartelería
+                  </h4>
+                  <p className="text-[11px] text-stone-500">Cartel QR para recepción y mesón de entrada</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onOpenQRPoster}
+                className="w-full py-2.5 px-3 bg-[#5EBA8C]/20 hover:bg-[#5EBA8C]/30 text-[#2B6D4E] border border-[#5EBA8C]/40 rounded-xl text-xs font-extrabold flex items-center justify-center space-x-2 transition-all mt-2"
+              >
+                <QrCode className="w-4 h-4" />
+                <span>Ver / Imprimir Cartel QR</span>
+              </button>
+            </div>
+
+            <div className="border-t border-[#E8DFD1] pt-3 mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('packs')}
+                className="py-2 px-2.5 bg-white hover:bg-[#F5F1EB] border border-[#E8DFD1] rounded-xl text-xs font-extrabold text-[#1F2933] flex items-center justify-center space-x-1.5 transition-colors"
+              >
+                <Ticket className="w-3.5 h-3.5 text-purple-600" />
+                <span>Packs</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate && onNavigate('finance')}
+                className="py-2 px-2.5 bg-white hover:bg-[#F5F1EB] border border-[#E8DFD1] rounded-xl text-xs font-extrabold text-[#1F2933] flex items-center justify-center space-x-1.5 transition-colors"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-[#5EBA8C]" />
+                <span>Caja & Finanzas</span>
+              </button>
+            </div>
+          </div>
+
         </div>
 
         {/* Navigation Tabs */}

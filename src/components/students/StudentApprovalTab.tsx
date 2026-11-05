@@ -8,7 +8,8 @@ import {
   Mail,
   User,
   MessageCircle,
-  FileText
+  FileText,
+  CreditCard
 } from 'lucide-react';
 import { Profile } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
@@ -112,6 +113,19 @@ export const StudentApprovalTab: React.FC<StudentApprovalTabProps> = ({
                     <User className="w-3.5 h-3.5 text-slate-400" />
                     <span className="truncate">Emergencia: {student.emergency_contact_name || 'N/A'}</span>
                   </div>
+                </div>
+
+                {/* Pack y Estado de Pago */}
+                <div className="flex items-center justify-between text-xs bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3 mb-4">
+                  <div className="flex items-center space-x-2 text-emerald-900 font-bold">
+                    <CreditCard className="w-4 h-4 text-emerald-600" />
+                    <span>Inscripción con Pack:</span>
+                  </div>
+                  <span className="font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full text-[10px] uppercase">
+                    {student.credits_balance > 0
+                      ? `${student.credits_balance === 999 ? 'Pase Libre' : `${student.credits_balance} clases`} (Acreditado vía MP)`
+                      : 'Pack Pagado al Registrarse'}
+                  </span>
                 </div>
 
                 {/* Medical Declaration Checklist */}

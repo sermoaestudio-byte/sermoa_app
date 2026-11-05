@@ -83,11 +83,9 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
     }
   };
 
+  const isPending = student?.status === 'pending_approval';
+
   // Estructura de menú:
-  // 1. Inicio
-  // 2. Reservar clase
-  // 3. Mis turnos
-  // 4. Mi perfil (contiene Mi Plan, Credencial, Ficha y Objetivos)
   const mainMenuItems = [
     {
       id: 'home' as const,
@@ -138,7 +136,9 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
       label: 'Mi perfil',
       description: 'Mi plan y credencial',
       icon: User,
-      badge: student?.credits_balance === 999 ? 'Pase Libre' : `${student?.credits_balance ?? 0} clases`,
+      badge: isPending
+        ? 'Ficha en Revisión'
+        : (student?.credits_balance === 999 ? 'Pase Libre' : `${student?.credits_balance ?? 0} clases`),
       action: () => {
         onSelectTab('my_profile');
         if (isDrawer && onClose) onClose();
@@ -210,8 +210,10 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
                 <h3 className="font-black text-[#44261B] text-sm tracking-tight truncate leading-tight mt-0.5">
                   {student?.first_name || 'Alumno'} {student?.last_name || ''}
                 </h3>
-                <span className="text-[10px] font-bold text-[#5E612B] block truncate">
-                  {student?.credits_balance === 999 ? 'Pase Libre' : `${student?.credits_balance ?? 0} clases`}
+                <span className="text-[10px] font-bold block truncate ${isPending ? 'text-amber-800 font-extrabold' : 'text-[#5E612B]'}">
+                  {isPending
+                    ? `${student?.credits_balance ?? 0} clases (Pendiente de aprobación)`
+                    : (student?.credits_balance === 999 ? 'Pase Libre' : `${student?.credits_balance ?? 0} clases`)}
                 </span>
               </div>
             )}

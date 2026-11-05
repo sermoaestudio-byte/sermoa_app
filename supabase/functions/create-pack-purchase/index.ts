@@ -96,9 +96,10 @@ serve(async (req) => {
     // 3. Crear la preferencia en Mercado Pago
     const webhookUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook`;
     
-    // Mercado Pago rechaza localhost en back_urls cuando auto_return está activo
+    // Mercado Pago exige dominios públicos https:// para back_urls
     const isLocal = !back_url || back_url.includes('localhost') || back_url.includes('127.0.0.1');
-    const safeBaseUrl = (isLocal ? 'https://sermoa.app' : back_url).split('#')[0].split('?')[0];
+    const fallbackUrl = 'https://sermoa-app.vercel.app';
+    const safeBaseUrl = (isLocal ? fallbackUrl : back_url).split('#')[0].split('?')[0];
 
     const preferencePayload: any = {
       statement_descriptor: 'SERMOA PILATES',

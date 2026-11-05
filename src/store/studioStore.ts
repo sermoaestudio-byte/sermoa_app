@@ -168,7 +168,146 @@ const initialCreditPacks: CreditPack[] = [
   },
 ];
 
-const initialPayments: PaymentTransaction[] = [];
+const initialPayments: PaymentTransaction[] = [
+  {
+    id: 'p1111111-0001-4000-8000-000000000001',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: 'a22f7b15-9897-4b21-9068-2b105178979f',
+    student_name: 'Joanthan Leguizamon',
+    amount: 140000,
+    payment_type: 'income',
+    payment_method: 'mercadopago',
+    concept: 'Compra Pack 20 clases - Joanthan Leguizamon',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-892101',
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0002-4000-8000-000000000002',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: '52570a44-ce64-4053-97bd-ba6cb6ea8f38',
+    student_name: 'Santiago Rosas',
+    amount: 84000,
+    payment_type: 'income',
+    payment_method: 'transfer',
+    concept: 'Compra Pack 12 clases - Santiago Rosas',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-745210',
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0003-4000-8000-000000000003',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: '57d7f8f0-f226-44b8-9cec-05d2867ad305',
+    student_name: 'Chloe Tolosa Gonzalez',
+    amount: 64000,
+    payment_type: 'income',
+    payment_method: 'mercadopago',
+    concept: 'Compra Pack 8 clases - Chloe Tolosa Gonzalez',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-619432',
+    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0004-4000-8000-000000000004',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: '88888888-8888-4888-8888-888888888888',
+    student_name: 'Alumno Dos',
+    amount: 45000,
+    payment_type: 'income',
+    payment_method: 'mercadopago',
+    concept: 'Compra Pack 5 clases - Alumno Dos',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-520194',
+    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0005-4000-8000-000000000005',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: 'd80b1951-7de7-4fc1-b7be-28e408af0573',
+    student_name: 'Maira Miori',
+    amount: 112000,
+    payment_type: 'income',
+    payment_method: 'transfer',
+    concept: 'Compra Pack 16 clases - Maira Miori',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-419823',
+    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0006-4000-8000-000000000006',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: '7a5173ea-1818-458c-aa48-b7c3f7909f7d',
+    student_name: 'Doña Rosa',
+    amount: 18000,
+    payment_type: 'income',
+    payment_method: 'cash',
+    concept: 'Compra Pack 2 clases - Doña Rosa',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-301982',
+    created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0007-4000-8000-000000000007',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: '0b8b34e9-fcb4-46cc-a67c-cf1c7c8464fb',
+    student_name: 'Paz Rosas',
+    amount: 18000,
+    payment_type: 'income',
+    payment_method: 'mercadopago',
+    concept: 'Compra Pack 2 clases - Paz Rosas',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-291048',
+    created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0008-4000-8000-000000000008',
+    studio_id: DEFAULT_STUDIO_ID,
+    student_id: 'af6a38c2-fdfe-4834-82b4-bd972322ab46',
+    student_name: 'Noelia Lucia Busto',
+    amount: 18000,
+    payment_type: 'income',
+    payment_method: 'transfer',
+    concept: 'Compra Pack 2 clases - Noelia Lucia Busto',
+    category: 'Venta de Pack / Membresía',
+    status: 'completed',
+    reference_code: 'REC-182940',
+    created_at: new Date(Date.now() - 16 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0009-4000-8000-000000000009',
+    studio_id: DEFAULT_STUDIO_ID,
+    amount: 250000,
+    payment_type: 'expense',
+    payment_method: 'transfer',
+    concept: 'Alquiler Estudio Pilates - Sede Principal',
+    category: 'Alquiler',
+    notes: '[PAGO FIJO] Alquiler mensual del local',
+    status: 'completed',
+    reference_code: 'EXP-100234',
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+  {
+    id: 'p1111111-0010-4000-8000-000000000010',
+    studio_id: DEFAULT_STUDIO_ID,
+    amount: 180000,
+    payment_type: 'expense',
+    payment_method: 'transfer',
+    concept: 'Honorarios Docentes - Profesores Turno Mañana',
+    category: 'Sueldos Profesores',
+    notes: '[PAGO FIJO] Sueldos profesores',
+    status: 'completed',
+    reference_code: 'EXP-100235',
+    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+  }
+];
 
 const initialWhatsAppTemplates: WhatsAppTemplate[] = [
   {
@@ -308,7 +447,15 @@ async function syncFromSupabase() {
     // 8. Fetch Attendances
     const { data: attendancesData } = await supabase.from('attendances').select('*');
     // 9. Fetch Payments
-    const { data: paymentsData } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
+    let paymentsData: any[] | null = null;
+    try {
+      const { data: pData, error: pErr } = await supabase.from('payments').select('*').order('created_at', { ascending: false });
+      if (!pErr && pData) {
+        paymentsData = pData;
+      }
+    } catch (pEx) {
+      console.warn('Error al consultar payments:', pEx);
+    }
     // 10. Fetch Categories
     const { data: categoriesData } = await supabase.from('financial_categories').select('*');
     // 11. Fetch Goals
@@ -362,7 +509,27 @@ async function syncFromSupabase() {
       creditPacks: packsData && packsData.length > 0 ? packsData : prev.creditPacks,
       bookings: bookingsData && bookingsData.length > 0 ? bookingsData : prev.bookings,
       attendances: attendancesData && attendancesData.length > 0 ? attendancesData : prev.attendances,
-      payments: paymentsData && paymentsData.length > 0 ? paymentsData : prev.payments,
+      payments: (() => {
+        let baseList: PaymentTransaction[] = [];
+        if (paymentsData && paymentsData.length > 0) {
+          baseList = paymentsData;
+        } else {
+          baseList = prev.payments && prev.payments.length > 0 ? prev.payments : initialPayments;
+        }
+
+        const activeProfiles = profilesData && profilesData.length > 0 ? profilesData : prev.profiles;
+
+        // Normalizar student_name en todos los pagos
+        return baseList.map((p: any) => {
+          if (p.student_id && (!p.student_name || p.student_name === 'General')) {
+            const stu = activeProfiles.find((prof: any) => prof.id === p.student_id);
+            if (stu) {
+              p.student_name = `${stu.first_name} ${stu.last_name}`;
+            }
+          }
+          return p;
+        });
+      })(),
       financialCategories: categoriesData && categoriesData.length > 0 ? categoriesData : prev.financialCategories,
       financialGoals: goalsData && goalsData.length > 0 ? goalsData[0] : prev.financialGoals,
       studentMemberships: membershipsData && membershipsData.length > 0 ? membershipsData : (prev.studentMemberships || []),
@@ -536,15 +703,7 @@ export function useStudioStore() {
       };
     }
 
-    // 3. Status validations
-    if (matchedProfile.status === 'pending_approval') {
-      return {
-        success: false,
-        status: 'pending_approval',
-        message: 'Tu solicitud de alta está pendiente de revisión médica por el administrador. Te avisaremos por WhatsApp en cuanto sea aprobada.',
-      };
-    }
-
+    // 3. Status validations (Permite a pending_approval ingresar al portal para ver su pantalla de espera)
     if (matchedProfile.status === 'inactive' || matchedProfile.status === 'rejected') {
       return {
         success: false,
@@ -1208,6 +1367,15 @@ export function useStudioStore() {
     
     if (!student) {
       return { success: false, isWaitlist: false, message: 'Datos de estudiante inválidos.' };
+    }
+
+    // Validación de ficha médica: no puede usar créditos hasta que sea aprobada
+    if (student.status === 'pending_approval') {
+      return {
+        success: false,
+        isWaitlist: false,
+        message: 'Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.',
+      };
     }
 
     // Validation: cannot book past dates

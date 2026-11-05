@@ -20,7 +20,7 @@ export function getAppBaseUrl(): string {
   }
 
   // 3. Fallback de producción
-  return 'https://sermoa.app';
+  return 'https://sermoa-app.vercel.app';
 }
 
 /**

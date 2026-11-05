@@ -87,91 +87,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenQ
               </div>
             </button>
 
-            {/* Desktop Navigation Links (Configuración & Caja) */}
-            <nav className="hidden lg:flex items-center space-x-1">
-
-              {/* Dropdown: Estrategia & Configuración (Solo Administradores) */}
-              {currentRole === 'admin' && (
-                <div className="relative">
-                  <button
-                    onClick={() => setOpenDropdown(openDropdown === 'estrategia' ? null : 'estrategia')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all ${
-                      ['settings', 'finance'].includes(currentView)
-                        ? 'bg-[#1F2933] text-white font-extrabold'
-                        : 'text-stone-700 hover:text-[#1F2933] hover:bg-[#EFE9DF]'
-                    }`}
-                  >
-                    <Settings className="w-3.5 h-3.5 text-stone-500" />
-                    <span>Configuración & Caja</span>
-                    <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${openDropdown === 'estrategia' ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {openDropdown === 'estrategia' && (
-                    <div className="absolute left-0 mt-2 w-64 bg-[#FAF8F5] rounded-2xl shadow-xl border border-[#E8DFD1] py-2 z-50 animate-fade-in">
-                      <button
-                        onClick={() => handleNavClick('settings')}
-                        className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
-                      >
-                        <Settings className="w-4 h-4 text-stone-600" />
-                        <div>
-                          <div className="font-bold text-stone-800">Configuración del estudio</div>
-                          <div className="text-[10px] text-stone-500">Marca, políticas y WhatsApp</div>
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handleNavClick('packs')}
-                        className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
-                      >
-                        <Ticket className="w-4 h-4 text-purple-600" />
-                        <div>
-                          <div className="font-bold text-stone-800">Packs & Membresías</div>
-                          <div className="text-[10px] text-stone-500">Tarifas, cantidad de clases y vigencia</div>
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handleNavClick('finance')}
-                        className="w-full px-4 py-2.5 text-left text-xs text-stone-700 hover:bg-[#EFE9DF] flex items-center space-x-3 transition-colors"
-                      >
-                        <BarChart3 className="w-4 h-4 text-[#5EBA8C]" />
-                        <div>
-                          <div className="flex items-center space-x-1.5">
-                            <span className="font-bold text-stone-800">Control financiero & Caja</span>
-                          </div>
-                          <div className="text-[10px] text-stone-500">Ingresos, egresos y métricas</div>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-            </nav>
+            
           </div>
 
           {/* RIGHT: Actions, Link Button, Notifications & Profile */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             
-            {/* Quick Action: Cartel QR */}
-            <button
-              onClick={onOpenQRPoster}
-              className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-stone-700 bg-[#EFE9DF]/80 hover:bg-[#E5DDCF] border border-[#DDD3C2] transition-colors shrink-0"
-              title="Ver o imprimir Cartel QR"
-            >
-              <QrCode className="w-3.5 h-3.5 text-[#1F2933]" />
-              <span className="hidden md:inline">Cartel QR</span>
-            </button>
-
-            {/* Studio Links Center Button */}
-            <button
-              onClick={() => setShowLinksModal(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#1F2933] bg-[#F7C59F]/60 hover:bg-[#F7C59F] border border-[#E8B48B] shadow-xs transition-all shrink-0"
-              title="Ver y copiar enlaces para Instagram Bio y WhatsApp"
-            >
-              <Share2 className="w-3.5 h-3.5 text-[#1F2933]" />
-              <span className="hidden sm:inline text-[11px]">Links para Redes</span>
-            </button>
+            
 
             {/* Notifications Bell */}
             <div className="relative">

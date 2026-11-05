@@ -334,7 +334,7 @@ export function App() {
       case 'finance':
         return <FinanceView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
-        return <SettingsView onNavigate={(view) => setCurrentView(view)} />;
+        return <SettingsView onNavigate={(view) => setCurrentView(view)} onOpenQRPoster={() => setShowQRPoster(true)} />;
       case 'packs':
         return <PacksView />;
       default:
@@ -355,11 +355,7 @@ export function App() {
   const showSidebar = !isIsolatedView && currentRole !== 'client' && isAuthenticated;
 
   return (
-    <div className={`min-h-screen relative overflow-x-hidden flex font-sans selection:bg-[#E8D5B5] selection:text-[#44261B] ${
-      currentRole === 'instructor' 
-        ? 'bg-[#F5F2EB] text-[#44261B]' 
-        : 'bg-[#F5F2EB] text-[#44261B]'
-    }`}>
+    <div className={`${showSidebar ? 'h-screen overflow-hidden' : 'min-h-screen overflow-x-hidden'} relative flex font-sans selection:bg-[#E8D5B5] selection:text-[#44261B] bg-[#F5F2EB] text-[#44261B]`}>
       {/* Decorative Silhouette Watermark in Background & Watercolor wash for instructor */}
       {showSidebar && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
@@ -421,7 +417,7 @@ export function App() {
 
       {/* 1. Left Navbar Sidebar (fijo a la izquierda con Operativa Diaria) */}
       {showSidebar && (
-        <div className="hidden lg:block shrink-0 relative z-10">
+        <div className="hidden lg:block shrink-0 relative z-20 h-screen sticky top-0">
           <SidebarLeft
             currentView={currentView}
             onNavigate={(view) => {
@@ -433,18 +429,8 @@ export function App() {
       )}
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
-        {/* Top Navbar */}
-        {showSidebar && (
-          <Navbar
-            currentView={currentView}
-            onNavigate={(view) => {
-              setCurrentView(view);
-              window.location.hash = `#${view}`;
-            }}
-            onOpenQRPoster={() => setShowQRPoster(true)}
-          />
-        )}
+      <div className={`flex-1 flex flex-col min-w-0 ${showSidebar ? 'h-screen overflow-y-auto' : ''} relative z-10`}>
+        {/* Cabecera consolidada en SidebarLeft */}
 
         {/* Main View Render */}
         <div className="flex-1 min-w-0">

@@ -76,8 +76,9 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
     const createPreference = async () => {
       try {
         const origin = window.location.origin;
+        // Mercado Pago exige HTTPS para back_urls. En local redirige a la URL oficial en Vercel
         const cleanBaseUrl = origin.includes('localhost') || origin.includes('127.0.0.1')
-          ? 'https://sermoa.app'
+          ? 'https://sermoa-app.vercel.app'
           : origin;
 
         // Llamada a la Edge Function

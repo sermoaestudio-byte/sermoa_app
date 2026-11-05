@@ -55,6 +55,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
     processWaitlistResponse,
     expireWaitlistEntry,
     getEnrichedClasses,
+    logout,
   } = useStudioStore();
 
   const isStaff = currentUser?.role === 'admin' || currentUser?.role === 'instructor' || currentRole === 'admin' || currentRole === 'instructor';
@@ -378,23 +379,39 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
 
               {/* Student Credit Summary Pill or Empty Register Banner */}
               {currentStudent ? (
-                <div
-                  className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between border border-[#E8D5B5]"
-                  style={{
-                    background: 'linear-gradient(135deg, #44261B 0%, #5E612B 45%, #C18749 100%)',
-                  }}
-                >
-                  <div>
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-[#F4E8D1]/80 block">
-                      Estado de tu Membresía
-                    </span>
-                    <h3 className="text-xl font-extrabold mt-0.5 text-white tracking-wide">
-                      {currentStudent.credits_balance === 999
-                        ? 'TIENES PASE LIBRE (ILIMITADO)'
-                        : `TIENES ${currentStudent.credits_balance ?? 0} CRÉDITOS DISPONIBLES`}
-                    </h3>
+                <>
+                  <div
+                    className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between border border-[#E8D5B5]"
+                    style={{
+                      background: 'linear-gradient(135deg, #44261B 0%, #5E612B 45%, #C18749 100%)',
+                    }}
+                  >
+                    <div>
+                      <span className="text-[10px] font-bold tracking-widest uppercase text-[#F4E8D1]/80 block">
+                        Estado de tu Membresía
+                      </span>
+                      <h3 className="text-xl font-extrabold mt-0.5 text-white tracking-wide">
+                        {currentStudent.credits_balance === 999
+                          ? 'TIENES PASE LIBRE (ILIMITADO)'
+                          : `TIENES ${currentStudent.credits_balance ?? 0} CRÉDITOS ${currentStudent.status === 'pending_approval' ? '(PENDIENTES DE APROBACIÓN PARA SU USO)' : 'DISPONIBLES'}`}
+                      </h3>
+                    </div>
                   </div>
-                </div>
+
+                  {currentStudent.status === 'pending_approval' && (
+                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 flex items-start gap-3 text-amber-950 animate-fade-in shadow-xs">
+                      <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                          Créditos en Espera de Validación Médica
+                        </h4>
+                        <p className="text-xs text-amber-900 font-semibold mt-0.5 leading-relaxed">
+                          Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="bg-white rounded-3xl p-6 text-center border border-slate-200 shadow-soft space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center mx-auto shadow-xs border border-brand-100">

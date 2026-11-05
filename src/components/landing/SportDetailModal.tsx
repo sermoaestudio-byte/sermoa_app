@@ -19,12 +19,15 @@ export const SportDetailModal: React.FC<SportDetailModalProps> = ({
   onClose,
   onNavigateToRegister
 }) => {
-  if (!sportId || !SPORTS_DETAILS_DATA[sportId]) return null;
-
-  const sport: SportDetailData = SPORTS_DETAILS_DATA[sportId];
+  const isOpen = Boolean(sportId && SPORTS_DETAILS_DATA[sportId]);
 
   // Cerrar con Escape y bloquear scroll del body mientras el modal esté abierto
   useEffect(() => {
+    if (!isOpen) {
+      document.body.style.overflow = '';
+      return;
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -36,7 +39,11 @@ export const SportDetailModal: React.FC<SportDetailModalProps> = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !sportId) return null;
+
+  const sport: SportDetailData = SPORTS_DETAILS_DATA[sportId];
 
   return (
     <div

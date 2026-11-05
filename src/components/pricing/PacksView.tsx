@@ -41,7 +41,7 @@ export const PacksView: React.FC = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [creditsCount, setCreditsCount] = useState<number>(8);
-  const [price, setPrice] = useState<number>(32000);
+  const [price, setPrice] = useState<number | string>(32000);
   const [validityDays, setValidityDays] = useState<number>(30);
   const [isPopular, setIsPopular] = useState(false);
   const [isActive, setIsActive] = useState(true);
@@ -424,10 +424,10 @@ export const PacksView: React.FC = () => {
                     <input
                       type="number"
                       required
-                      min={100}
-                      step={500}
+                      min={0}
+                      step="any"
                       value={price}
-                      onChange={(e) => setPrice(Number(e.target.value))}
+                      onChange={(e) => setPrice(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none"
                     />
                   </div>
