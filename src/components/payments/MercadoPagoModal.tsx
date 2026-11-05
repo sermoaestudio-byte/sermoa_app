@@ -76,10 +76,9 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
     const createPreference = async () => {
       try {
         const origin = window.location.origin;
-        const portalUrl = `${origin}/#portal-alumno`;
-        const safeBackUrl = origin.includes('localhost') || origin.includes('127.0.0.1')
-          ? 'https://sermoa.app/#portal-alumno'
-          : portalUrl;
+        const cleanBaseUrl = origin.includes('localhost') || origin.includes('127.0.0.1')
+          ? 'https://sermoa.app'
+          : origin;
 
         // Llamada a la Edge Function
         const { data, error } = await supabase.functions.invoke('create-pack-purchase', {
@@ -88,7 +87,7 @@ export const MercadoPagoModal: React.FC<MercadoPagoModalProps> = ({
             user_id: userId,
             payer_email: userEmail || 'alumno@sermoa.app',
             payer_name: userName || 'Alumno Sermoa',
-            back_url: safeBackUrl
+            back_url: cleanBaseUrl
           }
         });
 

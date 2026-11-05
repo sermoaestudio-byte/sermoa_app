@@ -14,7 +14,9 @@ import {
   Instagram,
   MessageCircle,
   Sparkles,
-  QrCode
+  QrCode,
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 import { Profile, Studio } from '../../types';
 
@@ -33,6 +35,10 @@ interface StudentSidebarProps {
   isDrawer?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
+  // Staff view switcher
+  isStaff?: boolean;
+  staffRole?: 'admin' | 'instructor';
+  onGoToAdmin?: () => void;
 }
 
 export const StudentSidebar: React.FC<StudentSidebarProps> = ({
@@ -49,6 +55,9 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
   isDrawer = false,
   isOpen = true,
   onClose,
+  isStaff = false,
+  staffRole = 'admin',
+  onGoToAdmin,
 }) => {
   const [internalCollapsed, setInternalCollapsed] = useState<boolean>(() => {
     try {
@@ -208,6 +217,39 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
             )}
           </div>
         </div>
+
+        {/* Botón para volver al Panel de Administración / Profesor (solo visible para staff) */}
+        {isStaff && onGoToAdmin && (
+          <div className={`pt-3 pb-1 border-b border-[#E8D5B5]/60 ${isCollapsed ? 'px-2' : 'px-3'}`}>
+            <button
+              type="button"
+              onClick={onGoToAdmin}
+              className={`w-full rounded-2xl transition-all cursor-pointer flex items-center bg-[#44261B] hover:bg-[#5E612B] text-[#F4E8D1] shadow-xs border border-[#E8D5B5]/40 ${
+                isCollapsed ? 'h-11 justify-center px-0' : 'px-3 py-2.5 justify-between'
+              }`}
+              title={staffRole === 'instructor' ? 'Volver a Panel de Profesor' : 'Volver a Panel de Administrador'}
+            >
+              <div className={`flex items-center min-w-0 ${isCollapsed ? 'justify-center' : 'space-x-2.5'}`}>
+                <div className="w-7 h-7 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-[#F4E8D1]" />
+                </div>
+                {!isCollapsed && (
+                  <div className="truncate text-left min-w-0">
+                    <span className="text-xs font-bold block leading-tight truncate">
+                      {staffRole === 'instructor' ? 'Panel Profesor' : 'Panel Admin'}
+                    </span>
+                    <span className="text-[10px] text-[#E8D5B5]/80 block leading-none mt-0.5">
+                      Modo Gestión
+                    </span>
+                  </div>
+                )}
+              </div>
+              {!isCollapsed && (
+                <ArrowRight className="w-4 h-4 text-[#E8D5B5] shrink-0" />
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Menú Principal Organizado */}
         <div className="py-3">

@@ -25,7 +25,58 @@ import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 export function App() {
   const { currentRole, studio, isAuthenticated, isInitialized, logout, updateStudioSettings } = useStudioStore();
-  const [currentView, setCurrentView] = useState('dashboard');
+
+  // Helper para determinar la vista inicial evaluando parámetros de Mercado Pago, hash y roles
+  const getInitialView = () => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const search = window.location.search.toLowerCase();
+    const rawHash = window.location.hash.toLowerCase();
+    const hash = rawHash.replace('#', '').split('?')[0];
+
+    // 1. Detección inmediata de retorno desde Mercado Pago o acceso directo a Portal Alumno
+    if (
+      search.includes('purchase_id=') ||
+      search.includes('payment_id=') ||
+      search.includes('collection_id=') ||
+      search.includes('collection_status=') ||
+      search.includes('status=') ||
+      search.includes('portal-alumno') ||
+      rawHash.includes('purchase_id=') ||
+      rawHash.includes('payment_id=') ||
+      rawHash.includes('portal-alumno') ||
+      hash.startsWith('portal-alumno') ||
+      hash.startsWith('reservar')
+    ) {
+      return 'portal-alumno';
+    }
+
+    if (hash === 'registro') return 'registro';
+    if (hash === 'login') return 'login';
+    if (hash === 'actualizar-clave' || hash.includes('type=recovery') || search.includes('type=recovery')) {
+      return 'actualizar-clave';
+    }
+
+    if (['dashboard', 'classes', 'clases', 'students', 'alumnos', 'attendance', 'asistencias', 'instructors', 'profesores', 'branches', 'sucursales', 'routines', 'rutinas', 'history', 'historial', 'finance', 'finanzas', 'settings', 'configuracion', 'packs', 'tarifas', 'membresias'].includes(hash)) {
+      const viewMap: Record<string, string> = {
+        clases: 'classes',
+        alumnos: 'students',
+        asistencias: 'attendance',
+        profesores: 'instructors',
+        sucursales: 'branches',
+        rutinas: 'routines',
+        historial: 'history',
+        finanzas: 'finance',
+        configuracion: 'settings',
+        tarifas: 'packs',
+        membresias: 'packs',
+      };
+      return viewMap[hash] || hash;
+    }
+
+    return 'dashboard';
+  };
+
+  const [currentView, setCurrentView] = useState<string>(getInitialView);
   const [showQRPoster, setShowQRPoster] = useState(false);
 
   // Apply dynamic brand theme to :root whenever studio colors change
@@ -35,19 +86,42 @@ export function App() {
     }
   }, [studio]);
 
+  // Si el usuario autenticado tiene rol 'client' (alumno), asegurar que siempre permanezca en portal-alumno
+  useEffect(() => {
+    if (isInitialized && isAuthenticated && currentRole === 'client') {
+      if (currentView !== 'portal-alumno' && currentView !== 'actualizar-clave') {
+        setCurrentView('portal-alumno');
+        if (!window.location.hash.startsWith('#portal-alumno')) {
+          window.location.hash = '#portal-alumno';
+        }
+      }
+    }
+  }, [isInitialized, isAuthenticated, currentRole, currentView]);
+
   // Listen for Supabase Password Recovery events and Payment Redirections
   useEffect(() => {
-    // Check if URL has recovery tokens/params instantly
-    const hashStr = window.location.hash;
-    const searchStr = window.location.search;
-    if (hashStr.includes('type=recovery') || searchStr.includes('type=recovery')) {
+    const rawHash = window.location.hash.toLowerCase();
+    const searchStr = window.location.search.toLowerCase();
+
+    if (rawHash.includes('type=recovery') || searchStr.includes('type=recovery')) {
       setCurrentView('actualizar-clave');
     }
 
-    // Si viene de una redirección de pago de Mercado Pago (?status=success o ?purchase_id=...)
-    if (searchStr.includes('purchase_id=') || searchStr.includes('payment_id=') || searchStr.includes('collection_id=')) {
+    // Si viene de una redirección de pago de Mercado Pago, garantizar que la vista sea portal-alumno
+    if (
+      searchStr.includes('purchase_id=') ||
+      searchStr.includes('payment_id=') ||
+      searchStr.includes('collection_id=') ||
+      searchStr.includes('collection_status=') ||
+      searchStr.includes('status=') ||
+      searchStr.includes('portal-alumno') ||
+      rawHash.includes('purchase_id=') ||
+      rawHash.includes('portal-alumno')
+    ) {
       setCurrentView('portal-alumno');
-      window.location.hash = '#portal-alumno';
+      if (!window.location.hash.startsWith('#portal-alumno')) {
+        window.location.hash = '#portal-alumno';
+      }
     }
 
     if (isSupabaseConfigured) {
@@ -64,8 +138,9 @@ export function App() {
   // Hash-based route listener for direct links with security routing
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '').toLowerCase();
-      if (!hash) return;
+      const rawHash = window.location.hash.replace('#', '').toLowerCase();
+      if (!rawHash) return;
+      const hash = rawHash.split('?')[0];
 
       if (hash === 'registro') {
         setCurrentView('registro');
@@ -73,7 +148,7 @@ export function App() {
         setCurrentView('login');
       } else if (hash === 'actualizar-clave') {
         setCurrentView('actualizar-clave');
-      } else if (hash.startsWith('reservar') || hash === 'portal-alumno') {
+      } else if (hash.startsWith('reservar') || hash.startsWith('portal-alumno') || rawHash.includes('purchase_id=')) {
         setCurrentView('portal-alumno');
       } else if (['dashboard', 'classes', 'clases', 'students', 'alumnos', 'attendance', 'asistencias', 'instructors', 'profesores', 'branches', 'sucursales', 'routines', 'rutinas', 'history', 'historial', 'finance', 'finanzas', 'settings', 'configuracion', 'packs', 'tarifas', 'membresias'].includes(hash)) {
         // Map Spanish aliases to internal view keys
@@ -180,7 +255,14 @@ export function App() {
           />
         );
       }
-      return <StudentPortalView />;
+      return (
+        <StudentPortalView
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
+        />
+      );
     }
 
     // 1.5 General Unauthenticated Guard
@@ -196,13 +278,15 @@ export function App() {
     }
 
     // 2. Client (Alumno) Security Guard: Block any internal dashboard or management views
+    // Un alumno nunca debe ser llevado a la vista de administrador bajo ninguna circunstancia
     if (currentRole === 'client') {
       return (
-        <AccessDeniedView
-          requiredRole="admin"
+        <StudentPortalView
           onNavigate={(view) => {
-            setCurrentView(view);
-            window.location.hash = `#${view}`;
+            if (view === 'actualizar-clave' || view === 'portal-alumno') {
+              setCurrentView(view);
+              window.location.hash = `#${view}`;
+            }
           }}
         />
       );

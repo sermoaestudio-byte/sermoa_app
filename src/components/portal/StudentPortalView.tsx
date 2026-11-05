@@ -16,7 +16,9 @@ import {
   Sparkles,
   LogOut,
   Menu,
-  ArrowLeft
+  ArrowLeft,
+  ShieldCheck,
+  ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
@@ -33,7 +35,11 @@ import { StudentSidebar } from './StudentSidebar';
 import { ClassSchedule } from '../../types';
 import { Dumbbell } from 'lucide-react';
 
-export const StudentPortalView: React.FC = () => {
+export interface StudentPortalViewProps {
+  onNavigate?: (view: string) => void;
+}
+
+export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate }) => {
   const {
     studio,
     branches,
@@ -43,12 +49,25 @@ export const StudentPortalView: React.FC = () => {
     setCurrentStudentId,
     bookClass,
     currentUser,
+    currentRole,
     bookings,
     waitlist,
     processWaitlistResponse,
     expireWaitlistEntry,
     getEnrichedClasses,
   } = useStudioStore();
+
+  const isStaff = currentUser?.role === 'admin' || currentUser?.role === 'instructor' || currentRole === 'admin' || currentRole === 'instructor';
+  const staffRole = (currentUser?.role === 'instructor' || currentRole === 'instructor') ? 'instructor' : 'admin';
+
+  const handleGoToStaff = () => {
+    const target = staffRole === 'instructor' ? 'classes' : 'dashboard';
+    if (onNavigate) {
+      onNavigate(target);
+    } else {
+      window.location.hash = `#${target}`;
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'my_payments' | 'register'>('home');
   const [showSidebarDrawer, setShowSidebarDrawer] = useState(false);
@@ -79,13 +98,21 @@ export const StudentPortalView: React.FC = () => {
     });
   };
 
-  // Si Mercado Pago redirige al Portal con ?status=success
+  // Si Mercado Pago redirige al Portal con confirmación de pago
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('status') === 'success') {
-      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashQueryIndex = window.location.hash.indexOf('?');
+    const hashParams = hashQueryIndex !== -1 ? new URLSearchParams(window.location.hash.substring(hashQueryIndex)) : null;
+
+    const status = searchParams.get('status') || searchParams.get('collection_status') || hashParams?.get('status') || hashParams?.get('collection_status');
+    const hasPurchaseId = searchParams.has('purchase_id') || hashParams?.has('purchase_id');
+    const isApproved = status === 'success' || status === 'approved' || (hasPurchaseId && status !== 'failure' && status !== 'rejected');
+
+    if (isApproved) {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       setActiveTab('my_payments');
-      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+      // Limpiar parámetros de la URL manteniendo hash limpio del portal alumno
+      window.history.replaceState({}, document.title, window.location.pathname + '#portal-alumno');
     }
   }, []);
 
@@ -251,6 +278,9 @@ export const StudentPortalView: React.FC = () => {
           studentsList={students}
           currentStudentId={currentStudent?.id || ''}
           onSelectStudent={(id) => setCurrentStudentId(id)}
+          isStaff={isStaff}
+          staffRole={staffRole}
+          onGoToAdmin={handleGoToStaff}
         />
       </div>
 
@@ -285,22 +315,40 @@ export const StudentPortalView: React.FC = () => {
               </div>
             </div>
 
-            {/* Student Simulator Selector */}
-            <div className="flex items-center space-x-2">
-              <span className="text-[10px] font-bold text-[#A68D74] uppercase hidden sm:inline-block">
-                Alumno:
-              </span>
-              <select
-                value={currentStudent?.id || ''}
-                onChange={(e) => setCurrentStudentId(e.target.value)}
-                className="text-xs border-[#E8D5B5] rounded-xl bg-[#FAF8F5] p-1.5 focus:ring-[#5E612B] focus:border-[#5E612B] max-w-[150px] text-[#44261B] font-medium"
-                title="Simulador: Cambiar de Alumno"
-              >
-                <option value="" disabled>Emular Usuario...</option>
-                {students.map(s => (
-                  <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
-                ))}
-              </select>
+            {/* Controles superiores: Volver a Panel Admin / Selector de Alumno */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {isStaff && (
+                <button
+                  type="button"
+                  onClick={handleGoToStaff}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#44261B] hover:bg-[#5E612B] text-[#F4E8D1] border border-[#E8D5B5] shadow-2xs transition-all cursor-pointer"
+                  title={staffRole === 'instructor' ? 'Volver al panel del profesor' : 'Volver al panel del administrador'}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#E8D5B5]" />
+                  <span className="hidden sm:inline">{staffRole === 'instructor' ? 'Panel Profesor' : 'Panel Admin'}</span>
+                  <span className="sm:hidden">Gestión</span>
+                  <ArrowRight className="w-3 h-3 text-[#E8D5B5]" />
+                </button>
+              )}
+
+              {isStaff && (
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-[10px] font-bold text-[#A68D74] uppercase hidden md:inline-block">
+                    Alumno:
+                  </span>
+                  <select
+                    value={currentStudent?.id || ''}
+                    onChange={(e) => setCurrentStudentId(e.target.value)}
+                    className="text-xs border-[#E8D5B5] rounded-xl bg-[#FAF8F5] p-1.5 focus:ring-[#5E612B] focus:border-[#5E612B] max-w-[130px] sm:max-w-[150px] text-[#44261B] font-medium"
+                    title="Simulador: Cambiar de Alumno"
+                  >
+                    <option value="" disabled>Emular Usuario...</option>
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -907,6 +955,9 @@ export const StudentPortalView: React.FC = () => {
         studentsList={students}
         currentStudentId={currentStudent?.id || ''}
         onSelectStudent={(id) => setCurrentStudentId(id)}
+        isStaff={isStaff}
+        staffRole={staffRole}
+        onGoToAdmin={handleGoToStaff}
       />
 
       {/* GPS Modal */}

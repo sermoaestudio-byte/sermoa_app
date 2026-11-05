@@ -98,7 +98,7 @@ serve(async (req) => {
     
     // Mercado Pago rechaza localhost en back_urls cuando auto_return está activo
     const isLocal = !back_url || back_url.includes('localhost') || back_url.includes('127.0.0.1');
-    const safeBackUrl = isLocal ? 'https://sermoa.app' : back_url;
+    const safeBaseUrl = (isLocal ? 'https://sermoa.app' : back_url).split('#')[0].split('?')[0];
 
     const preferencePayload: any = {
       statement_descriptor: 'SERMOA PILATES',
@@ -115,13 +115,13 @@ serve(async (req) => {
       external_reference: purchase.id,
       notification_url: webhookUrl,
       back_urls: {
-        success: `${safeBackUrl}?status=success&purchase_id=${purchase.id}`,
-        failure: `${safeBackUrl}?status=failure&purchase_id=${purchase.id}`,
-        pending: `${safeBackUrl}?status=pending&purchase_id=${purchase.id}`
+        success: `${safeBaseUrl}?status=success&purchase_id=${purchase.id}&view=portal-alumno#portal-alumno`,
+        failure: `${safeBaseUrl}?status=failure&purchase_id=${purchase.id}&view=portal-alumno#portal-alumno`,
+        pending: `${safeBaseUrl}?status=pending&purchase_id=${purchase.id}&view=portal-alumno#portal-alumno`
       }
     };
 
-    if (!isLocal && safeBackUrl.startsWith('https://')) {
+    if (!isLocal && safeBaseUrl.startsWith('https://')) {
       preferencePayload.auto_return = 'approved';
     }
 
