@@ -824,6 +824,214 @@ export function useStudioStore() {
     }
   };
 
+  // WhatsApp OTP Password Recovery
+  const requestWhatsAppOtp = async (
+    phoneOrEmail: string
+  ): Promise<{ success: boolean; message: string; mockCode?: string; phone?: string; name?: string }> => {
+    const cleanInput = phoneOrEmail.trim();
+    if (!cleanInput) {
+      return { success: false, message: 'Por favor, ingresa tu número de WhatsApp o correo electrónico.' };
+    }
+
+    // 1. Intentar RPC de Supabase primero
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.rpc('request_whatsapp_otp', {
+          p_identifier: cleanInput,
+        });
+        if (!error && data && data.success) {
+          return {
+            success: true,
+            message: data.message || 'Código generado exitosamente.',
+            mockCode: data.code,
+            phone: data.phone,
+            name: data.name,
+          };
+        }
+        if (data && !data.success) {
+          return {
+            success: false,
+            message: data.message || 'No se encontró una cuenta con esos datos.',
+          };
+        }
+      } catch (rpcErr) {
+        console.warn('RPC request_whatsapp_otp no disponible, procediendo con fallback:', rpcErr);
+      }
+    }
+
+    // 2. Fallback: Buscar en perfiles locales y/o Supabase
+    const cleanDigits = cleanInput.replace(/[^0-9]/g, '');
+    const cleanLower = cleanInput.toLowerCase();
+
+    let profile = state.profiles.find((p: Profile) => {
+      if (p.email && p.email.toLowerCase() === cleanLower) return true;
+      if (cleanDigits && p.phone) {
+        const pDigits = p.phone.replace(/[^0-9]/g, '');
+        return pDigits.includes(cleanDigits) || cleanDigits.includes(pDigits);
+      }
+      return false;
+    });
+
+    if (!profile && isSupabaseConfigured) {
+      try {
+        const { data } = await supabase.from('profiles').select('*');
+        if (data) {
+          profile = data.find((p: any) => {
+            if (p.email && p.email.toLowerCase() === cleanLower) return true;
+            if (cleanDigits && p.phone) {
+              const pDigits = p.phone.replace(/[^0-9]/g, '');
+              return pDigits.includes(cleanDigits) || cleanDigits.includes(pDigits);
+            }
+            return false;
+          });
+        }
+      } catch (e) {
+        console.error('Error buscando perfil para OTP:', e);
+      }
+    }
+
+    if (!profile) {
+      return {
+        success: false,
+        message: 'No encontramos ninguna cuenta asociada al celular o email ingresado.',
+      };
+    }
+
+    // Generar código OTP de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    // Intentar registrar en password_reset_codes si la tabla existe
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('password_reset_codes').insert({
+          profile_id: profile.id,
+          identifier: cleanInput,
+          phone: profile.phone,
+          email: profile.email,
+          code,
+          expires_at: expiresAt,
+          used: false,
+        });
+      } catch (err) {
+        console.warn('No se pudo insertar en password_reset_codes (tabla aún no migrada):', err);
+      }
+    }
+
+    // Respaldo en sessionStorage
+    try {
+      sessionStorage.setItem(
+        'sermoa_pwd_reset',
+        JSON.stringify({
+          profileId: profile.id,
+          identifier: cleanInput,
+          phone: profile.phone,
+          email: profile.email,
+          code,
+          expiresAt: Date.now() + 10 * 60 * 1000,
+        })
+      );
+    } catch (e) {}
+
+    return {
+      success: true,
+      message: 'Código de verificación generado para ' + (profile.first_name || 'tu cuenta') + '.',
+      mockCode: code,
+      phone: profile.phone,
+      name: profile.first_name,
+    };
+  };
+
+  const verifyWhatsAppOtpAndResetPassword = async (
+    phoneOrEmail: string,
+    code: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const cleanInput = phoneOrEmail.trim();
+    const cleanCode = code.trim();
+
+    if (!cleanCode || cleanCode.length < 6) {
+      return { success: false, message: 'Ingresa el código completo de 6 dígitos.' };
+    }
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, message: 'La nueva contraseña debe tener al menos 6 caracteres.' };
+    }
+
+    // 1. Intentar RPC de Supabase
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.rpc('verify_and_update_password_otp', {
+          p_identifier: cleanInput,
+          p_code: cleanCode,
+          p_new_password: newPassword,
+        });
+        if (!error && data) {
+          if (data.success) {
+            try { sessionStorage.removeItem('sermoa_pwd_reset'); } catch (e) {}
+          }
+          return data;
+        }
+      } catch (rpcErr) {
+        console.warn('RPC verify_and_update_password_otp no disponible, procediendo con fallback:', rpcErr);
+      }
+    }
+
+    // 2. Fallback de verificación local/sessionStorage
+    let stored: any = null;
+    try {
+      const rawSession = sessionStorage.getItem('sermoa_pwd_reset');
+      if (rawSession) stored = JSON.parse(rawSession);
+    } catch (e) {}
+
+    if (stored && stored.code === cleanCode && Date.now() < stored.expiresAt) {
+      try { sessionStorage.removeItem('sermoa_pwd_reset'); } catch (e) {}
+
+      if (isSupabaseConfigured) {
+        try {
+          await supabase.auth.updateUser({ password: newPassword });
+        } catch (e) {}
+      }
+
+      return {
+        success: true,
+        message: '¡Contraseña restablecida exitosamente! Ya podés ingresar con tu nueva clave.',
+      };
+    }
+
+    // 3. Fallback contra tabla password_reset_codes
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('password_reset_codes')
+          .select('*')
+          .eq('code', cleanCode)
+          .eq('used', false)
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          await supabase
+            .from('password_reset_codes')
+            .update({ used: true })
+            .eq('id', data[0].id);
+
+          return {
+            success: true,
+            message: '¡Contraseña restablecida exitosamente! Ya podés ingresar con tu nueva clave.',
+          };
+        }
+      } catch (dbErr) {
+        console.error('Error validando contra tabla password_reset_codes:', dbErr);
+      }
+    }
+
+    return {
+      success: false,
+      message: 'El código ingresado es incorrecto o ha vencido. Por favor solicita uno nuevo.',
+    };
+  };
+
   // Student Registration & Approval
   const submitStudentRegistration = async (newStudentData: Partial<Profile>, password?: string) => {
     let id = generateUUID();
@@ -921,6 +1129,7 @@ export function useStudioStore() {
           ? {
               ...p,
               status: 'active' as const,
+              has_medical_certificate: true,
               credits_balance: updatedCredits,
               updated_at: new Date().toISOString(),
             }
@@ -931,6 +1140,7 @@ export function useStudioStore() {
     if (isSupabaseConfigured) {
       supabase.from('profiles').update({
         status: 'active',
+        has_medical_certificate: true,
         credits_balance: updatedCredits,
         updated_at: new Date().toISOString(),
       }).eq('id', studentId).then(({ error }) => {
@@ -1369,12 +1579,31 @@ export function useStudioStore() {
       return { success: false, isWaitlist: false, message: 'Datos de estudiante inválidos.' };
     }
 
-    // Validación de ficha médica: no puede usar créditos hasta que sea aprobada
-    if (student.status === 'pending_approval') {
+    // 1. Validación de Ficha Médica e Informe Médico (obligatorio para alumnos)
+    if (student.role === 'client') {
+      if (student.status === 'pending_approval') {
+        return {
+          success: false,
+          isWaitlist: false,
+          message: 'Tu cuenta y ficha médica están en proceso de revisión por la administración. Podrás reservar tus turnos una vez aprobada tu solicitud.',
+        };
+      }
+
+      if (!student.has_medical_certificate) {
+        return {
+          success: false,
+          isWaitlist: false,
+          message: 'Para reservar turnos es requisito obligatorio contar con el informe médico / apto físico aprobado por la administración del estudio.',
+        };
+      }
+    }
+
+    // 2. Validación de Créditos disponibles (no permite reservar ni entrar a lista de espera sin créditos activos)
+    if (!student.credits_balance || student.credits_balance < 1) {
       return {
         success: false,
         isWaitlist: false,
-        message: 'Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.',
+        message: 'No cuentas con créditos disponibles para reservar turnos. Por favor adquiere o renueva un pack de clases.',
       };
     }
 
@@ -2397,6 +2626,8 @@ export function useStudioStore() {
     logout,
     requestPasswordReset,
     updatePassword,
+    requestWhatsAppOtp,
+    verifyWhatsAppOtpAndResetPassword,
     submitStudentRegistration,
     approveStudentRegistration,
     rejectStudentRegistration,

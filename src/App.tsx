@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStudioStore } from './store/studioStore';
 import { Navbar } from './components/layout/Navbar';
 import { SidebarLeft } from './components/layout/SidebarLeft';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { ClassesView } from './components/classes/ClassesView';
 import { StudentsView } from './components/students/StudentsView';
@@ -429,7 +430,7 @@ export function App() {
       )}
 
       {/* 2. Main Content Area */}
-      <div className={`flex-1 flex flex-col min-w-0 ${showSidebar ? 'h-screen overflow-y-auto' : ''} relative z-10`}>
+      <div className={`flex-1 flex flex-col min-w-0 ${showSidebar ? 'h-screen overflow-y-auto pb-16 lg:pb-0' : ''} relative z-10`}>
         {/* Cabecera consolidada en SidebarLeft */}
 
         {/* Main View Render */}
@@ -437,6 +438,18 @@ export function App() {
           {renderMainView()}
         </div>
       </div>
+
+      {/* 3. Barra de Navegación Inferior Móvil (Visible solo en dispositivos móviles) */}
+      {showSidebar && (
+        <MobileBottomNav
+          currentView={currentView}
+          onNavigate={(view) => {
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
+          }}
+          onOpenQRPoster={() => setShowQRPoster(true)}
+        />
+      )}
 
       {/* Printable / Downloadable Studio QR Poster Modal */}
       {showQRPoster && (

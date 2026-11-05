@@ -46,6 +46,7 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
     payments,
     whatsappTemplates,
     purchaseCreditPack,
+    updateStudent,
   } = useStudioStore();
 
   const [selectedPackId, setSelectedPackId] = useState('');
@@ -283,9 +284,18 @@ export const StudentDetailDrawer: React.FC<StudentDetailDrawerProps> = ({
                 <HeartPulse className="w-4 h-4 text-[#C18749]" />
                 <span>Ficha de Salud & Observaciones</span>
               </div>
-              <span className="text-[11px] font-semibold text-[#A68D74]">
-                {currentStudent.has_medical_certificate ? '✅ Apto médico entregado' : '⚠️ Sin apto físico'}
-              </span>
+              <button
+                type="button"
+                onClick={() => updateStudent(currentStudent.id, { has_medical_certificate: !currentStudent.has_medical_certificate })}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer flex items-center space-x-1 ${
+                  currentStudent.has_medical_certificate
+                    ? 'bg-[#5E612B]/10 text-[#5E612B] hover:bg-[#5E612B]/20 border border-[#5E612B]/30'
+                    : 'bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300'
+                }`}
+              >
+                <FileCheck className="w-3 h-3" />
+                <span>{currentStudent.has_medical_certificate ? '✅ Apto Validado' : '⚠️ Validar Apto Médico'}</span>
+              </button>
             </div>
             <p className="text-xs text-[#44261B] leading-relaxed bg-[#FAF8F5] border border-[#E8D5B5]/60 p-3 rounded-xl">
               {currentStudent.medical_notes || 'No se registraron observaciones médicas particulares.'}

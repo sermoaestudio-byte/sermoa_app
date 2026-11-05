@@ -237,22 +237,26 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
               <h2 className="text-xs sm:text-sm font-extrabold text-[#44261B] uppercase tracking-wider">
                 Tu plan actual
               </h2>
-              {student.status === 'pending_approval' && (
+              {(!student.has_medical_certificate || student.status === 'pending_approval') && (
                 <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
-                  Ficha Médica en Revisión
+                  {student.status === 'pending_approval' ? 'Ficha Médica en Revisión' : 'Apto Médico Pendiente'}
                 </span>
               )}
             </div>
 
-            {student.status === 'pending_approval' && (
+            {(!student.has_medical_certificate || student.status === 'pending_approval') && (
               <div className="mb-3 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-300/80 flex items-start gap-3 text-amber-950 animate-fade-in">
                 <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-wider text-amber-900">
-                    Créditos en Espera de Validación Médica
+                    {student.status === 'pending_approval'
+                      ? 'Ficha Médica y Registro en Revisión'
+                      : 'Informe Médico Pendiente de Validación'}
                   </h4>
                   <p className="text-xs text-amber-900 font-semibold mt-0.5 leading-relaxed">
-                    Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.
+                    {student.status === 'pending_approval'
+                      ? 'Podrás reservar turnos una vez que el administrador valide tu ficha médica y autorice tu cuenta.'
+                      : 'Para poder reservar clases, es necesario que la administración valide y apruebe tu informe médico o apto físico.'}
                   </p>
                 </div>
               </div>
@@ -291,7 +295,9 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
                   <span className="text-xs sm:text-sm font-bold block leading-tight mt-0.5 text-[#5E612B]">
                     {student.status === 'pending_approval'
                       ? 'Validación Médica en Curso'
-                      : (isUpToDate ? 'Activo / Al día' : `Deuda: ${student.debt_amount}`)}
+                      : !student.has_medical_certificate
+                        ? 'Apto Médico Pendiente'
+                        : (isUpToDate ? 'Activo / Al día' : `Deuda: ${student.debt_amount}`)}
                   </span>
                 </div>
               </div>

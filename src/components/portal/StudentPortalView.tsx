@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Home,
   Calendar,
   Clock,
   MapPin,
@@ -18,7 +19,8 @@ import {
   Menu,
   ArrowLeft,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  CreditCard
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudioStore } from '../../store/studioStore';
@@ -204,13 +206,71 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
       }
     }
 
+    // Validación 1: Informe Médico obligatorio
+    if (currentStudent.status === 'pending_approval' || !currentStudent.has_medical_certificate) {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Informe Médico Requerido',
+        message: currentStudent.status === 'pending_approval'
+          ? 'Tu solicitud de registro y ficha médica están siendo evaluadas por la administración. Podrás reservar tus turnos una vez aprobada tu cuenta.'
+          : 'Para reservar turnos es requisito obligatorio tener validado y aprobado el informe médico / apto físico por la administración.',
+        className: cls.title,
+        time: cls.start_time,
+        date: targetDateStr,
+      });
+      return;
+    }
+
+    // Validación 2: Créditos disponibles requeridos
+    const availableCredits = currentStudent.credits_balance || 0;
+    if (availableCredits < 1) {
+      setFeedbackModal({
+        isOpen: true,
+        type: 'info',
+        title: 'Sin Créditos Disponibles',
+        message: 'No cuentas con créditos disponibles para reservar esta clase. Por favor adquiere un pack de clases para continuar.',
+        className: cls.title,
+        time: cls.start_time,
+        date: targetDateStr,
+      });
+      setIsBuyPackOpen(true);
+      return;
+    }
+
     // We need to pass the date because if we book for tomorrow, it shouldn't book for today.
     // If no date is passed, it falls back to the store default (today).
     const res = bookClass(cls.id, currentStudent.id, targetDateStr, false);
 
-    if (!res.success && res.message.toLowerCase().includes('créditos')) {
-      setIsBuyPackOpen(true);
-    } else if (res.success) {
+    if (!res.success) {
+      if (res.message.toLowerCase().includes('créditos')) {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'info',
+          title: 'Sin Créditos Disponibles',
+          message: res.message || 'No cuentas con créditos disponibles para reservar turnos.',
+          className: cls.title,
+          time: cls.start_time,
+          date: targetDateStr,
+        });
+        setIsBuyPackOpen(true);
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: 'error',
+          title: res.message.toLowerCase().includes('médico') || res.message.toLowerCase().includes('revisión')
+            ? 'Informe Médico Requerido'
+            : 'No se pudo reservar',
+          message: res.message || 'Ocurrió un inconveniente al procesar tu solicitud.',
+          className: cls.title,
+          time: cls.start_time,
+          date: targetDateStr,
+        });
+      }
+      return;
+    }
+
+    if (res.success) {
       if (res.isWaitlist) {
         setFeedbackModal({
           isOpen: true,
@@ -286,7 +346,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
       </div>
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 pb-16 lg:pb-0">
 
         {/* Student App Topbar */}
         <header className="bg-white/95 backdrop-blur-md border-b border-[#E8D5B5] sticky top-0 z-30 shadow-xs relative">
@@ -393,22 +453,55 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                       <h3 className="text-xl font-extrabold mt-0.5 text-white tracking-wide">
                         {currentStudent.credits_balance === 999
                           ? 'TIENES PASE LIBRE (ILIMITADO)'
-                          : `TIENES ${currentStudent.credits_balance ?? 0} CRÉDITOS ${currentStudent.status === 'pending_approval' ? '(PENDIENTES DE APROBACIÓN PARA SU USO)' : 'DISPONIBLES'}`}
+                          : !currentStudent.has_medical_certificate || currentStudent.status === 'pending_approval'
+                            ? `TIENES ${currentStudent.credits_balance ?? 0} CRÉDITOS (EN ESPERA DE APROBACIÓN MÉDICA)`
+                            : (currentStudent.credits_balance ?? 0) <= 0
+                              ? '0 CRÉDITOS DISPONIBLES'
+                              : `TIENES ${currentStudent.credits_balance} CRÉDITOS DISPONIBLES`}
                       </h3>
                     </div>
                   </div>
 
-                  {currentStudent.status === 'pending_approval' && (
+                  {(!currentStudent.has_medical_certificate || currentStudent.status === 'pending_approval') && (
                     <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 flex items-start gap-3 text-amber-950 animate-fade-in shadow-xs">
                       <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
                       <div>
                         <h4 className="text-xs font-black uppercase tracking-wider text-amber-900">
-                          Créditos en Espera de Validación Médica
+                          {currentStudent.status === 'pending_approval'
+                            ? 'Ficha Médica y Registro en Revisión'
+                            : 'Informe Médico Pendiente de Validación'}
                         </h4>
                         <p className="text-xs text-amber-900 font-semibold mt-0.5 leading-relaxed">
-                          Podrás disfrutar de tus créditos una vez que el administrador valide tu ficha médica.
+                          {currentStudent.status === 'pending_approval'
+                            ? 'Podrás reservar turnos una vez que la administración valide tu ficha médica y autorice tu cuenta.'
+                            : 'Para poder reservar clases, es requisito indispensable que la administración valide tu apto médico físico.'}
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {currentStudent.has_medical_certificate && currentStudent.status === 'active' && (currentStudent.credits_balance || 0) <= 0 && (
+                    <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#E8D5B5] flex items-center justify-between gap-3 text-[#44261B] animate-fade-in shadow-xs">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2.5 rounded-xl bg-[#F4E8D1] text-[#5E612B] shrink-0">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-[#44261B]">
+                            No tienes créditos disponibles
+                          </h4>
+                          <p className="text-xs text-slate-600 font-semibold mt-0.5 leading-relaxed">
+                            Adquiere un pack de clases para poder reservar tus turnos en el estudio.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsBuyPackOpen(true)}
+                        className="px-4 py-2 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] rounded-xl text-xs font-extrabold transition-all shrink-0 cursor-pointer shadow-xs"
+                      >
+                        Comprar Pack
+                      </button>
                     </div>
                   )}
                 </>
@@ -1135,6 +1228,59 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
           </div>
         </div>
       )}
+
+      {/* 4. Barra de Navegación Inferior Móvil para el Alumno */}
+      <nav
+        aria-label="Navegación inferior móvil del alumno"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-t border-[#E8D5B5] px-2 py-1.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] flex items-center justify-around safe-bottom"
+      >
+        {[
+          { id: 'home', label: 'Inicio', icon: Home },
+          { id: 'schedule', label: 'Reservar', icon: Calendar },
+          {
+            id: 'my_bookings',
+            label: 'Mis Turnos',
+            icon: Clock,
+            badge: currentStudent ? bookings.filter((b) => b.student_id === currentStudent.id && b.status === 'confirmed').length : undefined,
+          },
+          { id: 'my_payments', label: 'Pagos', icon: CreditCard },
+          { id: 'my_profile', label: 'Mi Perfil', icon: User },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative min-w-[58px] cursor-pointer ${
+                isActive
+                  ? 'text-[#5E612B] font-extrabold'
+                  : 'text-[#A68D74] hover:text-[#44261B] font-semibold'
+              }`}
+            >
+              <div className="relative">
+                <Icon
+                  className={`w-5 h-5 transition-transform ${
+                    isActive ? 'scale-110 text-[#5E612B]' : 'text-[#A68D74]'
+                  }`}
+                />
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-3.5 px-1 rounded-full bg-[#5E612B] text-white text-[9px] font-black flex items-center justify-center shadow-xs">
+                    {tab.badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] mt-0.5 tracking-tight leading-none">
+                {tab.label}
+              </span>
+              {isActive && (
+                <span className="w-1.5 h-1.5 rounded-full bg-[#5E612B] mt-1" />
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
     </div>
   );
