@@ -299,3 +299,4 @@ export const StudentPaymentsTab: React.FC<StudentPaymentsTabProps> = ({
     </div>
   );
 };
+

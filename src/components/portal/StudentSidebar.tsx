@@ -68,7 +68,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
         const next = !prev;
         try {
           localStorage.setItem('sermoa_student_sidebar_collapsed', String(next));
-        } catch {}
+        } catch { }
         return next;
       });
     }
@@ -155,9 +155,8 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
 
   const sidebarContent = (
     <aside
-      className={`${
-        isCollapsed ? 'w-20' : 'w-64'
-      } border-r flex flex-col justify-between shrink-0 h-screen sticky top-0 z-30 transition-all duration-300 ease-in-out bg-[#FAF8F5] border-[#E8D5B5] relative select-none`}
+      className={`${isCollapsed ? 'w-20' : 'w-64'
+        } border-r flex flex-col justify-between shrink-0 h-screen sticky top-0 z-30 transition-all duration-300 ease-in-out bg-[#FAF8F5] border-[#E8D5B5] relative select-none`}
     >
       {/* Botón flotante para contraer/expandir en desktop */}
       {!isDrawer && (
@@ -178,7 +177,7 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
 
       {/* Top Header con Perfil de Alumno */}
       <div className="flex-1 overflow-y-auto">
-        
+
         {/* Cabecera / Identidad */}
         <div className={`border-b border-[#E8D5B5] transition-all ${isCollapsed ? 'p-3' : 'p-4'}`}>
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
@@ -226,26 +225,22 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
                 <div key={item.id} className="relative group">
                   <button
                     onClick={item.action}
-                    className={`w-full rounded-2xl transition-all cursor-pointer flex items-center ${
-                      isCollapsed
+                    className={`w-full rounded-2xl transition-all cursor-pointer flex items-center ${isCollapsed
                         ? 'h-11 justify-center px-0'
                         : 'px-3 py-2.5 justify-between'
-                    } ${
-                      isActive
+                      } ${isActive
                         ? 'bg-[#5E612B] text-[#F4E8D1] shadow-xs'
                         : 'text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1]/60'
-                    }`}
+                      }`}
                     title={isCollapsed ? item.label : undefined}
                   >
                     <div className={`flex items-center min-w-0 ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
                       <div
-                        className={`relative rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                          isCollapsed ? 'w-8 h-8' : 'w-7 h-7'
-                        } ${
-                          isActive
+                        className={`relative rounded-xl flex items-center justify-center shrink-0 transition-colors ${isCollapsed ? 'w-8 h-8' : 'w-7 h-7'
+                          } ${isActive
                             ? 'bg-white/15 text-[#F4E8D1]'
                             : 'bg-[#F4E8D1] text-[#5E612B] group-hover:bg-[#E8D5B5]'
-                        }`}
+                          }`}
                       >
                         <Icon className={isCollapsed ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
                       </div>
@@ -256,9 +251,8 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
                             {item.label}
                           </span>
                           <span
-                            className={`text-[10px] block leading-none truncate ${
-                              isActive ? 'text-[#F4E8D1]/80' : 'text-[#A68D74]'
-                            }`}
+                            className={`text-[10px] block leading-none truncate ${isActive ? 'text-[#F4E8D1]/80' : 'text-[#A68D74]'
+                              }`}
                           >
                             {item.description}
                           </span>
@@ -268,11 +262,10 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
 
                     {!isCollapsed && item.badge && (
                       <span
-                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-                          isActive
+                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${isActive
                             ? 'bg-[#F4E8D1] text-[#44261B]'
                             : 'bg-[#F4E8D1] text-[#5E612B] border border-[#E8D5B5]'
-                        }`}
+                          }`}
                       >
                         {item.badge}
                       </span>
@@ -312,18 +305,16 @@ export const StudentSidebar: React.FC<StudentSidebarProps> = ({
                 <div key={item.id} className="relative group">
                   <button
                     onClick={item.action}
-                    className={`w-full rounded-2xl transition-all cursor-pointer flex items-center text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1]/60 ${
-                      isCollapsed
+                    className={`w-full rounded-2xl transition-all cursor-pointer flex items-center text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1]/60 ${isCollapsed
                         ? 'h-10 justify-center px-0'
                         : 'px-3 py-2 justify-between'
-                    }`}
+                      }`}
                     title={isCollapsed ? item.label : undefined}
                   >
                     <div className={`flex items-center min-w-0 ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
                       <div
-                        className={`rounded-xl flex items-center justify-center shrink-0 transition-colors bg-white border border-[#E8D5B5] text-[#A68D74] group-hover:text-[#5E612B] group-hover:border-[#5E612B] ${
-                          isCollapsed ? 'w-8 h-8' : 'w-7 h-7'
-                        }`}
+                        className={`rounded-xl flex items-center justify-center shrink-0 transition-colors bg-white border border-[#E8D5B5] text-[#A68D74] group-hover:text-[#5E612B] group-hover:border-[#5E612B] ${isCollapsed ? 'w-8 h-8' : 'w-7 h-7'
+                          }`}
                       >
                         <Icon className="w-3.5 h-3.5" />
                       </div>

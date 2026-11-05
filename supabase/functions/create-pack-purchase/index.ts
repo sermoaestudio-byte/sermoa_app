@@ -101,6 +101,7 @@ serve(async (req) => {
     const safeBackUrl = isLocal ? 'https://sermoa.app' : back_url;
 
     const preferencePayload: any = {
+      statement_descriptor: 'SERMOA PILATES',
       items: [
         {
           id: pack.id,
