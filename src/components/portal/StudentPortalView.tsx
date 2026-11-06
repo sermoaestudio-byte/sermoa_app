@@ -33,7 +33,7 @@ import { StudentRoutinesTab } from './StudentRoutinesTab';
 import { StudentPaymentsTab } from './StudentPaymentsTab';
 import { StudentCheckinModal } from '../checkin/StudentCheckinModal';
 import { BuyPackModal } from '../payments/BuyPackModal';
-import { StudentSidebar } from './StudentSidebar';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { ClassSchedule } from '../../types';
 import { Dumbbell } from 'lucide-react';
 
@@ -59,6 +59,19 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
     getEnrichedClasses,
     logout,
   } = useStudioStore();
+  const { confirm } = useConfirm();
+
+  const handleLogout = async () => {
+    const isConfirmed = await confirm('¿Deseas cerrar tu sesión?', {
+      title: 'Cerrar Sesión',
+      confirmText: 'Cerrar Sesión',
+      type: 'warning',
+    });
+    if (isConfirmed) {
+      logout();
+      window.location.hash = '#login';
+    }
+  };
 
   const isStaff = currentUser?.role === 'admin' || currentUser?.role === 'instructor' || currentRole === 'admin' || currentRole === 'instructor';
   const staffRole = (currentUser?.role === 'instructor' || currentRole === 'instructor') ? 'instructor' : 'admin';
@@ -73,7 +86,6 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
   };
 
   const [activeTab, setActiveTab] = useState<'home' | 'my_profile' | 'schedule' | 'my_bookings' | 'my_routines' | 'my_payments' | 'register'>('home');
-  const [showSidebarDrawer, setShowSidebarDrawer] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState('');
   const [selectedDiscipline, setSelectedDiscipline] = useState('Pilates Reformer');
   const [selectedInstructorId, setSelectedInstructorId] = useState('');
@@ -326,24 +338,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
         />
       </div>
 
-      {/* 1. Left Navbar Sidebar permanente (visible siempre en desktop con toggle colapsable) */}
-      <div className="hidden lg:block shrink-0 relative z-30">
-        <StudentSidebar
-          student={currentStudent}
-          studio={studio}
-          activeTab={activeTab}
-          onSelectTab={(tab) => setActiveTab(tab)}
-          onLogout={() => {
-            window.location.hash = '#login';
-          }}
-          studentsList={students}
-          currentStudentId={currentStudent?.id || ''}
-          onSelectStudent={(id) => setCurrentStudentId(id)}
-          isStaff={isStaff}
-          staffRole={staffRole}
-          onGoToAdmin={handleGoToStaff}
-        />
-      </div>
+
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 relative z-10 pb-16 lg:pb-0">
@@ -352,14 +347,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
         <header className="bg-white/95 backdrop-blur-md border-b border-[#E8D5B5] sticky top-0 z-30 shadow-xs relative">
           <div className="max-w-3xl lg:max-w-[760px] xl:max-w-[800px] mr-auto ml-0 px-4 sm:px-8 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              {/* Hamburger Button on Left (visible en pantallas móviles) */}
-              <button
-                onClick={() => setShowSidebarDrawer(true)}
-                className="lg:hidden p-2 text-[#44261B] hover:text-[#5E612B] hover:bg-[#F4E8D1] rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer flex items-center justify-center shadow-2xs"
-                title="Abrir menú lateral"
-              >
-                <Menu className="w-5 h-5 text-[#44261B]" />
-              </button>
+
 
               <div className="w-9 h-9 rounded-xl bg-white border border-[#E8D5B5] p-1 shadow-2xs flex items-center justify-center shrink-0">
                 <img
@@ -410,6 +398,15 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                   </select>
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="p-2 text-[#A68D74] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer"
+                title="Cerrar Sesión"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </header>
@@ -1050,25 +1047,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
         </main>
       </div>
 
-      {/* Student Drawer Sidebar (para pantallas pequeñas / móviles) */}
-      <StudentSidebar
-        isDrawer={true}
-        isOpen={showSidebarDrawer}
-        onClose={() => setShowSidebarDrawer(false)}
-        student={currentStudent}
-        studio={studio}
-        activeTab={activeTab}
-        onSelectTab={(tab) => setActiveTab(tab)}
-        onLogout={() => {
-          window.location.hash = '#login';
-        }}
-        studentsList={students}
-        currentStudentId={currentStudent?.id || ''}
-        onSelectStudent={(id) => setCurrentStudentId(id)}
-        isStaff={isStaff}
-        staffRole={staffRole}
-        onGoToAdmin={handleGoToStaff}
-      />
+
 
       {/* GPS Modal */}
       {showCheckinGPSModal && (
@@ -1229,10 +1208,10 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
         </div>
       )}
 
-      {/* 4. Barra de Navegación Inferior Móvil para el Alumno */}
+      {/* Barra de Navegación Inferior Unificada para el Alumno */}
       <nav
-        aria-label="Navegación inferior móvil del alumno"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-t border-[#E8D5B5] px-2 py-1.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] flex items-center justify-around safe-bottom"
+        aria-label="Navegación del alumno"
+        className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-t border-[#E8D5B5] px-2 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] safe-bottom"
       >
         {[
           { id: 'home', label: 'Inicio', icon: Home },

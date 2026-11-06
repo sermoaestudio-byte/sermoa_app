@@ -17,10 +17,12 @@ import {
   ArrowLeft,
   Flame,
   Info,
-  Clock
+  Clock,
+  LogOut
 } from 'lucide-react';
 import { Profile, Studio } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
+import { useConfirm } from '../../contexts/ConfirmContext';
 
 interface StudentProfileViewProps {
   student: Profile;
@@ -35,7 +37,20 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
   onBackToHome,
   onOpenCheckinGPS,
 }) => {
-  const { updateStudent } = useStudioStore();
+  const { updateStudent, logout } = useStudioStore();
+  const { confirm } = useConfirm();
+
+  const handleLogout = async () => {
+    const isConfirmed = await confirm('¿Deseas cerrar tu sesión?', {
+      title: 'Cerrar Sesión',
+      confirmText: 'Cerrar Sesión',
+      type: 'warning',
+    });
+    if (isConfirmed) {
+      logout();
+      window.location.hash = '#login';
+    }
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [photoSavedToast, setPhotoSavedToast] = useState(false);
@@ -419,6 +434,18 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
             </p>
           </div>
         )}
+      </div>
+
+      {/* Botón Cerrar Sesión */}
+      <div className="pt-2 pb-6 text-center">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-extrabold transition-all inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Cerrar Sesión de Mi Cuenta</span>
+        </button>
       </div>
 
       {/* ============================================================== */}
