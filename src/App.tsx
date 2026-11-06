@@ -247,11 +247,23 @@ export function App() {
     if (currentView === 'portal-alumno') {
       if (!isAuthenticated) {
         return (
-          <AccessDeniedView
-            requiredRole="client"
-            onNavigate={(view) => {
-              setCurrentView(view);
-              window.location.hash = `#${view}`;
+          <LoginView
+            onLoginSuccess={(role) => {
+              if (role === 'client') {
+                setCurrentView('portal-alumno');
+                window.location.hash = '#portal-alumno';
+              } else {
+                setCurrentView('dashboard');
+                window.location.hash = '#dashboard';
+              }
+            }}
+            onGoToRegister={() => {
+              setCurrentView('registro');
+              window.location.hash = '#registro';
+            }}
+            onGoToLanding={() => {
+              setCurrentView('landing');
+              window.location.hash = '#landing';
             }}
           />
         );
@@ -279,15 +291,13 @@ export function App() {
     }
 
     // 2. Client (Alumno) Security Guard: Block any internal dashboard or management views
-    // Un alumno nunca debe ser llevado a la vista de administrador bajo ninguna circunstancia
-    if (currentRole === 'client') {
+    // Un alumno autenticado siempre debe permanecer en el portal del alumno
+    if (isAuthenticated && currentRole === 'client') {
       return (
         <StudentPortalView
           onNavigate={(view) => {
-            if (view === 'actualizar-clave' || view === 'portal-alumno') {
-              setCurrentView(view);
-              window.location.hash = `#${view}`;
-            }
+            setCurrentView(view);
+            window.location.hash = `#${view}`;
           }}
         />
       );

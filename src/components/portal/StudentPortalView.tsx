@@ -68,7 +68,10 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
       type: 'warning',
     });
     if (isConfirmed) {
-      logout();
+      if (onNavigate) {
+        onNavigate('login');
+      }
+      await logout();
       window.location.hash = '#login';
     }
   };
@@ -341,11 +344,11 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
 
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10 pb-16 lg:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 pb-24">
 
         {/* Student App Topbar */}
         <header className="bg-white/95 backdrop-blur-md border-b border-[#E8D5B5] sticky top-0 z-30 shadow-xs relative">
-          <div className="max-w-3xl lg:max-w-[760px] xl:max-w-[800px] mr-auto ml-0 px-4 sm:px-8 py-3 flex items-center justify-between">
+          <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
             <div className="flex items-center space-x-3">
 
 
@@ -399,13 +402,25 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                 </div>
               )}
 
+              {/* Indicador de alumno activo */}
+              {currentStudent && (
+                <div className="flex items-center space-x-1.5 bg-[#FAF8F5] border border-[#E8D5B5] px-2.5 py-1 rounded-xl">
+                  <div className="w-6 h-6 rounded-full bg-[#E8D5B5] text-[#44261B] font-black text-[10px] flex items-center justify-center shrink-0">
+                    {currentStudent.first_name?.charAt(0) || 'A'}
+                  </div>
+                  <span className="text-xs font-bold text-[#44261B] max-w-[110px] truncate hidden sm:inline-block">
+                    {currentStudent.first_name}
+                  </span>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleLogout}
-                className="p-2 text-[#A68D74] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-[#E8D5B5] cursor-pointer flex items-center justify-center"
                 title="Cerrar Sesión"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 text-slate-500 hover:text-rose-600" />
               </button>
             </div>
           </div>
@@ -1211,54 +1226,56 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
       {/* Barra de Navegación Inferior Unificada para el Alumno */}
       <nav
         aria-label="Navegación del alumno"
-        className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-t border-[#E8D5B5] px-2 py-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] safe-bottom"
+        className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-t border-[#E8D5B5] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] safe-bottom py-1.5 px-2"
       >
-        {[
-          { id: 'home', label: 'Inicio', icon: Home },
-          { id: 'schedule', label: 'Reservar', icon: Calendar },
-          {
-            id: 'my_bookings',
-            label: 'Mis Turnos',
-            icon: Clock,
-            badge: currentStudent ? bookings.filter((b) => b.student_id === currentStudent.id && b.status === 'confirmed').length : undefined,
-          },
-          { id: 'my_payments', label: 'Pagos', icon: CreditCard },
-          { id: 'my_profile', label: 'Mi Perfil', icon: User },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+        <div className="flex items-center justify-around w-full max-w-lg mx-auto">
+          {[
+            { id: 'home', label: 'Inicio', icon: Home },
+            { id: 'schedule', label: 'Reservar', icon: Calendar },
+            {
+              id: 'my_bookings',
+              label: 'Mis Turnos',
+              icon: Clock,
+              badge: currentStudent ? bookings.filter((b) => b.student_id === currentStudent.id && b.status === 'confirmed').length : undefined,
+            },
+            { id: 'my_payments', label: 'Pagos', icon: CreditCard },
+            { id: 'my_profile', label: 'Mi Perfil', icon: User },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
 
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all relative min-w-[58px] cursor-pointer ${
-                isActive
-                  ? 'text-[#5E612B] font-extrabold'
-                  : 'text-[#A68D74] hover:text-[#44261B] font-semibold'
-              }`}
-            >
-              <div className="relative">
-                <Icon
-                  className={`w-5 h-5 transition-transform ${
-                    isActive ? 'scale-110 text-[#5E612B]' : 'text-[#A68D74]'
-                  }`}
-                />
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-3.5 px-1 rounded-full bg-[#5E612B] text-white text-[9px] font-black flex items-center justify-center shadow-xs">
-                    {tab.badge}
-                  </span>
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all relative cursor-pointer text-center ${
+                  isActive
+                    ? 'text-[#5E612B] font-extrabold'
+                    : 'text-[#A68D74] hover:text-[#44261B] font-semibold'
+                }`}
+              >
+                <div className="relative">
+                  <Icon
+                    className={`w-5 h-5 transition-transform ${
+                      isActive ? 'scale-110 text-[#5E612B]' : 'text-[#A68D74]'
+                    }`}
+                  />
+                  {tab.badge !== undefined && tab.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#5E612B] text-white text-[9px] font-black flex items-center justify-center shadow-xs">
+                      {tab.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] mt-0.5 tracking-tight leading-none whitespace-nowrap">
+                  {tab.label}
+                </span>
+                {isActive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#5E612B] mt-1" />
                 )}
-              </div>
-              <span className="text-[10px] mt-0.5 tracking-tight leading-none">
-                {tab.label}
-              </span>
-              {isActive && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[#5E612B] mt-1" />
-              )}
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
     </div>
