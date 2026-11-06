@@ -29,6 +29,9 @@ interface StudentProfileViewProps {
   studio: Studio;
   onBackToHome: () => void;
   onOpenCheckinGPS: () => void;
+  onLogout?: () => void | Promise<void>;
+  onGoToPayments?: () => void;
+  onOpenBuyPack?: () => void;
 }
 
 export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
@@ -36,6 +39,9 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
   studio,
   onBackToHome,
   onOpenCheckinGPS,
+  onLogout,
+  onGoToPayments,
+  onOpenBuyPack,
 }) => {
   const { updateStudent, logout } = useStudioStore();
   const { confirm } = useConfirm();
@@ -47,8 +53,12 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
       type: 'warning',
     });
     if (isConfirmed) {
-      logout();
-      window.location.hash = '#login';
+      if (onLogout) {
+        await onLogout();
+      } else {
+        await logout();
+        window.location.hash = '#login';
+      }
     }
   };
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -352,6 +362,28 @@ export const StudentProfileView: React.FC<StudentProfileViewProps> = ({
               Renovación continua
             </span>
           </div>
+        </div>
+
+        {/* Acciones directas del plan */}
+        <div className="flex items-center gap-2.5 pt-2">
+          {onOpenBuyPack && (
+            <button
+              type="button"
+              onClick={onOpenBuyPack}
+              className="flex-1 py-2.5 px-3 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-xs active:scale-98"
+            >
+              Comprar / Renovar Pack
+            </button>
+          )}
+          {onGoToPayments && (
+            <button
+              type="button"
+              onClick={onGoToPayments}
+              className="flex-1 py-2.5 px-3 bg-[#F4E8D1] hover:bg-white text-[#44261B] border border-[#E8D5B5] rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-2xs active:scale-98"
+            >
+              Mis Pagos & Facturas
+            </button>
+          )}
         </div>
 
         {student.status === 'pending_approval' && (

@@ -453,7 +453,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
               {currentStudent ? (
                 <>
                   <div
-                    className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between border border-[#E8D5B5]"
+                    className="text-white rounded-3xl p-5 shadow-soft flex items-center justify-between gap-3 border border-[#E8D5B5]"
                     style={{
                       background: 'linear-gradient(135deg, #44261B 0%, #5E612B 45%, #C18749 100%)',
                     }}
@@ -472,6 +472,14 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
                               : `TIENES ${currentStudent.credits_balance} CRÉDITOS DISPONIBLES`}
                       </h3>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('my_profile')}
+                      className="px-3.5 py-2 bg-[#F4E8D1] text-[#44261B] font-extrabold text-xs rounded-xl shadow-xs hover:bg-white transition-colors flex items-center space-x-1.5 cursor-pointer shrink-0"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-[#5E612B]" />
+                      <span>Ver Pase</span>
+                    </button>
                   </div>
 
                   {(!currentStudent.has_medical_certificate || currentStudent.status === 'pending_approval') && (
@@ -1019,6 +1027,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
               onGoToProfile={() => setActiveTab('my_profile')}
               onGoToBookings={() => setActiveTab('my_bookings')}
               onOpenBuyPack={() => setIsBuyPackOpen(true)}
+              onOpenCheckinGPS={() => setShowCheckinGPSModal(true)}
             />
           )}
 
@@ -1051,6 +1060,9 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
               studio={studio}
               onBackToHome={() => setActiveTab('home')}
               onOpenCheckinGPS={() => setShowCheckinGPSModal(true)}
+              onLogout={handleLogout}
+              onGoToPayments={() => setActiveTab('my_payments')}
+              onOpenBuyPack={() => setIsBuyPackOpen(true)}
             />
           )}
 
@@ -1238,7 +1250,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({ onNavigate
               icon: Clock,
               badge: currentStudent ? bookings.filter((b) => b.student_id === currentStudent.id && b.status === 'confirmed').length : undefined,
             },
-            { id: 'my_payments', label: 'Pagos', icon: CreditCard },
+            { id: 'my_routines', label: 'Mi Rutina', icon: Dumbbell },
             { id: 'my_profile', label: 'Mi Perfil', icon: User },
           ].map((tab) => {
             const Icon = tab.icon;

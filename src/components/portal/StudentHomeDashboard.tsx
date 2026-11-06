@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Calendar,
   Clock,
@@ -12,7 +13,10 @@ import {
   ArrowRight,
   ShieldCheck,
   AlertCircle,
-  Plus
+  Plus,
+  Heart,
+  Navigation,
+  User
 } from 'lucide-react';
 import { Profile, Studio, Booking, ClassSchedule } from '../../types';
 import { useStudioStore } from '../../store/studioStore';
@@ -26,6 +30,7 @@ interface StudentHomeDashboardProps {
   onGoToProfile: () => void;
   onGoToBookings?: () => void;
   onOpenBuyPack?: () => void;
+  onOpenCheckinGPS?: () => void;
 }
 
 export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
@@ -36,9 +41,18 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
   onGoToProfile,
   onGoToBookings,
   onOpenBuyPack,
+  onOpenCheckinGPS,
 }) => {
   const { bookings, classes, branches, cancelBooking } = useStudioStore();
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+
+  const qrPassPayload = JSON.stringify({
+    student_id: student.id,
+    dni: student.id_number || '38921450',
+    name: `${student.first_name} ${student.last_name}`,
+    token: `SERMOA-PASS-${student.id}-${Date.now().toString().slice(-4)}`,
+  });
 
   const isUnlimited = student.credits_balance === 999;
   const isUpToDate = (student.debt_amount ?? 0) <= 0;
@@ -98,9 +112,129 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
       {/* 2. Layout Principal */}
       <div className="space-y-4 sm:space-y-5">
 
+        {/* ------------------------------------------------------------ */}
+        {/* A. MEMBER PASS: CREDENCIAL DIGITAL DEL ALUMNO                */}
+        {/* ------------------------------------------------------------ */}
+        <section className="relative rounded-[26px] overflow-hidden shadow-soft border border-[#E8D5B5] transition-all hover:shadow-md group">
+          {/* Pass Top Banner con paleta otoñal Sermoa */}
+          <div
+            className="relative p-5 sm:p-6 text-white"
+            style={{
+              background: 'linear-gradient(135deg, #44261B 0%, #5E612B 40%, #545D31 70%, #C18749 100%)',
+            }}
+          >
+            {/* Silueta Pilates sutil */}
+            <img
+              src="/pilates-silhouette.png"
+              alt=""
+              className="absolute -right-4 -bottom-6 w-36 h-36 opacity-15 pointer-events-none select-none invert"
+            />
+
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="tracking-[0.2em] uppercase text-[10px] font-black text-[#F4E8D1]">
+                    {studio.name || 'SERMOA'}
+                  </span>
+                  <span className="text-[10px] text-[#E8D5B5]/80 font-semibold">• ESTUDIO</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5 text-[#F4E8D1] uppercase">
+                  MEMBER PASS
+                </h2>
+              </div>
+
+              <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-black/25 backdrop-blur-md border border-[#F4E8D1]/30 text-[#F4E8D1] text-[10px] font-extrabold uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-[#D98E2A]" />
+                <span>{isUnlimited ? 'VIP GOLD' : 'SERMOA CLUB'}</span>
+              </div>
+            </div>
+
+            <div className="relative z-10 my-3 flex items-center justify-between gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-[#F4E8D1]/30 flex items-center justify-center shrink-0">
+                <Heart className="w-6 h-6 text-[#F4E8D1] fill-[#D98E2A]/50" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black text-[#F4E8D1]">
+                  Estás en la <span className="underline decoration-[#D98E2A]">categoría inicial</span>.
+                </p>
+                <p className="text-[10px] text-[#F4E8D1]/85 mt-0.5 leading-snug">
+                  Para subir de categoría, deberás llegar a los <strong>cuatro meses</strong> de renovación continua.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative z-10 border-t border-[#F4E8D1]/20 pt-2 flex items-center justify-between text-[10px] text-[#F4E8D1]/80 font-medium">
+              <span>Sede Principal & Red Sermoa</span>
+              <span className="text-[#F4E8D1] font-bold">2026 Pass</span>
+            </div>
+          </div>
+
+          {/* Pass Bottom Card */}
+          <div className="bg-[#FAF8F5] p-4 sm:p-5 border-t border-[#E8D5B5]">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-soft bg-[#F4E8D1] flex items-center justify-center shrink-0">
+                  {student.avatar_url ? (
+                    <img
+                      src={student.avatar_url}
+                      alt={`${student.first_name} ${student.last_name}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-[#5E612B] bg-gradient-to-br from-[#F4E8D1] to-[#E8D5B5]">
+                      <User className="w-6 h-6 text-[#5E612B]" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#A68D74] block">
+                    Alumno / Titular
+                  </span>
+                  <h3 className="text-sm sm:text-base font-black text-[#44261B] truncate uppercase">
+                    {student.last_name ? `${student.last_name}, ${student.first_name}` : student.first_name}
+                  </h3>
+                  <p className="text-[11px] text-[#5E612B] font-medium">
+                    DNI: <span className="font-bold text-[#44261B]">{student.id_number || 'No especificado'}</span>
+                    <span className="ml-2 font-normal text-[#A68D74]">• Nivel: <strong className="text-[#B74E2A]">{isUnlimited ? 'VIP GOLD' : 'SERMOA'}</strong></span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onGoToProfile}
+                className="text-xs font-bold text-[#5E612B] hover:text-[#44261B] flex items-center gap-1 transition-colors ml-auto cursor-pointer"
+              >
+                <span>Ver Mi Perfil</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Quick Credential Action Buttons */}
+            <div className="mt-3.5 grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowQRModal(true)}
+                className="py-2.5 px-3 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] rounded-xl text-xs font-extrabold shadow-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer active:scale-98"
+              >
+                <QrCode className="w-4 h-4 text-[#F4E8D1]" />
+                <span>Ver QR de Ingreso</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenCheckinGPS || onGoToProfile}
+                className="py-2.5 px-3 bg-[#F4E8D1]/60 hover:bg-[#F4E8D1] text-[#44261B] border border-[#E8D5B5] rounded-xl text-xs font-extrabold transition-all flex items-center justify-center space-x-1.5 shadow-2xs cursor-pointer active:scale-98"
+              >
+                <Navigation className="w-4 h-4 text-[#B74E2A]" />
+                <span>Check-in GPS</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
           {/* ------------------------------------------------------------ */}
-          {/* A. PRIORIDAD 1: PRÓXIMA CLASE O ESTADO DE RESERVAS           */}
-          {/* (Altura moderadamente reducida ~10-15%, padding optimizado)  */}
+          {/* B. PRIORIDAD 2: PRÓXIMA CLASE O ESTADO DE RESERVAS           */}
           {/* ------------------------------------------------------------ */}
           <section className="bg-white rounded-3xl p-4 sm:p-5 border border-[#E8D5B5] shadow-xs relative overflow-hidden">
             <div className="flex items-center justify-between mb-3">
@@ -327,7 +461,34 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
           </section>
 
           {/* ------------------------------------------------------------ */}
-          {/* C. FILOSOFÍA SERMOA (Directamente debajo de Tu Plan Actual)   */}
+          {/* C. MI RUTINA DE ENTRENAMIENTO                                */}
+          {/* ------------------------------------------------------------ */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-[#E8D5B5] shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#eaede7] text-[#5E612B] flex items-center justify-center shrink-0">
+                <Dumbbell className="w-5 h-5 text-[#5E612B]" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-extrabold text-[#44261B] uppercase tracking-wider">
+                  Mi Rutina de Entrenamiento
+                </h3>
+                <p className="text-xs text-[#A68D74] truncate">
+                  {student.medical_notes || 'Ejercicios de acondicionamiento y Pilates Reformer asignados a tu perfil.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onGoToRoutines}
+              className="px-3.5 py-2 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <span>Ver Rutina</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* ------------------------------------------------------------ */}
+          {/* D. FILOSOFÍA SERMOA                                          */}
           {/* ------------------------------------------------------------ */}
           <div className="bg-[#FAF8F5] rounded-3xl p-3.5 sm:p-4 border border-[#E8D5B5] flex items-center gap-3.5 relative overflow-hidden group">
             <div className="w-10 h-10 rounded-xl bg-[#F4E8D1]/70 flex items-center justify-center shrink-0 border border-[#E8D5B5]/60 overflow-hidden">
@@ -360,6 +521,54 @@ export const StudentHomeDashboard: React.FC<StudentHomeDashboardProps> = ({
         onConfirm={handleConfirmCancel}
         onCancel={() => setBookingToCancel(null)}
       />
+
+      {/* Modal QR de Ingreso para el Alumno */}
+      {showQRModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center shadow-2xl border border-[#E8D5B5]">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#44261B] bg-[#F4E8D1] px-3 py-1 rounded-full border border-[#E8D5B5]">
+                Pase de Acceso Sermoa
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowQRModal(false)}
+                className="text-[#A68D74] hover:text-[#44261B] text-sm font-bold p-1 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <h3 className="text-lg font-black text-[#44261B]">
+              {student.first_name} {student.last_name}
+            </h3>
+            <p className="text-xs text-[#5E612B] mb-4">
+              DNI: {student.id_number || '38.921.450'}
+            </p>
+
+            <div className="p-4 bg-[#F7F3EC] border-2 border-dashed border-[#E8D5B5] rounded-3xl inline-block shadow-inner my-2">
+              <QRCodeSVG
+                value={qrPassPayload}
+                size={190}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            <p className="text-[11px] text-[#A68D74] mt-3 leading-relaxed">
+              Muestra este código al profesor o acerca tu pantalla al tótem de recepción al ingresar.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowQRModal(false)}
+              className="mt-5 w-full py-3 bg-[#5E612B] hover:bg-[#44261B] text-[#F4E8D1] font-extrabold text-xs rounded-2xl transition-colors cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
